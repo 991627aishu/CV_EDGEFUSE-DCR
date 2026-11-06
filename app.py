@@ -201,6 +201,12 @@ def health():
     }
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    """Returns empty 204 No Content for browser favicon requests to avoid 404 logs."""
+    return Response(content=b"", status_code=204)
+
+
 @app.get("/api/test_cnn")
 def test_cnn():
     if MODEL is None:
