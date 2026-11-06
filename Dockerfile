@@ -2,7 +2,12 @@ FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
-    PORT=8000
+    PORT=8000 \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
+    VECLIB_MAXIMUM_THREADS=1
 
 WORKDIR /app
 
@@ -14,7 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision && \
+    pip install --no-cache-dir -r requirements.txt
 
 COPY . /app
 

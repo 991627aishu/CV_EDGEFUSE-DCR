@@ -40,6 +40,12 @@ app.add_middleware(
 )
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+# Strict single-thread limit for low-memory (512MB RAM) Linux hosting
+torch.set_num_threads(1)
+try:
+    torch.set_num_interop_threads(1)
+except Exception:
+    pass
 MODEL_PATH = "EDGEFUSE_DCR/models/edgefuse_dcr_compact.pth"
 if not os.path.exists(MODEL_PATH):
     MODEL_PATH = "models/edgefuse_dcr_compact.pth"

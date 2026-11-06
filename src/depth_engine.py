@@ -426,17 +426,22 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
 
         cnn_conf_np = None
         if cnn_model is not None:
-            import torch
-            # Normalize inputs
-            rgb_t = torch.from_numpy(rgb_image.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0).to(device)
-            d_t = torch.from_numpy(base_up.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
-            v_t = torch.from_numpy((base_up > 0.05).astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+            try:
+                import torch
+                torch.set_num_threads(1)
+                # Normalize inputs
+                rgb_t = torch.from_numpy(rgb_image.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0).to(device)
+                d_t = torch.from_numpy(base_up.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+                v_t = torch.from_numpy((base_up > 0.05).astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
 
-            cnn_model.eval()
-            with torch.no_grad():
-                pred_d, pred_conf = cnn_model(rgb_t, d_t, v_t)
-                cnn_depth = pred_d.squeeze().cpu().numpy()
-                cnn_conf_np = pred_conf.squeeze().cpu().numpy()
+                cnn_model.eval()
+                with torch.no_grad():
+                    pred_d, pred_conf = cnn_model(rgb_t, d_t, v_t)
+                    cnn_depth = pred_d.squeeze().cpu().numpy()
+                    cnn_conf_np = pred_conf.squeeze().cpu().numpy()
+            except Exception as e:
+                print(f"Warning: CNN forward pass error ({e}), falling back to edge-guided baseline.")
+                cnn_depth = fast_guided_filter(rgb_image, base_up, radius=4, eps=0.005)
         else:
             # Fallback to guided filter if model checkpoint not yet loaded
             cnn_depth = fast_guided_filter(rgb_image, base_up, radius=4, eps=0.005)
