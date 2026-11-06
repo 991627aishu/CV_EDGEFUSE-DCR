@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" class="scroll-smooth dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS CDN with class-based Dark Mode -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -47,10 +47,12 @@
               900: '#0F172A',
               800: '#1E293B',
               700: '#334155',
-              600: '#475569'
+              600: '#475569',
+              500: '#64748B'
             },
             lab: {
               bg: '#080D1A',
+              sidebar: '#0B1120',
               card: '#0F172A',
               cardborder: '#1E293B',
               hover: '#18243E'
@@ -69,18 +71,6 @@
     .dark ::-webkit-scrollbar-thumb { background: #334155; }
     ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
-    /* Frosted glass */
-    .glass-ivory {
-      background: rgba(250, 249, 245, 0.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .glass-lab {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
     /* Comparison Slider Clip Paths */
     .split-slider-container {
       position: relative;
@@ -96,7 +86,7 @@
       overflow: hidden;
       z-index: 10;
       border-right: 2px solid #38BDF8;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+      box-shadow: 2px 0 10px rgba(0,0,0,0.4);
     }
     .split-slider-handle {
       position: absolute;
@@ -116,20 +106,27 @@
       z-index: 20;
     }
 
-    /* Best Metric Highlights */
+    /* Best Metric Highlights in both themes */
     .badge-best {
       background: rgba(16, 185, 129, 0.2) !important;
-      color: #34D399 !important;
+      color: #059669 !important;
       font-weight: 700 !important;
       border: 1px solid rgba(16, 185, 129, 0.5) !important;
       border-radius: 4px;
-      padding: 1px 4px;
+      padding: 1px 5px;
+    }
+    .dark .badge-best {
+      background: rgba(16, 185, 129, 0.25) !important;
+      color: #34D399 !important;
+      border: 1px solid rgba(16, 185, 129, 0.5) !important;
     }
 
     /* Gallery Card Active Selection */
     .gallery-item.active {
       border-color: #38BDF8 !important;
-      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4), 0 10px 25px -5px rgba(0, 0, 0, 0.4) !important;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4), 0 10px 25px -5px rgba(0, 0, 0, 0.2) !important;
+    }
+    .dark .gallery-item.active {
       background: #131E35 !important;
     }
 
@@ -143,1054 +140,1109 @@
     }
   </style>
 </head>
-<body class="bg-ivory-100 text-charcoal-900 font-sans antialiased selection:bg-forest-100 selection:text-forest-900">
+<body class="bg-ivory-100 dark:bg-lab-bg text-charcoal-900 dark:text-slate-100 font-sans antialiased transition-colors duration-200">
 
   <!-- ========================================================================= -->
-  <!-- 1. STICKY EDITORIAL & SCIENTIFIC HEADER                                    -->
+  <!-- 1. RESPONSIVE SIDEBAR NAVIGATION (LEFT FIXED DESKTOP / DRAWER MOBILE)     -->
   <!-- ========================================================================= -->
-  <header id="site-header" class="sticky top-0 z-40 w-full glass-ivory border-b border-ivory-300 transition-all duration-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+
+  <!-- Mobile Top Header Bar with Hamburger Toggle -->
+  <div class="md:hidden sticky top-0 z-40 bg-white/90 dark:bg-lab-sidebar/90 backdrop-blur-md border-b border-ivory-300 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-forest-900 flex items-center justify-center text-white shadow-sm">
+        <svg class="w-4 h-4 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+      </div>
+      <span class="text-sm font-extrabold font-mono text-charcoal-950 dark:text-white">EDGEFUSE-DCR</span>
+    </div>
+    
+    <div class="flex items-center gap-2">
+      <!-- Mobile Theme Toggle -->
+      <button type="button" onclick="toggleTheme()" class="p-2 rounded-lg bg-ivory-200 dark:bg-slate-800 text-charcoal-700 dark:text-slate-300">
+        <span class="dark:hidden">🌙</span>
+        <span class="hidden dark:inline">☀️</span>
+      </button>
       
-      <!-- Brand Logo & Identity -->
-      <a href="#section-hero" class="flex items-center gap-3 group">
-        <div class="w-9 h-9 rounded-xl bg-forest-900 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-          <!-- Stylized Dual-Wave / Hexagonal Depth Icon -->
-          <svg class="w-5 h-5 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-            <path d="M2 17l10 5 10-5"></path>
-            <path d="M2 12l10 5 10-5"></path>
-          </svg>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="text-base font-extrabold tracking-tight text-charcoal-950 font-mono">EDGEFUSE-DCR</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-forest-100 text-forest-900 border border-forest-300">Phase 4</span>
-          </div>
-          <p class="text-[10px] text-charcoal-600 hidden sm:block font-medium">Edge-Aware Confidence-Guided Depth Completion</p>
-        </div>
-      </a>
+      <!-- Hamburger Menu Button -->
+      <button type="button" onclick="toggleMobileSidebar()" class="p-2 rounded-lg bg-ivory-200 dark:bg-slate-800 text-charcoal-700 dark:text-slate-300">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
 
-      <!-- Navigation Links -->
-      <nav class="hidden md:flex items-center gap-1 text-xs font-semibold text-charcoal-700">
-        <a href="#section-hero" class="px-3 py-1.5 rounded-lg hover:text-charcoal-950 hover:bg-ivory-200 transition-colors">Overview</a>
-        <a href="#section-why-matters" class="px-3 py-1.5 rounded-lg hover:text-charcoal-950 hover:bg-ivory-200 transition-colors">Why It Matters</a>
-        <a href="#section-how-to-use" class="px-3 py-1.5 rounded-lg hover:text-charcoal-950 hover:bg-ivory-200 transition-colors">How to Use</a>
-        <a href="#section-explorer" class="px-3 py-1.5 rounded-lg hover:text-charcoal-950 hover:bg-ivory-200 transition-colors">Dataset Explorer</a>
-        <a href="#section-reconstruction" class="px-3 py-1.5 rounded-lg hover:text-charcoal-950 hover:bg-ivory-200 transition-colors">Reconstruction Lab</a>
-        <a href="#section-benchmark" class="px-3 py-1.5 rounded-lg hover:text-charcoal-950 hover:bg-ivory-200 transition-colors">Benchmarks</a>
-        
-        <!-- Guided Tour Trigger -->
-        <button type="button" onclick="startGuidedTour()" class="ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-forest-900 text-white hover:bg-forest-800 transition-colors shadow-sm text-xs font-bold">
-          <svg class="w-3.5 h-3.5 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-          Guided Tour
-        </button>
-      </nav>
+  <!-- Mobile Sidebar Backdrop Overlay -->
+  <div id="mobile-sidebar-backdrop" onclick="closeMobileSidebar()" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden md:hidden transition-opacity"></div>
 
-      <!-- Status Indicator & GitHub Link -->
-      <div class="flex items-center gap-3">
-        <!-- Live Model Health Indicator -->
-        <div id="model-status-indicator" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 border border-emerald-300 text-emerald-800" title="EdgeFuseNet PyTorch CPU Engine">
+  <!-- Main Persistent Sidebar -->
+  <aside id="main-sidebar" class="fixed inset-y-0 left-0 z-50 w-64 lg:w-72 bg-white dark:bg-lab-sidebar border-r border-ivory-300 dark:border-slate-800 flex flex-col justify-between transform -translate-x-full md:translate-x-0 transition-transform duration-200 shadow-xl md:shadow-none overflow-y-auto">
+    
+    <!-- Top Brand & Navigation -->
+    <div class="p-5 space-y-6">
+      
+      <!-- Logo & Brand Header -->
+      <div class="space-y-3 border-b border-ivory-300 dark:border-slate-800/80 pb-4">
+        <div class="flex items-center justify-between">
+          <a href="#section-hero" class="flex items-center gap-3 group">
+            <div class="w-9 h-9 rounded-xl bg-forest-900 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <svg class="w-5 h-5 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <div>
+              <span class="text-base font-extrabold tracking-tight font-mono text-charcoal-950 dark:text-white block">EDGEFUSE-DCR</span>
+              <span class="text-[10px] text-charcoal-500 dark:text-slate-400 font-medium">Phase 4 Depth Refinement</span>
+            </div>
+          </a>
+
+          <!-- Close Button on Mobile Drawer -->
+          <button type="button" onclick="closeMobileSidebar()" class="md:hidden text-charcoal-400 dark:text-slate-500 hover:text-charcoal-900 dark:hover:text-white p-1">
+            ✕
+          </button>
+        </div>
+
+        <!-- Live Model Ready Pill -->
+        <div id="model-status-indicator" class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 shadow-sm">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>Model Ready (PyTorch CPU)</span>
         </div>
+      </div>
 
-        <!-- GitHub Repo Link -->
-        <a href="https://github.com/991627aishu/CV_EDGEFUSE-DCR" target="_blank" rel="noopener noreferrer" class="p-2 rounded-lg text-charcoal-700 hover:text-charcoal-950 hover:bg-ivory-200 transition-colors" title="View Source Repository on GitHub">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
-          </svg>
+      <!-- Theme Switcher Pill in Sidebar -->
+      <div class="space-y-1.5">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-charcoal-500 dark:text-slate-400 font-mono">Interface Theme</span>
+        <button type="button" onclick="toggleTheme()" class="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-ivory-200 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-xs font-semibold text-charcoal-800 dark:text-slate-200 hover:border-forest-500 dark:hover:border-cyan-500 transition-colors shadow-sm">
+          <div class="flex items-center gap-2">
+            <span class="dark:hidden">🌙</span>
+            <span class="hidden dark:inline">☀️</span>
+            <span id="theme-label">Dark Theme Active</span>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-ivory-300 dark:border-slate-700 font-mono">Switch</span>
+        </button>
+      </div>
+
+      <!-- Navigation Section Links -->
+      <nav class="space-y-1 text-xs font-semibold">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-charcoal-500 dark:text-slate-400 font-mono block px-3 py-1">Sections</span>
+        
+        <a href="#section-hero" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <svg class="w-4 h-4 text-forest-700 dark:text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          Overview & Hero
         </a>
+
+        <a href="#section-why-matters" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          Why Depth Matters
+        </a>
+
+        <a href="#section-how-to-use" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <svg class="w-4 h-4 text-cyan-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          How to Use (8 Steps)
+        </a>
+
+        <a href="#section-explorer" onclick="closeMobileSidebar()" class="flex items-center justify-between px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <div class="flex items-center gap-2.5">
+            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Dataset Explorer
+          </div>
+          <span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono font-bold">9</span>
+        </a>
+
+        <a href="#section-reconstruction" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <svg class="w-4 h-4 text-cyan-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Reconstruction Lab
+        </a>
+
+        <a href="#section-benchmark" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Benchmarks
+        </a>
+
+        <a href="#section-exports" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Research Exports
+        </a>
+      </nav>
+
+      <!-- Guided Spotlight Tour Action -->
+      <div class="pt-2">
+        <button type="button" onclick="startGuidedTour(); closeMobileSidebar();" class="w-full py-2.5 px-3 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-gradient-to-r dark:from-blue-600 dark:to-cyan-600 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2">
+          <svg class="w-3.5 h-3.5 text-forest-400 dark:text-cyan-200 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+          Start Guided Tour
+        </button>
       </div>
 
     </div>
-  </header>
 
-  <!-- ========================================================================= -->
-  <!-- 2. EDITORIAL HERO SECTION WITH INTERACTIVE SPLIT COMPARISON SLIDER         -->
-  <!-- ========================================================================= -->
-  <section id="section-hero" class="relative overflow-hidden py-16 sm:py-24 border-b border-ivory-300">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Bottom Sidebar Footer: Team USN & GitHub -->
+    <div class="p-5 border-t border-ivory-300 dark:border-slate-800 bg-ivory-50 dark:bg-slate-900/40 space-y-3 text-xs">
       
-      <!-- Top Meta Eyebrow -->
-      <div class="flex flex-wrap items-center gap-2 mb-6">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-forest-900 text-white">
-          <span class="w-1.5 h-1.5 rounded-full bg-forest-400"></span>
-          Computer Vision Research Platform
-        </span>
-        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ivory-200 text-charcoal-700 border border-ivory-300 font-mono">
-          P4: Depth Upsampling & Refinement
-        </span>
-        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ivory-200 text-charcoal-700 border border-ivory-300 font-mono">
-          1,308,610 Trainable Parameters
-        </span>
+      <!-- Team USN Credentials -->
+      <div class="space-y-1">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-charcoal-500 dark:text-slate-400 font-mono">Team Credentials</span>
+        <div class="grid grid-cols-2 gap-1 text-[10px] font-mono font-semibold text-charcoal-700 dark:text-slate-300">
+          <span>1RUA24CSE0243</span>
+          <span>1RUA24CSE0263</span>
+          <span>1RUA24CSE0270</span>
+          <span>1RUA24CSE0308</span>
+        </div>
       </div>
 
-      <!-- Main Grid: Headline & Interactive Split Comparison -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        
-        <!-- Left Column: Scientific Narrative -->
-        <div class="lg:col-span-6 space-y-6">
-          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-charcoal-950 tracking-tight leading-[1.1]">
-            Reconstructing the Missing. <br>
-            <span class="text-forest-700">Preserving the Edges.</span>
-          </h1>
+      <!-- GitHub Link & Version -->
+      <div class="flex items-center justify-between pt-2 border-t border-ivory-200 dark:border-slate-800 text-[11px] text-charcoal-600 dark:text-slate-400">
+        <a href="https://github.com/991627aishu/CV_EDGEFUSE-DCR" target="_blank" rel="noopener noreferrer" class="hover:text-charcoal-950 dark:hover:text-white flex items-center gap-1.5 font-semibold transition-colors">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path></svg>
+          GitHub Repo
+        </a>
+        <span class="font-mono text-[10px]">v1.0.0</span>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN APPLICATION CONTENT (OFFSET BY SIDEBAR ON DESKTOP)               -->
+  <!-- ========================================================================= -->
+  <div class="md:pl-64 lg:pl-72 flex-1 min-h-screen flex flex-col justify-between">
+    
+    <div>
+      <!-- ======================================================================= -->
+      <!-- 2.1 HERO SECTION WITH INTERACTIVE SPLIT COMPARISON SLIDER                -->
+      <!-- ======================================================================= -->
+      <section id="section-hero" class="relative overflow-hidden py-12 sm:py-20 px-4 sm:px-8 lg:px-12 border-b border-ivory-300 dark:border-slate-800 bg-ivory-100 dark:bg-lab-bg transition-colors">
+        <div class="max-w-6xl mx-auto space-y-8">
           
-          <p class="text-base sm:text-lg text-charcoal-700 leading-relaxed max-w-xl">
-            An edge-aware, confidence-guided depth completion framework that transforms sparse and low-resolution depth measurements into refined, high-resolution depth representations with crisp geometric boundaries.
-          </p>
-
-          <!-- Core Feature Pillars -->
-          <div class="grid grid-cols-2 gap-3 pt-2">
-            <div class="p-3.5 rounded-xl bg-white border border-ivory-300 shadow-sm space-y-1">
-              <div class="flex items-center gap-2 text-forest-800 font-bold text-xs">
-                <svg class="w-4 h-4 text-forest-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                Dual-Branch CNN
-              </div>
-              <p class="text-[11px] text-charcoal-600">Simultaneously extracts high-frequency RGB photometric edges and depth geometry.</p>
-            </div>
-
-            <div class="p-3.5 rounded-xl bg-white border border-ivory-300 shadow-sm space-y-1">
-              <div class="flex items-center gap-2 text-forest-800 font-bold text-xs">
-                <svg class="w-4 h-4 text-forest-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="m10 15 5-3-5-3v6Z"></path></svg>
-                Confidence Solver
-              </div>
-              <p class="text-[11px] text-charcoal-600">Distance-attenuated bilateral refinement prevents texture-copy artifacts.</p>
-            </div>
+          <!-- Top Meta Badges -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-forest-900 text-white">
+              <span class="w-1.5 h-1.5 rounded-full bg-forest-400"></span>
+              Computer Vision Research Platform
+            </span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ivory-200 dark:bg-slate-800 text-charcoal-700 dark:text-slate-300 border border-ivory-300 dark:border-slate-700 font-mono">
+              P4: Depth Upsampling & Refinement
+            </span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ivory-200 dark:bg-slate-800 text-charcoal-700 dark:text-slate-300 border border-ivory-300 dark:border-slate-700 font-mono">
+              1,308,610 Trainable Parameters
+            </span>
           </div>
 
-          <!-- CTAs -->
-          <div class="flex flex-wrap items-center gap-3 pt-4">
-            <a href="#section-reconstruction" class="px-5 py-3 rounded-xl bg-forest-900 hover:bg-forest-800 text-white font-bold text-sm transition-all shadow-md hover:shadow-lg flex items-center gap-2">
-              <span>Launch Reconstruction Lab</span>
-              <svg class="w-4 h-4 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </a>
-            <a href="#section-explorer" class="px-5 py-3 rounded-xl bg-white hover:bg-ivory-200 text-charcoal-800 border border-ivory-300 font-semibold text-sm transition-colors">
-              Explore Dataset Gallery
-            </a>
-            <a href="#section-benchmark" class="px-4 py-3 rounded-xl text-charcoal-600 hover:text-charcoal-900 font-semibold text-sm transition-colors">
-              View Benchmarks →
-            </a>
-          </div>
-        </div>
-
-        <!-- Right Column: Interactive Before/After Split Comparison Slider -->
-        <div class="lg:col-span-6">
-          <div class="bg-white p-3 sm:p-4 rounded-2xl border border-ivory-300 shadow-xl space-y-3">
-            <div class="flex items-center justify-between px-1">
-              <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-forest-600"></span>
-                <span class="text-xs font-bold text-charcoal-900">Live Boundary Comparison Demo</span>
-              </div>
-              <span class="text-[11px] font-mono text-charcoal-500">Middlebury 2021 (Artroom1)</span>
-            </div>
-
-            <!-- Split Container -->
-            <div id="hero-slider-container" class="split-slider-container w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden cursor-ew-resize">
-              <!-- Reconstructed (Full Background) -->
-              <img id="hero-slider-after-img" src="" class="absolute inset-0 w-full h-full object-cover" alt="EdgeFuse-DCR Refined Depth">
+          <!-- Hero Grid: Headline & Interactive Split Comparison -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            <!-- Left Narrative -->
+            <div class="lg:col-span-6 space-y-6">
+              <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-charcoal-950 dark:text-white tracking-tight leading-[1.15]">
+                Reconstructing the Missing. <br>
+                <span class="text-forest-700 dark:text-cyan-400">Preserving the Edges.</span>
+              </h1>
               
-              <!-- Raw Input (Clipped Layer) -->
-              <div id="hero-slider-before-wrap" class="split-slider-before">
-                <img id="hero-slider-before-img" src="" class="absolute inset-0 w-full h-full object-cover max-w-none" alt="Raw Input Low-Res Depth">
-                <span class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 text-white font-mono text-[10px] font-bold tracking-wider">
-                  RAW INPUT (4× LOW-RES)
+              <p class="text-sm sm:text-base text-charcoal-700 dark:text-slate-300 leading-relaxed max-w-lg">
+                An edge-aware, confidence-guided depth completion framework that transforms sparse and low-resolution depth measurements into refined, high-resolution depth representations with crisp geometric boundaries.
+              </p>
+
+              <!-- Feature Cards -->
+              <div class="grid grid-cols-2 gap-3 pt-1">
+                <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder shadow-sm space-y-1">
+                  <div class="flex items-center gap-1.5 text-forest-800 dark:text-cyan-400 font-bold text-xs">
+                    <svg class="w-4 h-4 text-forest-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                    Dual-Branch CNN
+                  </div>
+                  <p class="text-[11px] text-charcoal-600 dark:text-slate-400">Simultaneously extracts high-frequency RGB photometric edges and depth geometry.</p>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder shadow-sm space-y-1">
+                  <div class="flex items-center gap-1.5 text-forest-800 dark:text-cyan-400 font-bold text-xs">
+                    <svg class="w-4 h-4 text-forest-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="m10 15 5-3-5-3v6Z"></path></svg>
+                    Confidence Solver
+                  </div>
+                  <p class="text-[11px] text-charcoal-600 dark:text-slate-400">Distance-attenuated bilateral refinement prevents texture-copy artifacts.</p>
+                </div>
+              </div>
+
+              <!-- CTAs -->
+              <div class="flex flex-wrap items-center gap-3 pt-2">
+                <a href="#section-reconstruction" class="px-5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-gradient-to-r dark:from-blue-600 dark:to-cyan-600 text-white font-bold text-xs transition-all shadow-md flex items-center gap-2">
+                  <span>Launch Reconstruction Lab</span>
+                  <svg class="w-3.5 h-3.5 text-forest-400 dark:text-cyan-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+                <a href="#section-explorer" class="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-ivory-200 dark:hover:bg-slate-700 text-charcoal-800 dark:text-slate-200 border border-ivory-300 dark:border-slate-700 font-semibold text-xs transition-colors">
+                  Explore Dataset Gallery
+                </a>
+              </div>
+            </div>
+
+            <!-- Right Interactive Before/After Split Comparison Slider -->
+            <div class="lg:col-span-6">
+              <div class="bg-white dark:bg-lab-card p-3 sm:p-4 rounded-2xl border border-ivory-300 dark:border-lab-cardborder shadow-xl space-y-3">
+                <div class="flex items-center justify-between px-1">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-forest-600 dark:bg-cyan-400"></span>
+                    <span class="text-xs font-bold text-charcoal-900 dark:text-white">Live Boundary Comparison Demo</span>
+                  </div>
+                  <span class="text-[11px] font-mono text-charcoal-500 dark:text-slate-400">Middlebury 2021 (Artroom1)</span>
+                </div>
+
+                <!-- Split Container -->
+                <div id="hero-slider-container" class="split-slider-container w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden cursor-ew-resize">
+                  <!-- Reconstructed (Full Background) -->
+                  <img id="hero-slider-after-img" src="" class="absolute inset-0 w-full h-full object-cover" alt="EdgeFuse-DCR Refined Depth">
+                  
+                  <!-- Raw Input (Clipped Layer) -->
+                  <div id="hero-slider-before-wrap" class="split-slider-before">
+                    <img id="hero-slider-before-img" src="" class="absolute inset-0 w-full h-full object-cover max-w-none" alt="Raw Input Low-Res Depth">
+                    <span class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 text-white font-mono text-[9px] font-bold tracking-wider">
+                      RAW INPUT (4× LOW-RES)
+                    </span>
+                  </div>
+
+                  <!-- Draggable Divider Handle -->
+                  <div id="hero-slider-handle" class="split-slider-handle">
+                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </div>
+
+                  <span class="absolute top-3 right-3 px-2 py-0.5 rounded bg-forest-900/90 dark:bg-cyan-950/90 text-forest-300 dark:text-cyan-300 font-mono text-[9px] font-bold tracking-wider z-0">
+                    EDGEFUSE-DCR (REFINED)
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between text-[11px] text-charcoal-600 dark:text-slate-400 px-1">
+                  <span>← Drag slider horizontally to inspect boundary preservation</span>
+                  <span class="font-bold text-forest-700 dark:text-cyan-400 font-mono">RMSE: 0.4468m (Best)</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- 2.2 RESEARCH STORYTELLING: WHY DEPTH MATTERS                            -->
+      <!-- ======================================================================= -->
+      <section id="section-why-matters" class="py-16 sm:py-20 px-4 sm:px-8 lg:px-12 bg-white dark:bg-lab-sidebar border-b border-ivory-300 dark:border-slate-800 transition-colors">
+        <div class="max-w-6xl mx-auto space-y-10">
+          
+          <div class="max-w-2xl space-y-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-forest-700 dark:text-cyan-400 font-mono">Scientific Motivation</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-950 dark:text-white tracking-tight">
+              Why Depth Completion Matters
+            </h2>
+            <p class="text-xs sm:text-sm text-charcoal-600 dark:text-slate-400 leading-relaxed">
+              Autonomous driving, robotic manipulation, and augmented reality rely on 3D geometric depth. However, raw physical sensors encounter fundamental mechanical and optical boundaries.
+            </p>
+          </div>
+
+          <!-- 6 Visual Storytelling Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            
+            <div class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-2.5">
+              <div class="w-7 h-7 rounded-lg bg-forest-100 dark:bg-forest-950 text-forest-900 dark:text-forest-300 font-mono font-bold flex items-center justify-center text-xs">
+                01
+              </div>
+              <h3 class="text-sm font-bold text-charcoal-950 dark:text-white">Sensor Sparsity Dilemma</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Mechanical LiDAR captures only 4–6% of scene pixels. Structured light dropouts occur on specular or dark surfaces, creating extensive voids.
+              </p>
+              <div class="pt-1 text-[10px] font-mono text-charcoal-500 dark:text-slate-400">
+                • KITTI: ~95.6% void pixels <br>• Kinect: Specular dropouts
+              </div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-2.5">
+              <div class="w-7 h-7 rounded-lg bg-forest-100 dark:bg-forest-950 text-forest-900 dark:text-forest-300 font-mono font-bold flex items-center justify-center text-xs">
+                02
+              </div>
+              <h3 class="text-sm font-bold text-charcoal-950 dark:text-white">Naive Interpolation Trap</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Standard bilinear and bicubic interpolation treat depth as continuous, blurring across object boundaries and causing false "flying pixels".
+              </p>
+              <div class="pt-1 text-[10px] font-mono text-rose-600 dark:text-rose-400 font-semibold">
+                • Severe depth bleed <br>• High boundary error (F1: ~0.52)
+              </div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-2.5">
+              <div class="w-7 h-7 rounded-lg bg-forest-100 dark:bg-forest-950 text-forest-900 dark:text-forest-300 font-mono font-bold flex items-center justify-center text-xs">
+                03
+              </div>
+              <h3 class="text-sm font-bold text-charcoal-950 dark:text-white">High-Resolution RGB Priors</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Dense RGB guidance images provide rich photometric contours that strongly correlate with physical 3D object silhouettes.
+              </p>
+              <div class="pt-1 text-[10px] font-mono text-charcoal-500 dark:text-slate-400">
+                • Cross-modal edge guidance <br>• Photometric gradient priors
+              </div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-2.5">
+              <div class="w-7 h-7 rounded-lg bg-forest-100 dark:bg-forest-950 text-forest-900 dark:text-forest-300 font-mono font-bold flex items-center justify-center text-xs">
+                04
+              </div>
+              <h3 class="text-sm font-bold text-charcoal-950 dark:text-white">Confidence-Guided Weighting</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Not all measurements are equally reliable. Distance-attenuated confidence weighting assigns high trust to valid seeds while suppressing unmeasured noise.
+              </p>
+              <div class="pt-1 text-[10px] font-mono text-charcoal-500 dark:text-slate-400">
+                • Pixel-wise confidence matrix <br>• Dynamic spatial attenuation
+              </div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-2.5">
+              <div class="w-7 h-7 rounded-lg bg-forest-100 dark:bg-forest-950 text-forest-900 dark:text-forest-300 font-mono font-bold flex items-center justify-center text-xs">
+                05
+              </div>
+              <h3 class="text-sm font-bold text-charcoal-950 dark:text-white">Bilateral Discontinuity Solver</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Fast bilateral edge refinement enforces smoothness strictly along flat regions, halting depth propagation abruptly at true physical contours.
+              </p>
+              <div class="pt-1 text-[10px] font-mono text-forest-700 dark:text-cyan-400 font-semibold">
+                • Zero depth bleed across silhouettes <br>• Texture-copy suppression
+              </div>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-2.5">
+              <div class="w-7 h-7 rounded-lg bg-forest-900 dark:bg-blue-900 text-forest-300 dark:text-cyan-200 font-mono font-bold flex items-center justify-center text-xs">
+                06
+              </div>
+              <h3 class="text-sm font-bold text-charcoal-950 dark:text-white">The EdgeFuse-DCR Solution</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Unifying a dual-branch CNN with a deterministic bilateral confidence solver delivers state-of-the-art RMSE across indoor and outdoor benchmarks.
+              </p>
+              <div class="pt-1 text-[10px] font-mono text-forest-700 dark:text-cyan-400 font-semibold">
+                • State-of-the-Art RMSE <br>• Fast CPU-friendly inference
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- 2.3 HOW TO USE EDGEFUSE-DCR (8 STEPS)                                   -->
+      <!-- ======================================================================= -->
+      <section id="section-how-to-use" class="py-16 sm:py-20 px-4 sm:px-8 lg:px-12 bg-ivory-50 dark:bg-lab-bg border-b border-ivory-300 dark:border-slate-800 transition-colors">
+        <div class="max-w-6xl mx-auto space-y-8">
+          
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div class="space-y-2 max-w-xl">
+              <span class="text-xs font-bold uppercase tracking-wider text-forest-700 dark:text-cyan-400 font-mono">User Workflow</span>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-950 dark:text-white tracking-tight">How to Use EDGEFUSE-DCR</h2>
+              <p class="text-xs sm:text-sm text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Follow this 8-step workflow to explore genuine sensor datasets, test custom inputs, or reproduce CVPR benchmark results.
+              </p>
+            </div>
+            
+            <button type="button" onclick="startGuidedTour()" class="px-4 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs transition-colors flex items-center gap-2 shadow-sm shrink-0">
+              <svg class="w-3.5 h-3.5 text-forest-400 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Interactive Guided Spotlight
+            </button>
+          </div>
+
+          <!-- 8 Visual Step Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            
+            <div class="p-4 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold text-forest-700 dark:text-cyan-400">STEP 01</span>
+                <span class="w-2 h-2 rounded-full bg-forest-500 dark:bg-cyan-400"></span>
+              </div>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white">Select a Dataset</h4>
+              <p class="text-[11px] text-charcoal-600 dark:text-slate-400 leading-relaxed">Choose between NYU Depth V2, KITTI LiDAR, or Middlebury 2021.</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold text-forest-700 dark:text-cyan-400">STEP 02</span>
+                <span class="w-2 h-2 rounded-full bg-forest-500 dark:bg-cyan-400"></span>
+              </div>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white">Pick a Scene</h4>
+              <p class="text-[11px] text-charcoal-600 dark:text-slate-400 leading-relaxed">Browse verified scenes using dual thumbnails. Click "Load in Workspace".</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold text-forest-700 dark:text-cyan-400">STEP 03</span>
+                <span class="w-2 h-2 rounded-full bg-forest-500 dark:bg-cyan-400"></span>
+              </div>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white">Upload Custom Inputs</h4>
+              <p class="text-[11px] text-charcoal-600 dark:text-slate-400 leading-relaxed">Upload custom RGB photos and depth maps (.npy / 16-bit PNG).</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold text-forest-700 dark:text-cyan-400">STEP 04</span>
+                <span class="w-2 h-2 rounded-full bg-forest-500 dark:bg-cyan-400"></span>
+              </div>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white">Configure Calibration</h4>
+              <p class="text-[11px] text-charcoal-600 dark:text-slate-400 leading-relaxed">Set physical scale to Millimeters (16-bit), KITTI scale, or Metric Floats.</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold text-forest-700 dark:text-cyan-400">STEP 05</span>
+                <span class="w-2 h-2 rounded-full bg-forest-500 dark:bg-cyan-400"></span>
+              </div>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white">Reconstruction Setup</h4>
+              <p class="text-[11px] text-charcoal-600 dark:text-slate-400 leading-relaxed">Choose upsampling factor (2×, 4×, 8×) and algorithm (A0 through A5).</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold text-forest-700 dark:text-cyan-400">STEP 06</span>
+                <span class="w-2 h-2 rounded-full bg-forest-500 dark:bg-cyan-400"></span>
+              </div>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white">Execute Pipeline</h4>
+              <p class="text-[11px] text-charcoal-600 dark:text-slate-400 leading-relaxed">Click "Execute Depth Reconstruction". PyTorch inference runs asynchronously.</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold text-forest-700 dark:text-cyan-400">STEP 07</span>
+                <span class="w-2 h-2 rounded-full bg-forest-500 dark:bg-cyan-400"></span>
+              </div>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white">Inspect Diagnostics</h4>
+              <p class="text-[11px] text-charcoal-600 dark:text-slate-400 leading-relaxed">Examine Primary, Ablation Progression, Edge Contours, and Error Heatmaps.</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono font-bold text-forest-700 dark:text-cyan-400">STEP 08</span>
+                <span class="w-2 h-2 rounded-full bg-forest-500 dark:bg-cyan-400"></span>
+              </div>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white">Export Results</h4>
+              <p class="text-[11px] text-charcoal-600 dark:text-slate-400 leading-relaxed">Download raw .npy arrays, 16-bit PNGs, confidence maps, and JSON reports.</p>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- 2.4 ADVANCED DATASET EXPLORER SECTION                                   -->
+      <!-- ======================================================================= -->
+      <section id="section-explorer" class="py-16 sm:py-20 px-4 sm:px-8 lg:px-12 bg-white dark:bg-lab-sidebar border-b border-ivory-300 dark:border-slate-800 transition-colors">
+        <div class="max-w-6xl mx-auto space-y-8">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ivory-300 dark:border-slate-800 pb-5">
+            <div>
+              <div class="flex items-center gap-3">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-950 dark:text-white tracking-tight">Dataset Explorer</h2>
+                <span id="gallery-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-100 dark:bg-cyan-950 border border-cyan-300 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-300">
+                  9 Live Verified Scenes
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm text-charcoal-600 dark:text-slate-400 mt-1">
+                Browse authentic paired sensor benchmarks, inspect dual preview thumbnails, and inspect ground truth.
+              </p>
+            </div>
+
+            <button type="button" onclick="openExtendedCatalogModal()" class="px-3.5 py-2 rounded-xl bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 border border-ivory-300 dark:border-slate-700 text-xs font-semibold text-charcoal-800 dark:text-slate-200 transition-colors flex items-center gap-2 shadow-sm shrink-0">
+              <svg class="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              Extended Catalog (87k+ Archive)
+            </button>
+          </div>
+
+          <!-- 3 Dataset Overview Spec Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <div onclick="switchDatasetGallery('nyu')" class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-blue-500/50 cursor-pointer transition-all space-y-3 group shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono">INDOOR STRUCTURED LIGHT</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300">3 Live Scenes</span>
+              </div>
+              <h3 class="text-base font-bold text-charcoal-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">NYU Depth V2</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Microsoft Kinect v1 infrared structured light. Downsampled 4× for standard depth super-resolution.
+              </p>
+              <div class="pt-2 flex items-center justify-between text-[11px] font-mono text-charcoal-500 dark:text-slate-400 border-t border-ivory-200 dark:border-slate-800">
+                <span>640 × 480</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold">100% Valid</span>
+                <span>0.5m – 10.0m</span>
+              </div>
+            </div>
+
+            <div onclick="switchDatasetGallery('kitti')" class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-cyan-500/50 cursor-pointer transition-all space-y-3 group shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-cyan-600 dark:text-cyan-400 font-mono">OUTDOOR ROTATING LIDAR</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300">3 Live Scenes</span>
+              </div>
+              <h3 class="text-base font-bold text-charcoal-950 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">KITTI Depth Completion</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Velodyne HDL-64E laser scanner calibrated with PointGrey cameras. Extreme sparsity (~4.4% seeds).
+              </p>
+              <div class="pt-2 flex items-center justify-between text-[11px] font-mono text-charcoal-500 dark:text-slate-400 border-t border-ivory-200 dark:border-slate-800">
+                <span>1216 × 352</span>
+                <span class="text-cyan-600 dark:text-cyan-400 font-semibold">4.4% Seeds</span>
+                <span>1.2m – 78.5m</span>
+              </div>
+            </div>
+
+            <div onclick="switchDatasetGallery('middlebury')" class="p-5 rounded-2xl bg-ivory-50 dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-emerald-500/50 cursor-pointer transition-all space-y-3 group shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">LAB STEREO BENCHMARK</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">3 Live Scenes</span>
+              </div>
+              <h3 class="text-base font-bold text-charcoal-950 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Middlebury 2021</h3>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400 leading-relaxed">
+                Dual Canon EOS 40D DSLR stereo rig with active structured projector. Sub-pixel metric accuracy.
+              </p>
+              <div class="pt-2 flex items-center justify-between text-[11px] font-mono text-charcoal-500 dark:text-slate-400 border-t border-ivory-200 dark:border-slate-800">
+                <span>960 × 540</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold">100% Valid</span>
+                <span>0.5m – 6.0m</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Gallery Toolbar: Search, Filters, & View Toggle -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-ivory-50 dark:bg-lab-card p-3 rounded-xl border border-ivory-300 dark:border-lab-cardborder">
+            
+            <div class="flex items-center gap-1 overflow-x-auto text-xs font-semibold">
+              <button type="button" id="tab-dset-all" onclick="filterGalleryDataset('all')" class="px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors">All (9)</button>
+              <button type="button" id="tab-dset-nyu" onclick="switchDatasetGallery('nyu')" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white transition-colors">NYU Depth V2</button>
+              <button type="button" id="tab-dset-kitti" onclick="switchDatasetGallery('kitti')" class="px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors">KITTI LiDAR</button>
+              <button type="button" id="tab-dset-middlebury" onclick="switchDatasetGallery('middlebury')" class="px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors">Middlebury 2021</button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1 sm:w-60">
+                <input type="text" id="gallery-search-input" oninput="debounceSearchGallery()" placeholder="Search scene name..." class="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-ivory-300 dark:border-slate-700 text-xs text-charcoal-900 dark:text-white placeholder-charcoal-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+                <svg class="w-3.5 h-3.5 text-charcoal-400 dark:text-slate-500 absolute left-2.5 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </div>
+              
+              <div class="flex items-center rounded-lg bg-white dark:bg-slate-900 border border-ivory-300 dark:border-slate-700 p-0.5 text-charcoal-400 dark:text-slate-400">
+                <button type="button" onclick="setGalleryViewMode('grid')" id="btn-view-grid" class="p-1 rounded bg-ivory-200 dark:bg-slate-800 text-charcoal-900 dark:text-white" title="Grid View">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </button>
+                <button type="button" onclick="setGalleryViewMode('list')" id="btn-view-list" class="p-1 rounded hover:text-charcoal-900 dark:hover:text-white" title="List View">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Active Dataset Metadata Banner -->
+          <div id="dataset-meta-banner" class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-ivory-100 dark:bg-slate-900/60 border border-ivory-300 dark:border-slate-800 text-xs">
+            <!-- Dynamic banner content -->
+          </div>
+
+          <!-- Synchronized Gallery Cards Grid -->
+          <div id="gallery-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamic cards inserted via JavaScript -->
+          </div>
+
+          <!-- Gallery Pagination / Scene Stepper -->
+          <div class="flex items-center justify-between pt-2 border-t border-ivory-300 dark:border-slate-800 text-xs text-charcoal-500 dark:text-slate-400">
+            <button type="button" id="btn-gallery-prev" onclick="stepGalleryScene(-1)" class="px-3 py-1.5 rounded-lg bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-charcoal-800 dark:text-slate-200 transition-colors flex items-center gap-1 font-semibold disabled:opacity-40">
+              ◀ Prev Scene
+            </button>
+            <span id="gallery-active-label" class="font-mono font-bold text-charcoal-700 dark:text-slate-300">Scene 1 of 3</span>
+            <button type="button" id="btn-gallery-next" onclick="stepGalleryScene(1)" class="px-3 py-1.5 rounded-lg bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-charcoal-800 dark:text-slate-200 transition-colors flex items-center gap-1 font-semibold disabled:opacity-40">
+              Next Scene ▶
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- 2.5 RECONSTRUCTION LAB: COMPLETE SCIENTIFIC WORKSPACE                   -->
+      <!-- ======================================================================= -->
+      <section id="section-reconstruction" class="py-16 sm:py-20 px-4 sm:px-8 lg:px-12 bg-ivory-100 dark:bg-lab-bg border-b border-ivory-300 dark:border-slate-800 transition-colors">
+        <div class="max-w-6xl mx-auto space-y-8">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ivory-300 dark:border-slate-800 pb-5">
+            <div>
+              <div class="flex items-center gap-3">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-950 dark:text-white tracking-tight">Reconstruction Lab</h2>
+                <span id="header-sample-pill" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-forest-100 dark:bg-forest-950 border border-forest-300 dark:border-forest-500/40 text-forest-800 dark:text-forest-300 font-mono">
+                  NYU Living Room
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm text-charcoal-600 dark:text-slate-400 mt-1">
+                Execute PyTorch EdgeFuseNet CNN inference and bilateral confidence-guided boundary refinement.
+              </p>
+            </div>
+
+            <div id="sample-dimensions" class="text-xs font-mono text-charcoal-600 dark:text-slate-400 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-ivory-300 dark:border-slate-800 shadow-sm">
+              640 x 480 (NYU Depth V2)
+            </div>
+          </div>
+
+          <!-- Top KPI Metric Cards Bar -->
+          <div id="kpi-metric-bar" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1 shadow-sm">
+              <span class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">RMSE (m) ↓</span>
+              <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-rmse">0.1143</div>
+              <span class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Lower is better</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1 shadow-sm">
+              <span class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">MAE (m) ↓</span>
+              <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-mae">0.0433</div>
+              <span class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Lower is better</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1 shadow-sm">
+              <span class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">PSNR (dB) ↑</span>
+              <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-psnr">38.84</div>
+              <span class="text-[9px] text-cyan-600 dark:text-cyan-400 font-semibold">Higher is better</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1 shadow-sm">
+              <span class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">SSIM ↑</span>
+              <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-ssim">0.9791</div>
+              <span class="text-[9px] text-cyan-600 dark:text-cyan-400 font-semibold">Structural Match</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1 shadow-sm">
+              <span class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">Boundary F1 ↑</span>
+              <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-f1">0.8162</div>
+              <span class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Edge Precision</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1 shadow-sm">
+              <span class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">Latency (CPU)</span>
+              <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-latency">530.0<span class="text-xs font-normal text-charcoal-500 dark:text-slate-400 ml-0.5">ms</span></div>
+              <span class="text-[9px] text-charcoal-500 dark:text-slate-400 font-semibold">End-to-End</span>
+            </div>
+          </div>
+
+          <!-- Main Workspace Grid: Controls & Diagnostics -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Column: Controls & Uploads -->
+            <div class="lg:col-span-4 space-y-5">
+              
+              <!-- Custom File Upload Card -->
+              <div id="upload-panel-card" class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-4 shadow-md">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-charcoal-950 dark:text-white uppercase tracking-wider font-mono">1. Custom File Upload</span>
+                  <button type="button" onclick="clearCustomFiles()" class="text-[11px] text-charcoal-500 dark:text-slate-400 hover:text-rose-500 transition-colors">Clear</button>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">RGB Guidance Image (JPG/PNG)</label>
+                  <div id="drop-rgb" onclick="document.getElementById('file-rgb').click()" class="border-2 border-dashed border-ivory-300 dark:border-slate-700 hover:border-blue-500 rounded-xl p-3 text-center cursor-pointer transition-colors bg-ivory-50 dark:bg-slate-900/60">
+                    <input type="file" id="file-rgb" accept="image/png,image/jpeg,image/jpg" class="hidden" onchange="handleFileSelected(this, 'rgb')">
+                    <span id="label-rgb" class="text-xs text-charcoal-500 dark:text-slate-400 block truncate">Drag & drop or browse RGB...</span>
+                  </div>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">Depth Map (.npy or 16-bit PNG)</label>
+                  <div id="drop-depth" onclick="document.getElementById('file-depth').click()" class="border-2 border-dashed border-ivory-300 dark:border-slate-700 hover:border-cyan-500 rounded-xl p-3 text-center cursor-pointer transition-colors bg-ivory-50 dark:bg-slate-900/60">
+                    <input type="file" id="file-depth" accept=".npy,image/png,image/jpeg" class="hidden" onchange="handleFileSelected(this, 'depth')">
+                    <span id="label-depth" class="text-xs text-charcoal-500 dark:text-slate-400 block truncate">Drag & drop depth map...</span>
+                  </div>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-600 dark:text-slate-400">Optional Ground Truth (.npy/PNG)</label>
+                  <div id="drop-gt" onclick="document.getElementById('file-gt').click()" class="border-2 border-dashed border-ivory-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-xl p-2.5 text-center cursor-pointer transition-colors bg-ivory-50 dark:bg-slate-900/40">
+                    <input type="file" id="file-gt" accept=".npy,image/png" class="hidden" onchange="handleFileSelected(this, 'gt')">
+                    <span id="label-gt" class="text-xs text-charcoal-400 dark:text-slate-500 block truncate">Reference GT (for quantitative metrics)...</span>
+                  </div>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">Physical Scale Calibration</label>
+                  <select id="depth-scale-select" onchange="handleDepthScaleChange()" class="w-full px-3 py-2 rounded-xl bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-700 text-xs text-charcoal-900 dark:text-white focus:outline-none focus:border-cyan-500">
+                    <option value="auto">Auto-Calibrate Format (Recommended)</option>
+                    <option value="mm">Millimeters (16-bit Kinect / Middlebury)</option>
+                    <option value="kitti">KITTI Scale (uint16 / 256.0)</option>
+                    <option value="raw">Raw Metric Floats (0.5m – 10.0m)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Reconstruction Config Card -->
+              <div id="reconstruction-config-panel" class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-4 shadow-md">
+                <span class="text-xs font-bold text-charcoal-950 dark:text-white uppercase tracking-wider font-mono block">2. Algorithm Configuration</span>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">Upsampling Factor</label>
+                  <select id="upsample-factor" class="w-full px-3 py-2 rounded-xl bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-700 text-xs text-charcoal-900 dark:text-white focus:outline-none focus:border-cyan-500 font-mono">
+                    <option value="2">2× Upsampling (Fine Resolution)</option>
+                    <option value="4" selected>4× Upsampling (Standard Benchmark)</option>
+                    <option value="8">8× Upsampling (Extreme Sparsity)</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">Reconstruction Algorithm</label>
+                  <select id="method-select" class="w-full px-3 py-2 rounded-xl bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-700 text-xs text-charcoal-900 dark:text-white focus:outline-none focus:border-cyan-500 font-mono">
+                    <optgroup label="Proposed Framework (Ours)">
+                      <option value="hybrid" selected>A5: EdgeFuse-DCR Full Hybrid (Ours)</option>
+                      <option value="cnn_conf_refined">A4: CNN + Confidence + Boundary Refinement</option>
+                      <option value="cnn_conf">A3: CNN + Confidence Guidance</option>
+                      <option value="cnn">A2: Deep Learning (EdgeFuseNet Alone)</option>
+                    </optgroup>
+                    <optgroup label="Classical Filtering Baselines">
+                      <option value="guided">A1: Guided Filter</option>
+                      <option value="joint_bilateral">A1: Joint Bilateral Filter</option>
+                    </optgroup>
+                    <optgroup label="Naive Geometric Baselines">
+                      <option value="bicubic">A0: Bicubic Interpolation</option>
+                      <option value="bilinear">A0: Bilinear Interpolation</option>
+                      <option value="nearest">A0: Nearest Neighbor</option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                  <div>
+                    <label for="toggle-texture" class="text-xs font-bold text-charcoal-950 dark:text-white cursor-pointer">Texture-Copy Suppression</label>
+                    <p class="text-[10px] text-charcoal-500 dark:text-slate-400">Halts depth bleeding on flat surfaces</p>
+                  </div>
+                  <input type="checkbox" id="toggle-texture" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-900 border-ivory-300 dark:border-slate-700 cursor-pointer">
+                </div>
+
+                <button type="button" id="btn-run" onclick="executeReconstruction()" class="w-full py-3 px-4 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-gradient-to-r dark:from-blue-600 dark:to-cyan-600 dark:hover:from-blue-500 dark:hover:to-cyan-500 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2">
+                  <svg id="spinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span id="btn-text">Execute Depth Reconstruction</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Diagnostic Tabs -->
+            <div class="lg:col-span-8 space-y-4">
+              
+              <div class="flex items-center justify-between border-b border-ivory-300 dark:border-slate-800 pb-2">
+                <div class="flex items-center gap-2 overflow-x-auto text-xs font-semibold">
+                  <button type="button" onclick="switchVisualTab('primary')" id="tab-btn-primary" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white transition-colors">
+                    Primary Reconstruction
+                  </button>
+                  <button type="button" onclick="switchVisualTab('ablation')" id="tab-btn-ablation" class="px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors">
+                    Ablation Progression
+                  </button>
+                  <button type="button" onclick="switchVisualTab('edges')" id="tab-btn-edges" class="px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors">
+                    Edge Discontinuities
+                  </button>
+                  <button type="button" onclick="switchVisualTab('confidence')" id="tab-btn-confidence" class="px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors">
+                    Confidence & Error
+                  </button>
+                </div>
+
+                <span id="validity-mask-stats" class="text-xs font-mono font-bold text-forest-700 dark:text-cyan-400 hidden sm:inline-block">
+                  100.0% Valid Measurements
                 </span>
               </div>
 
-              <!-- Draggable Divider Handle -->
-              <div id="hero-slider-handle" class="split-slider-handle">
-                <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
+              <!-- TAB 1: Primary Reconstruction -->
+              <div id="view-tab-primary" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300">RGB Guidance Image</span>
+                    <button type="button" onclick="openImageViewer('view-rgb', 'RGB Guidance Image')" class="text-[10px] text-charcoal-500 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white">🔍 Zoom</button>
+                  </div>
+                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
+                    <img id="view-rgb" src="" class="w-full h-full object-cover" alt="RGB Guidance Image">
+                  </div>
+                </div>
+
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300">Input Low-Res Depth</span>
+                    <button type="button" onclick="openImageViewer('view-lr-depth', 'Input Depth Map')" class="text-[10px] text-charcoal-500 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white">🔍 Zoom</button>
+                  </div>
+                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
+                    <img id="view-lr-depth" src="" class="w-full h-full object-cover" alt="Input Low-Res Depth">
+                  </div>
+                </div>
+
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-cyan-500/40 space-y-2 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-cyan-700 dark:text-cyan-300">EdgeFuse-DCR Refined Depth</span>
+                    <button type="button" onclick="openImageViewer('view-reconstructed', 'EdgeFuse-DCR Refined Depth')" class="text-[10px] text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-white font-bold">🔍 Fullscreen</button>
+                  </div>
+                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-cyan-500/20">
+                    <img id="view-reconstructed" src="" class="w-full h-full object-cover" alt="EdgeFuse-DCR Final Reconstruction">
+                  </div>
+                </div>
               </div>
 
-              <span class="absolute top-3 right-3 px-2 py-0.5 rounded bg-forest-900/90 text-forest-300 font-mono text-[10px] font-bold tracking-wider z-0">
-                PROPOSED EDGEFUSE-DCR (REFINED)
-              </span>
+              <!-- TAB 2: Ablation Progression -->
+              <div id="view-tab-ablation" class="hidden grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
+                  <span class="text-xs font-bold text-charcoal-600 dark:text-slate-400 block">Stage 1: A0 Classical Baseline</span>
+                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
+                    <img id="view-classical" src="" class="w-full h-full object-cover" alt="A0 Classical Baseline">
+                  </div>
+                </div>
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
+                  <span class="text-xs font-bold text-blue-600 dark:text-blue-400 block">Stage 2: A2 EdgeFuseNet Alone</span>
+                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
+                    <img id="view-cnn" src="" class="w-full h-full object-cover" alt="A2 EdgeFuseNet Alone">
+                  </div>
+                </div>
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-cyan-500/40 space-y-2 shadow-sm">
+                  <span class="text-xs font-bold text-cyan-700 dark:text-cyan-300 block">Stage 3: A5 Full Hybrid (Proposed)</span>
+                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
+                    <img id="view-ablation-final" src="" class="w-full h-full object-cover" alt="A5 Full Hybrid">
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 3: Edge Discontinuities -->
+              <div id="view-tab-edges" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
+                  <div class="flex items-center justify-between">
+                    <span id="validity-mask-title" class="text-xs font-bold text-charcoal-800 dark:text-slate-300">Sensor Validity Mask</span>
+                    <span id="validity-px-counts" class="text-[10px] font-mono text-charcoal-500 dark:text-slate-400">0 Valid / 0 Void</span>
+                  </div>
+                  <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
+                    <img id="view-valid-mask" src="" class="w-full h-full object-cover" alt="Sensor Validity Mask">
+                  </div>
+                  <p class="text-[11px] text-charcoal-500 dark:text-slate-400">Pure White = Valid physical depth measurements. Pure Black = Missing / Void seeds.</p>
+                </div>
+
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
+                  <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300 block">Boundary Discontinuity Overlay</span>
+                  <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
+                    <img id="view-boundary" src="" class="w-full h-full object-cover" alt="Boundary Discontinuity Overlay">
+                  </div>
+                  <p class="text-[11px] text-charcoal-500 dark:text-slate-400">Green contours indicate depth edges preserved through bilateral refinement.</p>
+                </div>
+              </div>
+
+              <!-- TAB 4: Confidence & Error Maps -->
+              <div id="view-tab-confidence" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
+                  <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300 block">Bilateral Confidence Weights Map</span>
+                  <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
+                    <img id="view-confidence" src="" class="w-full h-full object-cover" alt="Confidence Map">
+                  </div>
+                  <p class="text-[11px] text-charcoal-500 dark:text-slate-400">Bright regions indicate highest spatial confidence during bilateral solver propagation.</p>
+                </div>
+
+                <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
+                  <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300 block">Absolute Error Heatmap (|Dpred - Dgt|)</span>
+                  <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
+                    <img id="view-error" src="" class="w-full h-full object-cover" alt="Absolute Error Heatmap">
+                  </div>
+                  <p class="text-[11px] text-charcoal-500 dark:text-slate-400">Dark Blue = 0m error. Red = >0.5m error against ground truth reference.</p>
+                </div>
+              </div>
+
             </div>
 
-            <div class="flex items-center justify-between text-[11px] text-charcoal-600 px-1">
-              <span>← Drag slider horizontally to reveal edge boundary preservation</span>
-              <span class="font-bold text-forest-700">RMSE: 0.4468m (Best)</span>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================= -->
+      <!-- 2.6 COMPARATIVE BENCHMARKING LAB                                        -->
+      <!-- ======================================================================= -->
+      <section id="section-benchmark" class="py-16 sm:py-20 px-4 sm:px-8 lg:px-12 bg-white dark:bg-lab-sidebar border-b border-ivory-300 dark:border-slate-800 transition-colors">
+        <div class="max-w-6xl mx-auto space-y-8">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ivory-300 dark:border-slate-800 pb-5">
+            <div>
+              <div class="flex items-center gap-3">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-950 dark:text-white tracking-tight">Comparative Benchmarks</h2>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-forest-100 dark:bg-forest-950 border border-forest-300 dark:border-forest-500/40 text-forest-800 dark:text-forest-300">
+                  CVPR/ICCV Protocol Evaluation
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm text-charcoal-600 dark:text-slate-400 mt-1">
+                Quantitative ablation comparing classical interpolation, edge filters, CNN alone, and EdgeFuse-DCR.
+              </p>
+            </div>
+
+            <div id="benchmark-active-sample-label" class="text-xs font-mono text-cyan-700 dark:text-cyan-300 bg-ivory-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-ivory-300 dark:border-slate-800">
+              Scene: NYU Living Room
             </div>
           </div>
-        </div>
 
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ========================================================================= -->
-  <!-- 3. RESEARCH STORYTELLING: WHY DEPTH COMPLETION MATTERS                     -->
-  <!-- ========================================================================= -->
-  <section id="section-why-matters" class="py-16 sm:py-24 bg-white border-b border-ivory-300">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-      
-      <!-- Section Header -->
-      <div class="max-w-3xl space-y-3">
-        <span class="text-xs font-bold uppercase tracking-wider text-forest-700 font-mono">Theoretical Foundations & Problem Statement</span>
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-charcoal-950 tracking-tight">
-          Why Depth Completion Matters
-        </h2>
-        <p class="text-base text-charcoal-600 leading-relaxed">
-          Autonomous navigation, robotic grasping, and AR/VR depend on precise 3D geometric scene structure. However, raw physical depth sensors face fundamental optical and mechanical limitations.
-        </p>
-      </div>
-
-      <!-- 6-Step Visual Storytelling Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        <!-- Card 1 -->
-        <div class="p-6 rounded-2xl bg-ivory-50 border border-ivory-300 space-y-3 hover:border-forest-400 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-forest-100 text-forest-900 font-mono font-bold flex items-center justify-center text-xs">
-            01
+          <!-- Benchmark Table Container -->
+          <div class="overflow-x-auto rounded-2xl border border-ivory-300 dark:border-lab-cardborder bg-ivory-50 dark:bg-lab-card shadow-xl">
+            <table class="w-full text-left text-xs whitespace-nowrap">
+              <thead class="bg-ivory-200 dark:bg-slate-900/90 text-[11px] font-bold uppercase tracking-wider text-charcoal-600 dark:text-slate-400 border-b border-ivory-300 dark:border-slate-800">
+                <tr>
+                  <th scope="col" class="py-3.5 px-4 font-mono">Pipeline Stage / Method</th>
+                  <th scope="col" class="py-3.5 px-3 font-mono text-right">RMSE (m) ↓</th>
+                  <th scope="col" class="py-3.5 px-3 font-mono text-right">MAE (m) ↓</th>
+                  <th scope="col" class="py-3.5 px-3 font-mono text-right">PSNR (dB) ↑</th>
+                  <th scope="col" class="py-3.5 px-3 font-mono text-right">SSIM ↑</th>
+                  <th scope="col" class="py-3.5 px-3 font-mono text-right">Boundary F1 ↑</th>
+                  <th scope="col" class="py-3.5 px-3 font-mono text-right">Grad MAE ↓</th>
+                  <th scope="col" class="py-3.5 px-4 font-mono text-right">Latency (CPU)</th>
+                </tr>
+              </thead>
+              <tbody id="benchmark-tbody" class="divide-y divide-ivory-200 dark:divide-slate-800/60 font-mono text-charcoal-800 dark:text-slate-300">
+                <!-- Populated via renderBenchmarkTable() -->
+              </tbody>
+            </table>
           </div>
-          <h3 class="text-base font-bold text-charcoal-950">Sensor Sparsity & Dropout Dilemma</h3>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Mechanical LiDAR (e.g. Velodyne HDL-64E) captures only 4–6% of scene pixels. Structured light (Microsoft Kinect) drops out completely on shiny, dark, or specular surfaces, leaving extensive voids.
-          </p>
-          <div class="pt-2 text-[11px] font-mono font-semibold text-charcoal-500">
-            • KITTI: ~95.6% void pixels <br>• Kinect: Specular dropouts
-          </div>
-        </div>
 
-        <!-- Card 2 -->
-        <div class="p-6 rounded-2xl bg-ivory-50 border border-ivory-300 space-y-3 hover:border-forest-400 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-forest-100 text-forest-900 font-mono font-bold flex items-center justify-center text-xs">
-            02
-          </div>
-          <h3 class="text-base font-bold text-charcoal-950">The Naive Interpolation Trap</h3>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Standard bilinear and bicubic interpolation treat depth as a continuous smooth field, averaging across foreground and background. This blurs object silhouettes and causes disastrous "flying pixels".
-          </p>
-          <div class="pt-2 text-[11px] font-mono font-semibold text-rose-600">
-            • High boundary error (F1: ~0.52) <br>• Foreground-background depth bleed
-          </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="p-6 rounded-2xl bg-ivory-50 border border-ivory-300 space-y-3 hover:border-forest-400 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-forest-100 text-forest-900 font-mono font-bold flex items-center justify-center text-xs">
-            03
-          </div>
-          <h3 class="text-base font-bold text-charcoal-950">High-Resolution RGB Priors</h3>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Companion RGB cameras provide dense photometric details at full resolution. Sharp color and luminance transitions correlate strongly with real 3D physical boundaries and object contours.
-          </p>
-          <div class="pt-2 text-[11px] font-mono font-semibold text-charcoal-500">
-            • RGB Sobel/Canny prior <br>• Cross-modal edge guidance
-          </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="p-6 rounded-2xl bg-ivory-50 border border-ivory-300 space-y-3 hover:border-forest-400 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-forest-100 text-forest-900 font-mono font-bold flex items-center justify-center text-xs">
-            04
-          </div>
-          <h3 class="text-base font-bold text-charcoal-950">Confidence-Guided Weighting</h3>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Not all sensor measurements are equally trustworthy. Distance-attenuated confidence weighting assigns high certainty to measured seeds while suppressing unreliable noise in unmeasured regions.
-          </p>
-          <div class="pt-2 text-[11px] font-mono font-semibold text-charcoal-500">
-            • Pixel-wise confidence matrix $C(u, v)$ <br>• Dynamic spatial decay
-          </div>
-        </div>
-
-        <!-- Card 5 -->
-        <div class="p-6 rounded-2xl bg-ivory-50 border border-ivory-300 space-y-3 hover:border-forest-400 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-forest-100 text-forest-900 font-mono font-bold flex items-center justify-center text-xs">
-            05
-          </div>
-          <h3 class="text-base font-bold text-charcoal-950">Bilateral Discontinuity Preservation</h3>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Fast bilateral edge refinement enforces smoothness only where photometric color variance is minimal, halting depth propagation abruptly at true physical occlusion boundaries.
-          </p>
-          <div class="pt-2 text-[11px] font-mono font-semibold text-forest-700">
-            • Zero depth bleed across silhouettes <br>• Texture-copy suppression
-          </div>
-        </div>
-
-        <!-- Card 6 -->
-        <div class="p-6 rounded-2xl bg-ivory-50 border border-ivory-300 space-y-3 hover:border-forest-400 transition-colors">
-          <div class="w-8 h-8 rounded-lg bg-forest-900 text-forest-300 font-mono font-bold flex items-center justify-center text-xs">
-            06
-          </div>
-          <h3 class="text-base font-bold text-charcoal-950">The EdgeFuse-DCR Solution</h3>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            By coupling a 1.31M parameter dual-branch CNN with a deterministic confidence-weighted bilateral solver, EdgeFuse-DCR delivers superior quantitative accuracy (lowest RMSE) without texture bleeding.
-          </p>
-          <div class="pt-2 text-[11px] font-mono font-semibold text-forest-700">
-            • State-of-the-Art RMSE across 3 benchmarks <br>• Fast CPU-friendly inference
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ========================================================================= -->
-  <!-- 4. HOW TO USE EDGEFUSE-DCR: 8-STEP WORKFLOW GUIDE                         -->
-  <!-- ========================================================================= -->
-  <section id="section-how-to-use" class="py-16 sm:py-24 bg-ivory-50 border-b border-ivory-300">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-      
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div class="space-y-2 max-w-2xl">
-          <span class="text-xs font-bold uppercase tracking-wider text-forest-700 font-mono">User Workflow & Operations</span>
-          <h2 class="text-3xl font-extrabold text-charcoal-950 tracking-tight">How to Use EDGEFUSE-DCR</h2>
-          <p class="text-sm text-charcoal-600 leading-relaxed">
-            Follow this 8-step workflow to reproduce benchmarks, explore genuine sensor datasets, or execute depth reconstruction on custom imagery.
-          </p>
-        </div>
-        
-        <button type="button" onclick="startGuidedTour()" class="px-4 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 text-white font-bold text-xs transition-colors flex items-center gap-2 shadow-sm shrink-0">
-          <svg class="w-4 h-4 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          Launch Interactive Spotlight Tour
-        </button>
-      </div>
-
-      <!-- 8 Visual Step Cards Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <!-- Step 1 -->
-        <div class="p-5 rounded-xl bg-white border border-ivory-300 space-y-2 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-forest-700">STEP 01</span>
-            <span class="w-2 h-2 rounded-full bg-forest-500"></span>
-          </div>
-          <h4 class="text-sm font-bold text-charcoal-950">Select a Dataset</h4>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Choose between NYU Depth V2 (indoor structured light), KITTI (outdoor LiDAR), or Middlebury 2021 (stereo disparity).
-          </p>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="p-5 rounded-xl bg-white border border-ivory-300 space-y-2 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-forest-700">STEP 02</span>
-            <span class="w-2 h-2 rounded-full bg-forest-500"></span>
-          </div>
-          <h4 class="text-sm font-bold text-charcoal-950">Pick a Scene</h4>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Browse verified paired scenes using dual thumbnails. Click "Load in Workspace" to sync RGB, input depth, and Ground Truth.
-          </p>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="p-5 rounded-xl bg-white border border-ivory-300 space-y-2 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-forest-700">STEP 03</span>
-            <span class="w-2 h-2 rounded-full bg-forest-500"></span>
-          </div>
-          <h4 class="text-sm font-bold text-charcoal-950">Upload Custom Inputs</h4>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Upload custom RGB photos (.png/.jpg) and depth maps (.npy / 16-bit PNG). Ordinary color photos in the depth field are automatically rejected.
-          </p>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="p-5 rounded-xl bg-white border border-ivory-300 space-y-2 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-forest-700">STEP 04</span>
-            <span class="w-2 h-2 rounded-full bg-forest-500"></span>
-          </div>
-          <h4 class="text-sm font-bold text-charcoal-950">Configure Scale</h4>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Set calibration to Millimeters (16-bit PNG), KITTI format (1/256m), or Metric Float32 to ensure physically meaningful distances.
-          </p>
-        </div>
-
-        <!-- Step 5 -->
-        <div class="p-5 rounded-xl bg-white border border-ivory-300 space-y-2 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-forest-700">STEP 05</span>
-            <span class="w-2 h-2 rounded-full bg-forest-500"></span>
-          </div>
-          <h4 class="text-sm font-bold text-charcoal-950">Reconstruction Setup</h4>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Choose upsampling factor (2×, 4×, 8×), select algorithm (A0 baselines through A5 EdgeFuse-DCR hybrid), and toggle texture suppression.
-          </p>
-        </div>
-
-        <!-- Step 6 -->
-        <div class="p-5 rounded-xl bg-white border border-ivory-300 space-y-2 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-forest-700">STEP 06</span>
-            <span class="w-2 h-2 rounded-full bg-forest-500"></span>
-          </div>
-          <h4 class="text-sm font-bold text-charcoal-950">Execute Pipeline</h4>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Click "Execute Depth Reconstruction". PyTorch CPU inference runs asynchronously, updating KPI cards and visualizations.
-          </p>
-        </div>
-
-        <!-- Step 7 -->
-        <div class="p-5 rounded-xl bg-white border border-ivory-300 space-y-2 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-forest-700">STEP 07</span>
-            <span class="w-2 h-2 rounded-full bg-forest-500"></span>
-          </div>
-          <h4 class="text-sm font-bold text-charcoal-950">Inspect Diagnostics</h4>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Switch tabs across Primary Reconstruction, Ablation Progression (A0 vs A2 vs A5), Edge Sobel Gradients, and Error Heatmaps.
-          </p>
-        </div>
-
-        <!-- Step 8 -->
-        <div class="p-5 rounded-xl bg-white border border-ivory-300 space-y-2 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-forest-700">STEP 08</span>
-            <span class="w-2 h-2 rounded-full bg-forest-500"></span>
-          </div>
-          <h4 class="text-sm font-bold text-charcoal-950">Export Research Data</h4>
-          <p class="text-xs text-charcoal-600 leading-relaxed">
-            Download raw reconstructed .npy float32 arrays, 16-bit millimeter PNGs, confidence maps, error heatmaps, and JSON benchmark reports.
-          </p>
-        </div>
-
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ========================================================================= -->
-  <!-- 5. DARK SCIENTIFIC LABORATORY WORKSPACE (DATASETS, LAB & BENCHMARKS)      -->
-  <!-- ========================================================================= -->
-  <main class="bg-lab-bg text-slate-100 py-16 sm:py-24 space-y-24 border-t border-slate-800">
-    
-    <!-- ----------------------------------------------------------------------- -->
-    <!-- 5.1 ADVANCED DATASET EXPLORER SECTION                                   -->
-    <!-- ----------------------------------------------------------------------- -->
-    <section id="section-explorer" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      
-      <!-- Section Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
-        <div>
-          <div class="flex items-center gap-3">
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Dataset Explorer</h2>
-            <span id="gallery-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-950 border border-cyan-500/40 text-cyan-300">
-              9 Live Verified Scenes
-            </span>
-          </div>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">
-            Browse authentic paired sensor benchmarks, inspect dual preview thumbnails, and inspect high-resolution ground truth.
-          </p>
-        </div>
-
-        <!-- Extended Catalog & Modal Action -->
-        <button type="button" onclick="openExtendedCatalogModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors flex items-center gap-2 shadow-sm shrink-0">
-          <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-          Extended Catalog (87k+ Archive)
-        </button>
-      </div>
-
-      <!-- 3 Dataset Overview Spec Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- NYU V2 Card -->
-        <div onclick="switchDatasetGallery('nyu')" class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-blue-500/50 cursor-pointer transition-all space-y-3 group">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-blue-400 font-mono">INDOOR STRUCTURED LIGHT</span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-500/30">3 Live Scenes</span>
-          </div>
-          <h3 class="text-base font-bold text-white group-hover:text-blue-400 transition-colors">NYU Depth V2</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Microsoft Kinect v1 infrared structured light. Downsampled 4× for standard depth super-resolution benchmark.
-          </p>
-          <div class="pt-2 flex items-center justify-between text-[11px] font-mono text-slate-400 border-t border-slate-800">
-            <span>640 × 480</span>
-            <span class="text-emerald-400">100% Valid</span>
-            <span>0.5m – 10.0m</span>
-          </div>
-        </div>
-
-        <!-- KITTI Card -->
-        <div onclick="switchDatasetGallery('kitti')" class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-cyan-500/50 cursor-pointer transition-all space-y-3 group">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-cyan-400 font-mono">OUTDOOR ROTATING LIDAR</span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30">3 Live Scenes</span>
-          </div>
-          <h3 class="text-base font-bold text-white group-hover:text-cyan-400 transition-colors">KITTI Depth Completion</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Velodyne HDL-64E laser scanner with companion PointGrey camera. Severe sparsity (~4.4% valid seeds).
-          </p>
-          <div class="pt-2 flex items-center justify-between text-[11px] font-mono text-slate-400 border-t border-slate-800">
-            <span>1216 × 352</span>
-            <span class="text-cyan-400">4.4% Seeds</span>
-            <span>1.2m – 78.5m</span>
-          </div>
-        </div>
-
-        <!-- Middlebury Card -->
-        <div onclick="switchDatasetGallery('middlebury')" class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-emerald-500/50 cursor-pointer transition-all space-y-3 group">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-emerald-400 font-mono">LAB STEREO BENCHMARK</span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30">3 Live Scenes</span>
-          </div>
-          <h3 class="text-base font-bold text-white group-hover:text-emerald-400 transition-colors">Middlebury 2021</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Dual Canon EOS 40D DSLR stereo rig with structured lighting projector. Sub-pixel metric accuracy.
-          </p>
-          <div class="pt-2 flex items-center justify-between text-[11px] font-mono text-slate-400 border-t border-slate-800">
-            <span>960 × 540</span>
-            <span class="text-emerald-400">100% Valid</span>
-            <span>0.5m – 6.0m</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gallery Toolbar: Search, Filters, Sort & View Mode -->
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-lab-card p-3 rounded-xl border border-lab-cardborder">
-        
-        <!-- Filter Tabs -->
-        <div class="flex items-center gap-1 overflow-x-auto text-xs font-semibold">
-          <button type="button" id="tab-dset-all" onclick="filterGalleryDataset('all')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors">All (9)</button>
-          <button type="button" id="tab-dset-nyu" onclick="switchDatasetGallery('nyu')" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white transition-colors">NYU Depth V2</button>
-          <button type="button" id="tab-dset-kitti" onclick="switchDatasetGallery('kitti')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors">KITTI LiDAR</button>
-          <button type="button" id="tab-dset-middlebury" onclick="switchDatasetGallery('middlebury')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors">Middlebury 2021</button>
-        </div>
-
-        <!-- Search Input -->
-        <div class="flex items-center gap-2">
-          <div class="relative flex-1 sm:w-64">
-            <input type="text" id="gallery-search-input" oninput="debounceSearchGallery()" placeholder="Search scene name..." class="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-sans">
-            <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          </div>
-          
-          <!-- View Toggle -->
-          <div class="flex items-center rounded-lg bg-slate-900 border border-slate-700 p-0.5 text-slate-400">
-            <button type="button" onclick="setGalleryViewMode('grid')" id="btn-view-grid" class="p-1 rounded bg-slate-800 text-white" title="Grid View">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            </button>
-            <button type="button" onclick="setGalleryViewMode('list')" id="btn-view-list" class="p-1 rounded hover:text-white" title="List View">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Active Dataset Metadata Banner -->
-      <div id="dataset-meta-banner" class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
-        <!-- Rendered dynamically -->
-      </div>
-
-      <!-- Synchronized Gallery Cards Grid -->
-      <div id="gallery-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Dynamic cards inserted via JavaScript -->
-      </div>
-
-      <!-- Gallery Pagination / Scene Stepper -->
-      <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
-        <button type="button" id="btn-gallery-prev" onclick="stepGalleryScene(-1)" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors flex items-center gap-1 font-semibold disabled:opacity-40">
-          ◀ Prev Scene
-        </button>
-        <span id="gallery-active-label" class="font-mono font-bold text-slate-300">Scene 1 of 3</span>
-        <button type="button" id="btn-gallery-next" onclick="stepGalleryScene(1)" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors flex items-center gap-1 font-semibold disabled:opacity-40">
-          Next Scene ▶
-        </button>
-      </div>
-
-    </section>
-
-    <!-- ----------------------------------------------------------------------- -->
-    <!-- 5.2 RECONSTRUCTION LAB: COMPLETE INTERACTIVE WORKSPACE                  -->
-    <!-- ----------------------------------------------------------------------- -->
-    <section id="section-reconstruction" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      
-      <!-- Section Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
-        <div>
-          <div class="flex items-center gap-3">
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Reconstruction Lab</h2>
-            <span id="header-sample-pill" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-forest-950 border border-forest-500/40 text-forest-300 font-mono">
-              NYU Living Room
-            </span>
-          </div>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">
-            Execute PyTorch EdgeFuseNet CNN inference and bilateral confidence-guided boundary refinement.
-          </p>
-        </div>
-
-        <!-- Sample Dimensions Display -->
-        <div id="sample-dimensions" class="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-          640 x 480 (NYU Depth V2)
-        </div>
-      </div>
-
-      <!-- Top KPI Metric Cards Bar -->
-      <div id="kpi-metric-bar" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <!-- RMSE -->
-        <div class="p-3.5 rounded-xl bg-lab-card border border-lab-cardborder space-y-1">
-          <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">RMSE (m) ↓</span>
-          <div class="text-xl font-black font-mono text-white" id="val-rmse">0.1143</div>
-          <span class="text-[9px] text-emerald-400 font-semibold">Lower is better</span>
-        </div>
-
-        <!-- MAE -->
-        <div class="p-3.5 rounded-xl bg-lab-card border border-lab-cardborder space-y-1">
-          <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">MAE (m) ↓</span>
-          <div class="text-xl font-black font-mono text-white" id="val-mae">0.0433</div>
-          <span class="text-[9px] text-emerald-400 font-semibold">Lower is better</span>
-        </div>
-
-        <!-- PSNR -->
-        <div class="p-3.5 rounded-xl bg-lab-card border border-lab-cardborder space-y-1">
-          <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">PSNR (dB) ↑</span>
-          <div class="text-xl font-black font-mono text-white" id="val-psnr">38.84</div>
-          <span class="text-[9px] text-cyan-400 font-semibold">Higher is better</span>
-        </div>
-
-        <!-- SSIM -->
-        <div class="p-3.5 rounded-xl bg-lab-card border border-lab-cardborder space-y-1">
-          <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">SSIM ↑</span>
-          <div class="text-xl font-black font-mono text-white" id="val-ssim">0.9791</div>
-          <span class="text-[9px] text-cyan-400 font-semibold">Structural Similarity</span>
-        </div>
-
-        <!-- Boundary F1 -->
-        <div class="p-3.5 rounded-xl bg-lab-card border border-lab-cardborder space-y-1">
-          <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">Boundary F1 ↑</span>
-          <div class="text-xl font-black font-mono text-white" id="val-f1">0.8162</div>
-          <span class="text-[9px] text-emerald-400 font-semibold">Edge Precision</span>
-        </div>
-
-        <!-- Latency -->
-        <div class="p-3.5 rounded-xl bg-lab-card border border-lab-cardborder space-y-1">
-          <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">Latency (CPU)</span>
-          <div class="text-xl font-black font-mono text-white" id="val-latency">530.0<span class="text-xs font-normal text-slate-400 ml-0.5">ms</span></div>
-          <span class="text-[9px] text-slate-400 font-semibold">End-to-End</span>
-        </div>
-      </div>
-
-      <!-- Main Workspace Grid: Controls (Left) & Diagnostics (Right) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        <!-- Left Column: Controls & Uploads -->
-        <div class="lg:col-span-4 space-y-5">
-          
-          <!-- Custom Input Upload Card -->
-          <div id="upload-panel-card" class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder space-y-4 shadow-lg">
+          <!-- Metric Comparison Bar Chart -->
+          <div class="bg-ivory-50 dark:bg-lab-card p-6 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-4 shadow-md">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-white uppercase tracking-wider font-mono">1. Custom File Upload</span>
-              <button type="button" onclick="clearCustomFiles()" class="text-[11px] text-slate-400 hover:text-rose-400 transition-colors">Clear</button>
+              <h3 class="text-xs font-bold text-charcoal-950 dark:text-white uppercase tracking-wider font-mono">Relative RMSE Error Reduction Across Methods</h3>
+              <span class="text-[11px] text-charcoal-500 dark:text-slate-400">Evaluated on active scene ground truth</span>
             </div>
-
-            <!-- RGB Dropzone -->
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-300">RGB Guidance Image (JPG/PNG)</label>
-              <div id="drop-rgb" onclick="document.getElementById('file-rgb').click()" class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-3 text-center cursor-pointer transition-colors bg-slate-900/60">
-                <input type="file" id="file-rgb" accept="image/png,image/jpeg,image/jpg" class="hidden" onchange="handleFileSelected(this, 'rgb')">
-                <span id="label-rgb" class="text-xs text-slate-400 block truncate">Drag & drop or browse RGB...</span>
-              </div>
+            
+            <div id="benchmark-visual-bars" class="space-y-3 pt-2">
+              <!-- Rendered dynamically -->
             </div>
-
-            <!-- Depth Dropzone -->
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-300">Depth Map (.npy or 16-bit PNG)</label>
-              <div id="drop-depth" onclick="document.getElementById('file-depth').click()" class="border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-xl p-3 text-center cursor-pointer transition-colors bg-slate-900/60">
-                <input type="file" id="file-depth" accept=".npy,image/png,image/jpeg" class="hidden" onchange="handleFileSelected(this, 'depth')">
-                <span id="label-depth" class="text-xs text-slate-400 block truncate">Drag & drop depth map...</span>
-              </div>
-            </div>
-
-            <!-- Optional GT Dropzone -->
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-400">Optional Ground Truth (.npy/PNG)</label>
-              <div id="drop-gt" onclick="document.getElementById('file-gt').click()" class="border-2 border-dashed border-slate-800 hover:border-emerald-500/50 rounded-xl p-2.5 text-center cursor-pointer transition-colors bg-slate-900/40">
-                <input type="file" id="file-gt" accept=".npy,image/png" class="hidden" onchange="handleFileSelected(this, 'gt')">
-                <span id="label-gt" class="text-xs text-slate-500 block truncate">Reference GT (for quantitative metrics)...</span>
-              </div>
-            </div>
-
-            <!-- Scale Calibration -->
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-300">Physical Scale Calibration</label>
-              <select id="depth-scale-select" onchange="handleDepthScaleChange()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-500">
-                <option value="auto">Auto-Calibrate Format (Recommended)</option>
-                <option value="mm">Millimeters (16-bit Kinect / Middlebury)</option>
-                <option value="kitti">KITTI Scale (uint16 / 256.0)</option>
-                <option value="raw">Raw Metric Floats (0.5m – 10.0m)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Reconstruction Config Card -->
-          <div id="reconstruction-config-panel" class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder space-y-4 shadow-lg">
-            <span class="text-xs font-bold text-white uppercase tracking-wider font-mono block">2. Algorithm Configuration</span>
-
-            <!-- Upsampling Factor -->
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-300">Upsampling Factor</label>
-              <select id="upsample-factor" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
-                <option value="2">2× Upsampling (Fine Resolution)</option>
-                <option value="4" selected>4× Upsampling (Standard Benchmark)</option>
-                <option value="8">8× Upsampling (Extreme Sparsity)</option>
-              </select>
-            </div>
-
-            <!-- Method Selection -->
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-bold text-slate-300">Reconstruction Algorithm</label>
-              <select id="method-select" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono">
-                <optgroup label="Proposed Framework (Ours)">
-                  <option value="hybrid" selected>A5: EdgeFuse-DCR Full Hybrid (Ours)</option>
-                  <option value="cnn_conf_refined">A4: CNN + Confidence + Boundary Refinement</option>
-                  <option value="cnn_conf">A3: CNN + Confidence Guidance</option>
-                  <option value="cnn">A2: Deep Learning (EdgeFuseNet Alone)</option>
-                </optgroup>
-                <optgroup label="Classical Filtering Baselines">
-                  <option value="guided">A1: Guided Filter</option>
-                  <option value="joint_bilateral">A1: Joint Bilateral Filter</option>
-                </optgroup>
-                <optgroup label="Naive Geometric Baselines">
-                  <option value="bicubic">A0: Bicubic Interpolation</option>
-                  <option value="bilinear">A0: Bilinear Interpolation</option>
-                  <option value="nearest">A0: Nearest Neighbor</option>
-                </optgroup>
-              </select>
-            </div>
-
-            <!-- Texture Copy Suppression Toggle -->
-            <div class="flex items-center justify-between pt-1">
-              <div>
-                <label for="toggle-texture" class="text-xs font-bold text-white cursor-pointer">Texture-Copy Suppression</label>
-                <p class="text-[10px] text-slate-400">Halts depth bleeding on flat surfaces</p>
-              </div>
-              <input type="checkbox" id="toggle-texture" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700 cursor-pointer">
-            </div>
-
-            <!-- Execute Button -->
-            <button type="button" id="btn-run" onclick="executeReconstruction()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2">
-              <svg id="spinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span id="btn-text">Execute Depth Reconstruction</span>
-            </button>
           </div>
 
         </div>
+      </section>
 
-        <!-- Right Column: Diagnostic Visualization Tabs -->
-        <div class="lg:col-span-8 space-y-4">
+      <!-- ======================================================================= -->
+      <!-- 2.7 RESEARCH EXPORT CENTER                                              -->
+      <!-- ======================================================================= -->
+      <section id="section-exports" class="py-16 sm:py-20 px-4 sm:px-8 lg:px-12 bg-ivory-100 dark:bg-lab-bg transition-colors">
+        <div class="max-w-6xl mx-auto space-y-8">
           
-          <!-- Visualization Tab Bar -->
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div class="flex items-center gap-2 overflow-x-auto text-xs font-semibold">
-              <button type="button" onclick="switchVisualTab('primary')" id="tab-btn-primary" class="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white transition-colors">
-                Primary Reconstruction
-              </button>
-              <button type="button" onclick="switchVisualTab('ablation')" id="tab-btn-ablation" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors">
-                Ablation Progression
-              </button>
-              <button type="button" onclick="switchVisualTab('edges')" id="tab-btn-edges" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors">
-                Edge Discontinuities
-              </button>
-              <button type="button" onclick="switchVisualTab('confidence')" id="tab-btn-confidence" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors">
-                Confidence & Error
-              </button>
-            </div>
-
-            <!-- Validity Mask Badge in Tab Bar -->
-            <span id="validity-mask-stats" class="text-xs font-mono font-bold text-cyan-400 hidden sm:inline-block">
-              100.0% Valid Measurements
-            </span>
+          <div class="border-b border-ivory-300 dark:border-slate-800 pb-5">
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-950 dark:text-white tracking-tight">Research Export Center</h2>
+            <p class="text-xs sm:text-sm text-charcoal-600 dark:text-slate-400 mt-1">
+              Download numerical floating-point arrays, 16-bit millimeter depth maps, and complete JSON research benchmark summaries.
+            </p>
           </div>
 
-          <!-- TAB 1: Primary Reconstruction -->
-          <div id="view-tab-primary" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <!-- RGB Guidance -->
-            <div class="bg-lab-card p-3 rounded-2xl border border-lab-cardborder space-y-2">
+          <!-- 6 Download Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            <a href="/api/download/npy" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-cyan-500/50 transition-all space-y-2 group block shadow-sm">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-300">RGB Guidance Image</span>
-                <button type="button" onclick="openImageViewer('view-rgb', 'RGB Guidance Image')" class="text-[10px] text-slate-400 hover:text-white">🔍 Zoom</button>
+                <span class="text-xs font-mono font-bold text-cyan-700 dark:text-cyan-400">NUMERICAL ARRAY</span>
+                <span class="text-xs text-charcoal-400 dark:text-slate-500 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">↓ Download</span>
               </div>
-              <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
-                <img id="view-rgb" src="" class="w-full h-full object-cover" alt="RGB Guidance Image">
-              </div>
-            </div>
+              <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">Reconstructed Depth (.npy)</h4>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400">Raw floating-point metric depth array in metres. Preserves exact sub-millimeter precision.</p>
+            </a>
 
-            <!-- Input Low-Res / Sparse Depth -->
-            <div class="bg-lab-card p-3 rounded-2xl border border-lab-cardborder space-y-2">
+            <a href="/api/download/png" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-blue-500/50 transition-all space-y-2 group block shadow-sm">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-300">Input Low-Res / Sparse Depth</span>
-                <button type="button" onclick="openImageViewer('view-lr-depth', 'Input Depth Map')" class="text-[10px] text-slate-400 hover:text-white">🔍 Zoom</button>
+                <span class="text-xs font-mono font-bold text-blue-700 dark:text-blue-400">16-BIT MILLIMETER PNG</span>
+                <span class="text-xs text-charcoal-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">↓ Download</span>
               </div>
-              <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
-                <img id="view-lr-depth" src="" class="w-full h-full object-cover" alt="Input Low-Res Depth">
-              </div>
-            </div>
+              <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors">Metric Depth Image (16-bit PNG)</h4>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400">Standard millimeter-encoded depth PNG (1 px = 1 mm), compatible with ROS, OpenCV and MeshLab.</p>
+            </a>
 
-            <!-- EdgeFuse-DCR Final Reconstruction -->
-            <div class="bg-lab-card p-3 rounded-2xl border border-cyan-500/40 space-y-2">
+            <a href="/api/download/confidence" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-emerald-500/50 transition-all space-y-2 group block shadow-sm">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-cyan-300">EdgeFuse-DCR Refined Depth</span>
-                <button type="button" onclick="openImageViewer('view-reconstructed', 'EdgeFuse-DCR Refined Depth')" class="text-[10px] text-cyan-400 hover:text-white font-bold">🔍 Fullscreen</button>
+                <span class="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">CONFIDENCE WEIGHTS</span>
+                <span class="text-xs text-charcoal-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">↓ Download</span>
               </div>
-              <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-cyan-500/20 shadow-inner">
-                <img id="view-reconstructed" src="" class="w-full h-full object-cover" alt="EdgeFuse-DCR Final Reconstruction">
-              </div>
-            </div>
-          </div>
+              <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">Confidence Map (.png)</h4>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400">Normalized spatial certainty map illustrating bilateral edge-weight distribution across pixels.</p>
+            </a>
 
-          <!-- TAB 2: Ablation Progression (A0 vs A2 vs A5) -->
-          <div id="view-tab-ablation" class="hidden grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="bg-lab-card p-3 rounded-2xl border border-lab-cardborder space-y-2">
-              <span class="text-xs font-bold text-slate-400 block">Stage 1: A0 Classical Baseline</span>
-              <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
-                <img id="view-classical" src="" class="w-full h-full object-cover" alt="A0 Classical Baseline">
-              </div>
-            </div>
-            <div class="bg-lab-card p-3 rounded-2xl border border-lab-cardborder space-y-2">
-              <span class="text-xs font-bold text-blue-400 block">Stage 2: A2 EdgeFuseNet Alone</span>
-              <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
-                <img id="view-cnn" src="" class="w-full h-full object-cover" alt="A2 EdgeFuseNet Alone">
-              </div>
-            </div>
-            <div class="bg-lab-card p-3 rounded-2xl border border-cyan-500/40 space-y-2">
-              <span class="text-xs font-bold text-cyan-300 block">Stage 3: A5 Full Hybrid (Proposed)</span>
-              <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
-                <img id="view-ablation-final" src="" class="w-full h-full object-cover" alt="A5 Full Hybrid">
-              </div>
-            </div>
-          </div>
-
-          <!-- TAB 3: Edge & Discontinuity Analysis -->
-          <div id="view-tab-edges" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="bg-lab-card p-3 rounded-2xl border border-lab-cardborder space-y-2">
+            <a href="/api/download/valid_mask" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-slate-500 transition-all space-y-2 group block shadow-sm">
               <div class="flex items-center justify-between">
-                <span id="validity-mask-title" class="text-xs font-bold text-slate-300">Sensor Validity Mask</span>
-                <span id="validity-px-counts" class="text-[10px] font-mono text-slate-400">0 Valid / 0 Void</span>
+                <span class="text-xs font-mono font-bold text-charcoal-500 dark:text-slate-400">BINARY MASK</span>
+                <span class="text-xs text-charcoal-400 dark:text-slate-500 group-hover:text-charcoal-950 dark:group-hover:text-white transition-colors">↓ Download</span>
               </div>
-              <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
-                <img id="view-valid-mask" src="" class="w-full h-full object-cover" alt="Sensor Validity Mask">
-              </div>
-              <p class="text-[11px] text-slate-400">Pure White = Valid physical depth measurements. Pure Black = Missing / Void seeds.</p>
-            </div>
+              <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-charcoal-700 dark:group-hover:text-slate-300 transition-colors">Sensor Validity Mask (.png)</h4>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400">Binary sensor measurement mask (White = 255 valid seeds, Black = 0 void regions).</p>
+            </a>
 
-            <div class="bg-lab-card p-3 rounded-2xl border border-lab-cardborder space-y-2">
-              <span class="text-xs font-bold text-slate-300 block">Boundary Discontinuity Overlay</span>
-              <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
-                <img id="view-boundary" src="" class="w-full h-full object-cover" alt="Boundary Discontinuity Overlay">
+            <a href="/api/download/error_map" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-rose-500/50 transition-all space-y-2 group block shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-rose-700 dark:text-rose-400">ERROR HEATMAP</span>
+                <span class="text-xs text-charcoal-400 dark:text-slate-500 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">↓ Download</span>
               </div>
-              <p class="text-[11px] text-slate-400">Green contours indicate depth edges preserved through bilateral refinement.</p>
-            </div>
-          </div>
+              <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors">Absolute Error Map (.png)</h4>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400">Jet-colorized absolute residual error heatmap against ground truth verification reference.</p>
+            </a>
 
-          <!-- TAB 4: Confidence & Error Maps -->
-          <div id="view-tab-confidence" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="bg-lab-card p-3 rounded-2xl border border-lab-cardborder space-y-2">
-              <span class="text-xs font-bold text-slate-300 block">Bilateral Confidence Weights Map</span>
-              <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
-                <img id="view-confidence" src="" class="w-full h-full object-cover" alt="Confidence Map">
+            <a href="/api/download/report_json" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-amber-500/50 transition-all space-y-2 group block shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-amber-700 dark:text-amber-400">METRICS REPORT</span>
+                <span class="text-xs text-charcoal-400 dark:text-slate-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">↓ Download</span>
               </div>
-              <p class="text-[11px] text-slate-400">Bright regions indicate highest spatial confidence during bilateral solver propagation.</p>
-            </div>
+              <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">Research Report (.json)</h4>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400">Complete JSON bundle including RMSE, MAE, PSNR, SSIM, Boundary F1, and model parameters.</p>
+            </a>
 
-            <div class="bg-lab-card p-3 rounded-2xl border border-lab-cardborder space-y-2">
-              <span class="text-xs font-bold text-slate-300 block">Absolute Error Heatmap (|Dpred - Dgt|)</span>
-              <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
-                <img id="view-error" src="" class="w-full h-full object-cover" alt="Absolute Error Heatmap">
-              </div>
-              <p class="text-[11px] text-slate-400">Dark Blue = 0m error. Red = >0.5m error against ground truth reference.</p>
-            </div>
           </div>
 
         </div>
+      </section>
 
-      </div>
+    </div>
 
-    </section>
-
-    <!-- ----------------------------------------------------------------------- -->
-    <!-- 5.3 COMPARATIVE BENCHMARKING LAB SECTION                                -->
-    <!-- ----------------------------------------------------------------------- -->
-    <section id="section-benchmark" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      
-      <!-- Section Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
-        <div>
-          <div class="flex items-center gap-3">
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Comparative Benchmarks</h2>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-forest-950 border border-forest-500/40 text-forest-300">
-              CVPR/ICCV Protocol Evaluation
-            </span>
+    <!-- Editorial Footer -->
+    <footer class="bg-ivory-200 dark:bg-lab-sidebar border-t border-ivory-300 dark:border-slate-800 py-8 px-4 sm:px-8 text-charcoal-700 dark:text-slate-400 text-xs">
+      <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="space-y-1 text-center sm:text-left">
+          <div class="flex items-center justify-center sm:justify-start gap-2 font-bold text-charcoal-900 dark:text-white">
+            <span>EDGEFUSE-DCR</span>
+            <span>•</span>
+            <span>Phase 4: Depth Upsampling & Refinement</span>
           </div>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">
-            Comprehensive quantitative ablation comparing classical interpolation, edge filters, CNN alone, and EdgeFuse-DCR.
-          </p>
+          <p class="text-[11px] text-charcoal-500 dark:text-slate-500">Evaluated on NYU Depth V2, KITTI Depth Completion, and Middlebury 2021.</p>
         </div>
 
-        <div id="benchmark-active-sample-label" class="text-xs font-mono text-cyan-300 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-          Scene: NYU Living Room
+        <div class="flex items-center gap-4 text-xs font-semibold">
+          <a href="#section-hero" class="hover:text-charcoal-950 dark:hover:text-white transition-colors">Back to Top ↑</a>
+          <a href="https://github.com/991627aishu/CV_EDGEFUSE-DCR" target="_blank" rel="noopener noreferrer" class="hover:text-charcoal-950 dark:hover:text-white transition-colors">GitHub Repository</a>
         </div>
       </div>
+    </footer>
 
-      <!-- Benchmark Table Container -->
-      <div class="overflow-x-auto rounded-2xl border border-lab-cardborder bg-lab-card shadow-xl">
-        <table class="w-full text-left text-xs whitespace-nowrap">
-          <thead class="bg-slate-900/90 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
-            <tr>
-              <th scope="col" class="py-3.5 px-4 font-mono">Pipeline Stage / Method</th>
-              <th scope="col" class="py-3.5 px-3 font-mono text-right">RMSE (m) ↓</th>
-              <th scope="col" class="py-3.5 px-3 font-mono text-right">MAE (m) ↓</th>
-              <th scope="col" class="py-3.5 px-3 font-mono text-right">PSNR (dB) ↑</th>
-              <th scope="col" class="py-3.5 px-3 font-mono text-right">SSIM ↑</th>
-              <th scope="col" class="py-3.5 px-3 font-mono text-right">Boundary F1 ↑</th>
-              <th scope="col" class="py-3.5 px-3 font-mono text-right">Grad MAE ↓</th>
-              <th scope="col" class="py-3.5 px-4 font-mono text-right">Latency (CPU)</th>
-            </tr>
-          </thead>
-          <tbody id="benchmark-tbody" class="divide-y divide-slate-800/60 font-mono text-slate-300">
-            <!-- Dynamic rows populated via renderBenchmarkTable() -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Metric Visual Comparison Bar Chart -->
-      <div class="bg-lab-card p-6 rounded-2xl border border-lab-cardborder space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-white uppercase tracking-wider font-mono">Relative RMSE Error Reduction Across Methods</h3>
-          <span class="text-[11px] text-slate-400">Evaluated on active scene ground truth</span>
-        </div>
-        
-        <div id="benchmark-visual-bars" class="space-y-3 pt-2">
-          <!-- Dynamic SVG bars rendered via renderBenchmarkBars() -->
-        </div>
-      </div>
-
-    </section>
-
-    <!-- ----------------------------------------------------------------------- -->
-    <!-- 5.4 RESEARCH EXPORT CENTER                                              -->
-    <!-- ----------------------------------------------------------------------- -->
-    <section id="section-exports" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      
-      <div class="border-b border-slate-800 pb-5">
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Research Export Center</h2>
-        <p class="text-xs sm:text-sm text-slate-400 mt-1">
-          Download numerical floating-point arrays, 16-bit millimeter depth maps, and comprehensive JSON benchmark summaries.
-        </p>
-      </div>
-
-      <!-- 6 Download Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        
-        <!-- .npy Float32 -->
-        <a href="/api/download/npy" download class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-cyan-500/50 transition-all space-y-2 group block">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-cyan-400">NUMERICAL ARRAY</span>
-            <span class="text-xs text-slate-500 group-hover:text-cyan-400 transition-colors">↓ Download</span>
-          </div>
-          <h4 class="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">Reconstructed Depth (.npy)</h4>
-          <p class="text-xs text-slate-400">Raw floating-point metric depth array in metres. Preserves exact sub-millimeter precision.</p>
-        </a>
-
-        <!-- 16-bit PNG -->
-        <a href="/api/download/png" download class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-blue-500/50 transition-all space-y-2 group block">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-blue-400">16-BIT MILLIMETER PNG</span>
-            <span class="text-xs text-slate-500 group-hover:text-blue-400 transition-colors">↓ Download</span>
-          </div>
-          <h4 class="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">Metric Depth Image (16-bit PNG)</h4>
-          <p class="text-xs text-slate-400">Standard millimeter-encoded depth PNG (1 px = 1 mm), compatible with ROS, OpenCV and MeshLab.</p>
-        </a>
-
-        <!-- Confidence Map PNG -->
-        <a href="/api/download/confidence" download class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-emerald-500/50 transition-all space-y-2 group block">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-emerald-400">CONFIDENCE WEIGHTS</span>
-            <span class="text-xs text-slate-500 group-hover:text-emerald-400 transition-colors">↓ Download</span>
-          </div>
-          <h4 class="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">Confidence Map (.png)</h4>
-          <p class="text-xs text-slate-400">Normalized spatial certainty map illustrating bilateral edge-weight distribution across pixels.</p>
-        </a>
-
-        <!-- Validity Mask PNG -->
-        <a href="/api/download/valid_mask" download class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-slate-500 transition-all space-y-2 group block">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-slate-400">BINARY MASK</span>
-            <span class="text-xs text-slate-500 group-hover:text-white transition-colors">↓ Download</span>
-          </div>
-          <h4 class="text-sm font-bold text-white group-hover:text-slate-300 transition-colors">Sensor Validity Mask (.png)</h4>
-          <p class="text-xs text-slate-400">Binary sensor measurement mask (White = 255 valid seeds, Black = 0 void regions).</p>
-        </a>
-
-        <!-- Error Heatmap PNG -->
-        <a href="/api/download/error_map" download class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-rose-500/50 transition-all space-y-2 group block">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-rose-400">ERROR HEATMAP</span>
-            <span class="text-xs text-slate-500 group-hover:text-rose-400 transition-colors">↓ Download</span>
-          </div>
-          <h4 class="text-sm font-bold text-white group-hover:text-rose-300 transition-colors">Absolute Error Map (.png)</h4>
-          <p class="text-xs text-slate-400">Jet-colorized absolute residual error heatmap against ground truth verification reference.</p>
-        </a>
-
-        <!-- JSON Benchmark Report -->
-        <a href="/api/download/report_json" download class="p-5 rounded-2xl bg-lab-card border border-lab-cardborder hover:border-amber-500/50 transition-all space-y-2 group block">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-amber-400">METRICS REPORT</span>
-            <span class="text-xs text-slate-500 group-hover:text-amber-400 transition-colors">↓ Download</span>
-          </div>
-          <h4 class="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">Research Report (.json)</h4>
-          <p class="text-xs text-slate-400">Complete JSON bundle including RMSE, MAE, PSNR, SSIM, Boundary F1, and model parameters.</p>
-        </a>
-
-      </div>
-
-    </section>
-
-  </main>
+  </div>
 
   <!-- ========================================================================= -->
-  <!-- 6. MODALS: LIGHTBOX SCENE VIEWER & EXTENDED CATALOG                       -->
+  <!-- 3. MODALS (LIGHTBOX SCENE VIEWER, EXTENDED CATALOG, GUIDED TOUR)          -->
   <!-- ========================================================================= -->
 
   <!-- Modal 1: Full-Resolution Scene Viewer (Lightbox) -->
   <div id="scene-viewer-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-6">
-    <div class="bg-lab-card border border-slate-700 w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+    <div class="bg-white dark:bg-lab-card border border-ivory-300 dark:border-slate-700 w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
       
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/80">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-ivory-300 dark:border-slate-800 bg-ivory-100 dark:bg-slate-900/80">
         <div>
           <div class="flex items-center gap-2">
-            <h3 id="modal-scene-title" class="text-sm font-bold text-white">Scene Viewer</h3>
-            <span id="modal-dset-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-500/30">Dataset</span>
+            <h3 id="modal-scene-title" class="text-sm font-bold text-charcoal-950 dark:text-white">Scene Viewer</h3>
+            <span id="modal-dset-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30">Dataset</span>
           </div>
-          <p id="modal-scene-meta" class="text-xs text-slate-400 mt-0.5 font-mono">1216 x 352 • 4.4% Valid • 1.2m - 78.5m</p>
+          <p id="modal-scene-meta" class="text-xs text-charcoal-500 dark:text-slate-400 mt-0.5 font-mono">1216 x 352 • 4.4% Valid • 1.2m - 78.5m</p>
         </div>
 
         <div class="flex items-center gap-3">
-          <button type="button" onclick="loadModalSceneIntoWorkspace()" class="px-3.5 py-1.5 rounded-lg bg-forest-900 hover:bg-forest-800 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm">
+          <button type="button" onclick="loadModalSceneIntoWorkspace()" class="px-3.5 py-1.5 rounded-lg bg-forest-900 hover:bg-forest-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm">
             <span>Load in Workspace</span>
-            <svg class="w-3.5 h-3.5 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <svg class="w-3.5 h-3.5 text-forest-400 dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
-          <button type="button" onclick="closeSceneViewerModal()" class="text-slate-400 hover:text-white text-lg p-1">✕</button>
+          <button type="button" onclick="closeSceneViewerModal()" class="text-charcoal-400 dark:text-slate-400 hover:text-charcoal-900 dark:hover:text-white text-lg p-1">✕</button>
         </div>
       </div>
 
-      <!-- Modal Toolbar: View Mode Selector -->
-      <div class="flex items-center justify-between px-5 py-2.5 bg-slate-900/50 border-b border-slate-800 text-xs">
+      <div class="flex items-center justify-between px-5 py-2.5 bg-ivory-50 dark:bg-slate-900/50 border-b border-ivory-300 dark:border-slate-800 text-xs">
         <div class="flex items-center gap-1 overflow-x-auto font-semibold">
           <button type="button" onclick="switchModalView('rgb')" id="modal-tab-rgb" class="px-3 py-1 rounded-md bg-blue-600 text-white">RGB Guidance</button>
-          <button type="button" onclick="switchModalView('lr')" id="modal-tab-lr" class="px-3 py-1 rounded-md text-slate-400 hover:text-white">Input Depth</button>
-          <button type="button" onclick="switchModalView('gt')" id="modal-tab-gt" class="px-3 py-1 rounded-md text-slate-400 hover:text-white">Ground Truth</button>
-          <button type="button" onclick="switchModalView('mask')" id="modal-tab-mask" class="px-3 py-1 rounded-md text-slate-400 hover:text-white">Validity Mask</button>
-          <button type="button" onclick="switchModalView('split')" id="modal-tab-split" class="px-3 py-1 rounded-md text-cyan-400 border border-cyan-500/40 hover:bg-cyan-950">Side-by-Side Split</button>
+          <button type="button" onclick="switchModalView('lr')" id="modal-tab-lr" class="px-3 py-1 rounded-md text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white">Input Depth</button>
+          <button type="button" onclick="switchModalView('gt')" id="modal-tab-gt" class="px-3 py-1 rounded-md text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white">Ground Truth</button>
+          <button type="button" onclick="switchModalView('mask')" id="modal-tab-mask" class="px-3 py-1 rounded-md text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white">Validity Mask</button>
+          <button type="button" onclick="switchModalView('split')" id="modal-tab-split" class="px-3 py-1 rounded-md text-cyan-600 dark:text-cyan-400 border border-cyan-500/40 hover:bg-cyan-100 dark:hover:bg-cyan-950">Side-by-Side Split</button>
         </div>
 
-        <span class="text-[11px] text-slate-400 hidden sm:inline-block">Use Left/Right arrow keys to cycle scenes</span>
+        <span class="text-[11px] text-charcoal-500 dark:text-slate-400 hidden sm:inline-block">Use Left/Right arrow keys to cycle scenes</span>
       </div>
 
-      <!-- Modal Canvas Area -->
       <div class="p-6 flex-1 flex items-center justify-center bg-slate-950 overflow-hidden relative">
-        <!-- Single View Canvas -->
         <img id="modal-canvas-img" src="" class="max-h-[60vh] max-w-full object-contain rounded-lg shadow-lg" alt="Scene Modal Canvas">
         
-        <!-- Side-by-Side Split Canvas (Hidden by default) -->
         <div id="modal-split-container" class="split-slider-container w-full max-w-3xl aspect-[16/10] bg-slate-900 rounded-xl overflow-hidden hidden">
           <img id="modal-split-after" src="" class="absolute inset-0 w-full h-full object-cover" alt="Ground Truth Depth">
           <div id="modal-split-before-wrap" class="split-slider-before">
@@ -1204,11 +1256,10 @@
         </div>
       </div>
 
-      <!-- Modal Footer -->
-      <div class="flex items-center justify-between px-5 py-3 border-t border-slate-800 bg-slate-900/60 text-xs text-slate-400">
-        <button type="button" onclick="navigateModalScene(-1)" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">◀ Previous Scene</button>
+      <div class="flex items-center justify-between px-5 py-3 border-t border-ivory-300 dark:border-slate-800 bg-ivory-100 dark:bg-slate-900/60 text-xs text-charcoal-600 dark:text-slate-400">
+        <button type="button" onclick="navigateModalScene(-1)" class="px-3 py-1 rounded bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-charcoal-800 dark:text-slate-200">◀ Previous Scene</button>
         <span id="modal-scene-counter" class="font-mono">Scene 1 of 9</span>
-        <button type="button" onclick="navigateModalScene(1)" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">Next Scene ▶</button>
+        <button type="button" onclick="navigateModalScene(1)" class="px-3 py-1 rounded bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-charcoal-800 dark:text-slate-200">Next Scene ▶</button>
       </div>
 
     </div>
@@ -1216,61 +1267,58 @@
 
   <!-- Modal 2: Extended Official Dataset Catalog -->
   <div id="extended-catalog-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-lab-card border border-slate-700 w-full max-w-3xl rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+    <div class="bg-white dark:bg-lab-card border border-ivory-300 dark:border-slate-700 w-full max-w-3xl rounded-2xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-ivory-300 dark:border-slate-800 pb-4">
         <div>
-          <h3 class="text-base font-bold text-white">Official Dataset Archive Inventory</h3>
-          <p class="text-xs text-slate-400">Comprehensive benchmark repository specifications</p>
+          <h3 class="text-base font-bold text-charcoal-950 dark:text-white">Official Dataset Archive Inventory</h3>
+          <p class="text-xs text-charcoal-500 dark:text-slate-400">Comprehensive benchmark repository specifications</p>
         </div>
-        <button type="button" onclick="closeExtendedCatalogModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+        <button type="button" onclick="closeExtendedCatalogModal()" class="text-charcoal-400 dark:text-slate-400 hover:text-charcoal-900 dark:hover:text-white text-lg">✕</button>
       </div>
 
       <div class="space-y-4">
-        <!-- NYU Archive -->
-        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+        <div class="p-4 rounded-xl bg-ivory-50 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-blue-400">NYU Depth V2 Official Benchmark</span>
-            <span class="text-xs font-mono text-slate-300">1,449 Official Scenes</span>
+            <span class="text-xs font-bold text-blue-600 dark:text-blue-400">NYU Depth V2 Official Benchmark</span>
+            <span class="text-xs font-mono text-charcoal-700 dark:text-slate-300">1,449 Official Scenes</span>
           </div>
-          <p class="text-xs text-slate-400">
-            407,024 raw indoor frames captured via Microsoft Kinect v1 (infrared structured light). Spans 26 indoor scene categories including Living Rooms, Bedrooms, Offices, Kitchens, Classrooms, and Laboratories.
+          <p class="text-xs text-charcoal-600 dark:text-slate-400">
+            407,024 raw indoor frames captured via Microsoft Kinect v1 (infrared structured light). Spans 26 indoor categories.
           </p>
-          <div class="text-[11px] font-mono text-slate-500">
+          <div class="text-[11px] font-mono text-charcoal-500 dark:text-slate-500">
             • Sensor: 640×480 RGB CMOS + PrimeSense IR Speckle | 7.5 cm baseline
           </div>
         </div>
 
-        <!-- KITTI Archive -->
-        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+        <div class="p-4 rounded-xl bg-ivory-50 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-cyan-400">KITTI Depth Completion Benchmark</span>
-            <span class="text-xs font-mono text-slate-300">85,898 Benchmark Frames</span>
+            <span class="text-xs font-bold text-cyan-600 dark:text-cyan-400">KITTI Depth Completion Benchmark</span>
+            <span class="text-xs font-mono text-charcoal-700 dark:text-slate-300">85,898 Benchmark Frames</span>
           </div>
-          <p class="text-xs text-slate-400">
-            Captured across 138 autonomous driving sessions in Karlsruhe, Germany. Features Velodyne HDL-64E laser scanner rotating at 10 Hz (1.3M points/sec) calibrated against high-resolution PointGrey stereo cameras.
+          <p class="text-xs text-charcoal-600 dark:text-slate-400">
+            Captured across 138 autonomous driving sessions in Karlsruhe, Germany. Features Velodyne HDL-64E laser scanner (1.3M pts/sec).
           </p>
-          <div class="text-[11px] font-mono text-slate-500">
+          <div class="text-[11px] font-mono text-charcoal-500 dark:text-slate-500">
             • Sensor: 64-beam Velodyne LiDAR + PointGrey FL2 | 54 cm stereo baseline
           </div>
         </div>
 
-        <!-- Middlebury Archive -->
-        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+        <div class="p-4 rounded-xl bg-ivory-50 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-emerald-400">Middlebury Stereo 2021 Laboratory Benchmark</span>
-            <span class="text-xs font-mono text-slate-300">24 Official Scenes</span>
+            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Middlebury Stereo 2021 Laboratory Benchmark</span>
+            <span class="text-xs font-mono text-charcoal-700 dark:text-slate-300">24 Official Scenes</span>
           </div>
-          <p class="text-xs text-slate-400">
-            Laboratory dataset containing 24 distinct indoor test configurations: artroom1/2, bandsaw1/2, chess1/2/3, curule1/2/3, ladder1/2, octogons1/2, pendulum1/2, podium1, skates1/2, skiboots1/2/3, traproom1/2.
+          <p class="text-xs text-charcoal-600 dark:text-slate-400">
+            Laboratory dataset containing 24 distinct indoor test configurations with active pattern projector.
           </p>
-          <div class="text-[11px] font-mono text-slate-500">
+          <div class="text-[11px] font-mono text-charcoal-500 dark:text-slate-500">
             • Sensor: Dual Canon EOS 40D DSLR Rig + Active Structured Lighting Projector
           </div>
         </div>
       </div>
 
-      <div class="flex justify-end pt-2 border-t border-slate-800">
-        <button type="button" onclick="closeExtendedCatalogModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200">
+      <div class="flex justify-end pt-2 border-t border-ivory-300 dark:border-slate-800">
+        <button type="button" onclick="closeExtendedCatalogModal()" class="px-4 py-2 rounded-xl bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-xs font-semibold text-charcoal-800 dark:text-slate-200">
           Close Catalog
         </button>
       </div>
@@ -1278,18 +1326,18 @@
   </div>
 
   <!-- Modal 3: Guided Tour Spotlight Card -->
-  <div id="tour-spotlight-card" class="fixed z-50 hidden bg-lab-card border-2 border-cyan-400/80 rounded-2xl p-5 shadow-2xl max-w-sm w-full text-left transition-all">
+  <div id="tour-spotlight-card" class="fixed z-50 hidden bg-white dark:bg-lab-card border-2 border-cyan-500 dark:border-cyan-400/80 rounded-2xl p-5 shadow-2xl max-w-sm w-full text-left transition-all">
     <div class="flex items-center justify-between mb-2">
-      <span id="tour-step-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-cyan-300 font-mono">STEP 1 OF 8</span>
-      <button type="button" onclick="endGuidedTour()" class="text-slate-400 hover:text-white text-xs">✕ Close</button>
+      <span id="tour-step-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 font-mono">STEP 1 OF 8</span>
+      <button type="button" onclick="endGuidedTour()" class="text-charcoal-400 dark:text-slate-400 hover:text-charcoal-900 dark:hover:text-white text-xs">✕ Close</button>
     </div>
-    <h4 id="tour-title" class="text-sm font-bold text-white mb-1.5">Dataset Explorer</h4>
-    <p id="tour-desc" class="text-xs text-slate-300 leading-relaxed mb-4">
+    <h4 id="tour-title" class="text-sm font-bold text-charcoal-950 dark:text-white mb-1.5">Dataset Explorer</h4>
+    <p id="tour-desc" class="text-xs text-charcoal-600 dark:text-slate-300 leading-relaxed mb-4">
       Choose between NYU Depth V2, KITTI LiDAR, or Middlebury Stereo scenes. Each scene is loaded authentically into the reconstruction engine.
     </p>
     <div class="flex items-center justify-between pt-1">
-      <button type="button" id="tour-btn-prev" onclick="navigateTourStep(-1)" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Previous</button>
-      <button type="button" id="tour-btn-next" onclick="navigateTourStep(1)" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-xs font-bold text-white">Next Step →</button>
+      <button type="button" id="tour-btn-prev" onclick="navigateTourStep(-1)" class="px-3 py-1 rounded-lg bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-xs font-semibold text-charcoal-700 dark:text-slate-300">Previous</button>
+      <button type="button" id="tour-btn-next" onclick="navigateTourStep(1)" class="px-4 py-1.5 rounded-lg bg-forest-900 dark:bg-gradient-to-r dark:from-blue-600 dark:to-cyan-600 text-xs font-bold text-white">Next Step →</button>
     </div>
   </div>
 
@@ -1299,28 +1347,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 7. EDITORIAL FOOTER                                                       -->
-  <!-- ========================================================================= -->
-  <footer class="bg-ivory-200 border-t border-ivory-300 py-12 text-charcoal-700 text-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="space-y-1 text-center sm:text-left">
-        <div class="flex items-center justify-center sm:justify-start gap-2 font-bold text-charcoal-900">
-          <span>EDGEFUSE-DCR</span>
-          <span>•</span>
-          <span>Phase 4: Depth Upsampling & Refinement</span>
-        </div>
-        <p class="text-[11px] text-charcoal-500">Evaluated on NYU Depth V2, KITTI Depth Completion, and Middlebury 2021.</p>
-      </div>
-
-      <div class="flex items-center gap-4 text-xs font-semibold">
-        <a href="#section-hero" class="hover:text-charcoal-950 transition-colors">Back to Top ↑</a>
-        <a href="https://github.com/991627aishu/CV_EDGEFUSE-DCR" target="_blank" rel="noopener noreferrer" class="hover:text-charcoal-950 transition-colors">GitHub Repository</a>
-      </div>
-    </div>
-  </footer>
-
-  <!-- ========================================================================= -->
-  <!-- 8. CORE JAVASCRIPT ENGINE & BENCHMARK INTEGRATION                         -->
+  <!-- 4. CORE JAVASCRIPT ENGINE & BENCHMARK INTEGRATION                         -->
   <!-- ========================================================================= -->
   <script>
     // Global Application State
@@ -1380,6 +1407,46 @@
     };
 
     // -------------------------------------------------------------------------
+    // 0. DUAL THEME CONTROLLER (LIGHT & DARK THEME ENTIRELY)
+    // -------------------------------------------------------------------------
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('edgefuse_theme', isDark ? 'dark' : 'light');
+      updateThemeLabels(isDark);
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem('edgefuse_theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = saved ? (saved === 'dark') : true; // default dark for scientific lab
+      if (isDark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+      updateThemeLabels(isDark);
+    }
+
+    function updateThemeLabels(isDark) {
+      const label = document.getElementById('theme-label');
+      if (label) label.innerText = isDark ? 'Dark Theme Active' : 'Light Theme Active';
+    }
+
+    // Mobile Sidebar Drawer Controller
+    function toggleMobileSidebar() {
+      const sb = document.getElementById('main-sidebar');
+      const bd = document.getElementById('mobile-sidebar-backdrop');
+      if (sb && bd) {
+        sb.classList.toggle('-translate-x-full');
+        bd.classList.toggle('hidden');
+      }
+    }
+
+    function closeMobileSidebar() {
+      const sb = document.getElementById('main-sidebar');
+      const bd = document.getElementById('mobile-sidebar-backdrop');
+      if (sb) sb.classList.add('-translate-x-full');
+      if (bd) bd.classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------------------
     // 1. DATASET GALLERY & INITIALIZATION
     // -------------------------------------------------------------------------
     async function loadDatasetGallery() {
@@ -1413,14 +1480,13 @@
     function switchDatasetGallery(dsetKey, autoSelect = true) {
       currentDatasetKey = dsetKey;
       
-      // Update top pill active states
       ['all', 'nyu', 'kitti', 'middlebury'].forEach(k => {
         const btn = document.getElementById(`tab-dset-${k}`);
         if (btn) {
           if (k === dsetKey) {
             btn.className = 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold transition-colors';
           } else {
-            btn.className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors';
+            btn.className = 'px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors';
           }
         }
       });
@@ -1429,26 +1495,23 @@
       const dset = datasetManifest.datasets[dsetKey];
       gallerySamples = dset.samples || [];
 
-      // Update Header Badge
       document.getElementById('gallery-count-badge').innerText = `${gallerySamples.length} Live Scenes (${dset.name})`;
 
-      // Update Dataset Metadata Banner
       const metaBanner = document.getElementById('dataset-meta-banner');
       if (metaBanner) {
         metaBanner.innerHTML = `
           <div class="flex items-center gap-2">
-            <span class="font-bold text-white">${dset.name}</span>
-            <span class="text-slate-400">• ${dset.sensor}</span>
+            <span class="font-bold text-charcoal-950 dark:text-white">${dset.name}</span>
+            <span class="text-charcoal-500 dark:text-slate-400">• ${dset.sensor}</span>
           </div>
           <div class="flex items-center gap-2 font-mono text-[11px]">
-            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300">${dset.resolution_info || 'Native'}</span>
-            <span class="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300">${dset.typical_coverage || '100%'}</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300">Range: 0.5–${dset.max_eval_depth}m</span>
+            <span class="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-charcoal-700 dark:text-slate-300 border border-ivory-300 dark:border-slate-700">${dset.resolution_info || 'Native'}</span>
+            <span class="px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950 border border-cyan-300 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-300">${dset.typical_coverage || '100%'}</span>
+            <span class="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-charcoal-700 dark:text-slate-300 border border-ivory-300 dark:border-slate-700">Range: 0.5–${dset.max_eval_depth}m</span>
           </div>
         `;
       }
 
-      // Preserve or set active index
       let targetIdx = gallerySamples.findIndex(s => s.id === currentDemo);
       if (targetIdx === -1) targetIdx = 0;
       activeGalleryIndex = targetIdx;
@@ -1467,10 +1530,9 @@
         currentDatasetKey = 'all';
         ['all', 'nyu', 'kitti', 'middlebury'].forEach(k => {
           const btn = document.getElementById(`tab-dset-${k}`);
-          if (btn) btn.className = (k === 'all') ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white';
+          if (btn) btn.className = (k === 'all') ? 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold' : 'px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white';
         });
 
-        // Combine all samples
         gallerySamples = [];
         if (datasetManifest && datasetManifest.datasets) {
           Object.values(datasetManifest.datasets).forEach(d => {
@@ -1497,32 +1559,32 @@
       filtered.forEach((sample, idx) => {
         const item = document.createElement('div');
         const isActive = (sample.id === currentDemo);
-        item.className = `gallery-item bg-lab-card border border-lab-cardborder rounded-2xl p-4 space-y-3 cursor-pointer transition-all ${isActive ? 'active' : ''}`;
+        item.className = `gallery-item bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder rounded-2xl p-4 space-y-3 cursor-pointer transition-all shadow-sm ${isActive ? 'active' : ''}`;
         item.id = `gal-item-${sample.id}`;
 
         item.innerHTML = `
           <!-- Dual Preview Thumbnails -->
           <div class="gallery-dual-thumbs grid grid-cols-2 gap-2">
-            <div class="relative rounded-lg overflow-hidden bg-slate-950 border border-slate-800 aspect-[4/3]">
+            <div class="relative rounded-lg overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 aspect-[4/3]">
               <img src="${sample.rgb_thumb_b64 || ''}" class="w-full h-full object-cover" alt="RGB Preview" loading="lazy">
-              <span class="absolute bottom-1 right-1 bg-slate-950/80 px-1.5 py-0.5 rounded text-[8px] font-bold text-slate-300">RGB</span>
+              <span class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] font-bold text-slate-200">RGB</span>
             </div>
-            <div class="relative rounded-lg overflow-hidden bg-slate-950 border border-slate-800 aspect-[4/3]">
+            <div class="relative rounded-lg overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 aspect-[4/3]">
               <img src="${sample.depth_thumb_b64 || ''}" class="w-full h-full object-cover" alt="Depth Preview" loading="lazy">
-              <span class="absolute bottom-1 right-1 bg-slate-950/80 px-1.5 py-0.5 rounded text-[8px] font-bold text-cyan-300">DEPTH</span>
+              <span class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] font-bold text-cyan-300">DEPTH</span>
             </div>
           </div>
 
           <!-- Metadata & Title -->
           <div class="space-y-1.5">
             <div class="flex items-center justify-between">
-              <h4 class="text-xs font-bold text-white truncate" title="${sample.title}">${sample.title}</h4>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-emerald-400">● GT Verified</span>
+              <h4 class="text-xs font-bold text-charcoal-950 dark:text-white truncate" title="${sample.title}">${sample.title}</h4>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-400">● GT Verified</span>
             </div>
-            <div class="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
-              <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">${sample.dimensions}</span>
-              <span class="px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/30 text-cyan-300">${sample.valid_percent}% Valid</span>
-              <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 truncate">${sample.depth_range}</span>
+            <div class="flex items-center gap-1.5 text-[10px] font-mono text-charcoal-500 dark:text-slate-400">
+              <span class="px-1.5 py-0.5 rounded bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800">${sample.dimensions}</span>
+              <span class="px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-950 border border-cyan-300 dark:border-cyan-500/30 text-cyan-800 dark:text-cyan-300">${sample.valid_percent}% Valid</span>
+              <span class="px-1.5 py-0.5 rounded bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 truncate">${sample.depth_range}</span>
             </div>
           </div>
 
@@ -1531,7 +1593,7 @@
             <button type="button" onclick="selectGallerySample('${sample.id}', ${idx})" class="flex-1 py-1.5 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] transition-colors text-center">
               Load in Workspace
             </button>
-            <button type="button" onclick="openSceneViewerModal('${sample.id}')" class="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-[11px] transition-colors" title="Inspect full resolution & GT">
+            <button type="button" onclick="openSceneViewerModal('${sample.id}')" class="py-1.5 px-2.5 rounded-lg bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white font-semibold text-[11px] transition-colors" title="Inspect full resolution & GT">
               Inspect 🔍
             </button>
           </div>
@@ -1579,12 +1641,12 @@
 
       if (mode === 'list') {
         container.className = 'grid grid-cols-1 gap-2.5';
-        if (btnGrid) btnGrid.className = 'p-1 rounded text-slate-400 hover:text-white';
-        if (btnList) btnList.className = 'p-1 rounded bg-slate-800 text-white';
+        if (btnGrid) btnGrid.className = 'p-1 rounded text-charcoal-400 dark:text-slate-400 hover:text-charcoal-900 dark:hover:text-white';
+        if (btnList) btnList.className = 'p-1 rounded bg-ivory-200 dark:bg-slate-800 text-charcoal-900 dark:text-white';
       } else {
         container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
-        if (btnGrid) btnGrid.className = 'p-1 rounded bg-slate-800 text-white';
-        if (btnList) btnList.className = 'p-1 rounded text-slate-400 hover:text-white';
+        if (btnGrid) btnGrid.className = 'p-1 rounded bg-ivory-200 dark:bg-slate-800 text-charcoal-900 dark:text-white';
+        if (btnList) btnList.className = 'p-1 rounded text-charcoal-400 dark:text-slate-400 hover:text-charcoal-900 dark:hover:text-white';
       }
     }
 
@@ -1637,7 +1699,6 @@
         const bLabel = document.getElementById('benchmark-active-sample-label');
         if (bLabel) bLabel.innerText = `Scene: ${data.title}`;
 
-        // Update Validity Mask Stats in Tab 3
         const st = data.valid_mask_stats || {};
         document.getElementById('validity-mask-title').innerText = `Validity Mask (${data.seed_label})`;
         document.getElementById('validity-mask-stats').innerText = `${data.valid_percent}% Valid Measurements`;
@@ -1647,7 +1708,6 @@
         renderBenchmarkBars(currentSceneBenchmarks);
         showToast(`Loaded ${data.title} (${data.dimensions})`);
 
-        // Automatically fetch precomputed / cached reconstruction for seamless immediate display
         fetchInitialReconstruction(sampleId);
       } catch (err) {
         showToast('Error loading sample: ' + err.message, true);
@@ -1727,7 +1787,6 @@
     }
 
     function updateReconstructionUI(data) {
-      // 1. Update KPI Metrics Bar
       if (data.metrics && typeof data.metrics.rmse !== 'undefined') {
         document.getElementById('val-rmse').innerText = Number(data.metrics.rmse).toFixed(4);
         document.getElementById('val-mae').innerText = Number(data.metrics.mae).toFixed(4);
@@ -1741,9 +1800,8 @@
         document.getElementById('val-ssim').innerText = 'N/A';
         document.getElementById('val-f1').innerText = 'N/A';
       }
-      document.getElementById('val-latency').innerHTML = `${Number(data.latency_ms).toFixed(1)}<span class="text-xs font-normal text-slate-400 ml-0.5">ms</span>`;
+      document.getElementById('val-latency').innerHTML = `${Number(data.latency_ms).toFixed(1)}<span class="text-xs font-normal text-charcoal-500 dark:text-slate-400 ml-0.5">ms</span>`;
 
-      // 2. Update Image Views
       if (data.reconstructed_b64) {
         setViewImage('view-reconstructed', data.reconstructed_b64);
         setViewImage('view-ablation-final', data.reconstructed_b64);
@@ -1754,7 +1812,6 @@
       if (data.boundary_b64) setViewImage('view-boundary', data.boundary_b64);
       if (data.error_b64) setViewImage('view-error', data.error_b64);
 
-      // 3. Update Benchmark Table with Live Run
       const dsetKey = currentDemo ? currentDatasetKey : 'custom';
       renderBenchmarkTable(dsetKey, data.metrics, data.latency_ms, currentSceneBenchmarks);
     }
@@ -1782,7 +1839,6 @@
       let rows = (sceneRows && sceneRows.length > 0) ? sceneRows : (OFFICIAL_REFERENCE_BENCHMARKS[datasetKey]?.rows || []);
       if (!rows || rows.length === 0) rows = OFFICIAL_REFERENCE_BENCHMARKS['nyu'].rows;
 
-      // Determine Best (min RMSE, min MAE, max PSNR, max SSIM, max F1, min Grad)
       let minRmse = Infinity, minMae = Infinity, maxPsnr = -Infinity, maxSsim = -Infinity, maxF1 = -Infinity, minGrad = Infinity;
 
       rows.forEach(r => {
@@ -1801,11 +1857,10 @@
         if (!isNaN(grad) && grad < minGrad) minGrad = grad;
       });
 
-      // Render rows
       rows.forEach(r => {
         const tr = document.createElement('tr');
         const isHighlight = r.highlight || r.method.includes('EdgeFuse-DCR');
-        tr.className = isHighlight ? 'bg-forest-950/40 text-forest-200 font-semibold' : 'hover:bg-slate-800/40 transition-colors';
+        tr.className = isHighlight ? 'bg-forest-100/60 dark:bg-forest-950/40 text-forest-900 dark:text-forest-200 font-semibold' : 'hover:bg-ivory-100 dark:hover:bg-slate-800/40 transition-colors';
 
         const rmse = parseFloat(r.rmse);
         const mae = parseFloat(r.mae);
@@ -1815,8 +1870,8 @@
         const grad = parseFloat(r.grad || r.grad_mae || 999);
 
         tr.innerHTML = `
-          <td class="py-3 px-4 font-mono ${isHighlight ? 'text-forest-400 font-bold' : 'text-slate-200'}">
-            ${r.method} ${isHighlight ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-forest-900 border border-forest-500/40 text-forest-300 ml-1.5 font-bold">Proposed</span>' : ''}
+          <td class="py-3 px-4 font-mono ${isHighlight ? 'text-forest-800 dark:text-forest-400 font-bold' : 'text-charcoal-900 dark:text-slate-200'}">
+            ${r.method} ${isHighlight ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-forest-900 dark:bg-forest-900 border border-forest-500/40 text-forest-200 ml-1.5 font-bold">Proposed</span>' : ''}
           </td>
           <td class="py-3 px-3 text-right ${rmse <= minRmse + 0.0001 ? 'badge-best' : ''}">${r.rmse}</td>
           <td class="py-3 px-3 text-right ${mae <= minMae + 0.0001 ? 'badge-best' : ''}">${r.mae}</td>
@@ -1824,27 +1879,26 @@
           <td class="py-3 px-3 text-right ${ssim >= maxSsim - 0.0002 ? 'badge-best' : ''}">${r.ssim}</td>
           <td class="py-3 px-3 text-right ${f1 >= maxF1 - 0.0002 ? 'badge-best' : ''}">${r.f1 || r.boundary_f1 || '—'}</td>
           <td class="py-3 px-3 text-right ${grad <= minGrad + 0.0001 ? 'badge-best' : ''}">${r.grad || r.grad_mae || '—'}</td>
-          <td class="py-3 px-4 text-right text-slate-400">${r.latency || '—'}</td>
+          <td class="py-3 px-4 text-right text-charcoal-500 dark:text-slate-400">${r.latency || '—'}</td>
         `;
         tbody.appendChild(tr);
       });
 
-      // Append Current Live Run Row if available
       if (liveMetrics && typeof liveMetrics.rmse !== 'undefined') {
         const trLive = document.createElement('tr');
-        trLive.className = 'bg-cyan-950/60 text-cyan-200 font-bold border-t-2 border-cyan-500/40';
+        trLive.className = 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-900 dark:text-cyan-200 font-bold border-t-2 border-cyan-500/40';
         trLive.innerHTML = `
-          <td class="py-3 px-4 font-mono text-cyan-300 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          <td class="py-3 px-4 font-mono text-cyan-800 dark:text-cyan-300 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
             Current Live Run (HYBRID)
           </td>
-          <td class="py-3 px-3 text-right text-cyan-200 font-mono">${Number(liveMetrics.rmse).toFixed(4)}</td>
-          <td class="py-3 px-3 text-right text-cyan-200 font-mono">${Number(liveMetrics.mae).toFixed(4)}</td>
-          <td class="py-3 px-3 text-right text-cyan-200 font-mono">${Number(liveMetrics.psnr).toFixed(2)}</td>
-          <td class="py-3 px-3 text-right text-cyan-200 font-mono">${Number(liveMetrics.ssim).toFixed(4)}</td>
-          <td class="py-3 px-3 text-right text-cyan-200 font-mono">${Number(liveMetrics.boundary_f1).toFixed(4)}</td>
-          <td class="py-3 px-3 text-right text-cyan-200 font-mono">${Number(liveMetrics.grad_mae || 0.1482).toFixed(4)}</td>
-          <td class="py-3 px-4 text-right text-cyan-300 font-mono">${Number(liveLatency).toFixed(1)} ms</td>
+          <td class="py-3 px-3 text-right text-cyan-800 dark:text-cyan-200 font-mono">${Number(liveMetrics.rmse).toFixed(4)}</td>
+          <td class="py-3 px-3 text-right text-cyan-800 dark:text-cyan-200 font-mono">${Number(liveMetrics.mae).toFixed(4)}</td>
+          <td class="py-3 px-3 text-right text-cyan-800 dark:text-cyan-200 font-mono">${Number(liveMetrics.psnr).toFixed(2)}</td>
+          <td class="py-3 px-3 text-right text-cyan-800 dark:text-cyan-200 font-mono">${Number(liveMetrics.ssim).toFixed(4)}</td>
+          <td class="py-3 px-3 text-right text-cyan-800 dark:text-cyan-200 font-mono">${Number(liveMetrics.boundary_f1).toFixed(4)}</td>
+          <td class="py-3 px-3 text-right text-cyan-800 dark:text-cyan-200 font-mono">${Number(liveMetrics.grad_mae || 0.1482).toFixed(4)}</td>
+          <td class="py-3 px-4 text-right text-cyan-800 dark:text-cyan-300 font-mono">${Number(liveLatency).toFixed(1)} ms</td>
         `;
         tbody.appendChild(trLive);
       }
@@ -1870,11 +1924,11 @@
         rowDiv.className = 'space-y-1';
         rowDiv.innerHTML = `
           <div class="flex items-center justify-between text-xs font-mono">
-            <span class="${isProposed ? 'text-forest-400 font-bold' : 'text-slate-300'}">${r.method}</span>
-            <span class="${isProposed ? 'text-forest-400 font-bold' : 'text-slate-400'}">${r.rmse}m</span>
+            <span class="${isProposed ? 'text-forest-700 dark:text-forest-400 font-bold' : 'text-charcoal-700 dark:text-slate-300'}">${r.method}</span>
+            <span class="${isProposed ? 'text-forest-700 dark:text-forest-400 font-bold' : 'text-charcoal-500 dark:text-slate-400'}">${r.rmse}m</span>
           </div>
-          <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
-            <div class="${isProposed ? 'bg-forest-500' : 'bg-slate-700'} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+          <div class="w-full bg-ivory-200 dark:bg-slate-900 rounded-full h-2 overflow-hidden">
+            <div class="${isProposed ? 'bg-forest-600 dark:bg-forest-500' : 'bg-charcoal-400 dark:bg-slate-700'} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
           </div>
         `;
         barContainer.appendChild(rowDiv);
@@ -1892,11 +1946,9 @@
       const beforeImg = document.getElementById('hero-slider-before-img');
       if (!container || !beforeWrap || !handle) return;
 
-      // Provide authentic Middlebury preview images
       afterImg.src = '/demo_samples/middlebury_artroom1_rgb.png';
       beforeImg.src = '/demo_samples/middlebury_depth_lr.png';
 
-      // Also sync to loaded sample thumbnail once available
       if (datasetManifest?.datasets?.middlebury?.samples?.[0]) {
         const s = datasetManifest.datasets.middlebury.samples[0];
         if (s.rgb_thumb_b64) afterImg.src = s.rgb_thumb_b64;
@@ -1929,11 +1981,11 @@
       ['rgb', 'depth', 'gt'].forEach(type => {
         const drop = document.getElementById(`drop-${type}`);
         if (!drop) return;
-        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('border-cyan-400'); });
-        drop.addEventListener('dragleave', () => { drop.classList.remove('border-cyan-400'); });
+        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('border-cyan-500'); });
+        drop.addEventListener('dragleave', () => { drop.classList.remove('border-cyan-500'); });
         drop.addEventListener('drop', (e) => {
           e.preventDefault();
-          drop.classList.remove('border-cyan-400');
+          drop.classList.remove('border-cyan-500');
           if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             handleFileSelected({ files: e.dataTransfer.files }, type);
           }
@@ -2024,9 +2076,9 @@
         }
         if (btn) {
           if (k === tabKey) {
-            btn.className = 'px-3.5 py-1.5 rounded-lg bg-blue-600 text-white font-semibold transition-colors';
+            btn.className = 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold transition-colors';
           } else {
-            btn.className = 'px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-colors';
+            btn.className = 'px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors';
           }
         }
       });
@@ -2067,7 +2119,7 @@
         const tab = document.getElementById(`modal-tab-${m}`);
         if (tab) {
           if (m === mode) tab.className = 'px-3 py-1 rounded-md bg-blue-600 text-white font-semibold';
-          else tab.className = 'px-3 py-1 rounded-md text-slate-400 hover:text-white';
+          else tab.className = 'px-3 py-1 rounded-md text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white';
         }
       });
 
@@ -2272,6 +2324,7 @@
         closeSceneViewerModal();
         closeExtendedCatalogModal();
         endGuidedTour();
+        closeMobileSidebar();
       } else if (e.key === 'ArrowRight') {
         const modal = document.getElementById('scene-viewer-modal');
         if (modal && !modal.classList.contains('hidden')) navigateModalScene(1);
@@ -2283,6 +2336,7 @@
 
     // Page Load Initialization
     window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
       setupDragDrop();
       loadDatasetGallery();
     });
