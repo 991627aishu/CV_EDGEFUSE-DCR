@@ -285,7 +285,7 @@ def estimate_confidence_map(depth_map, valid_mask, window_size=5, factor=1, is_l
     return conf.astype(np.float32)
 
 
-def compute_texture_suppression_gate(rgb_grad, depth_grad, threshold=0.20):
+def compute_texture_suppression_gate(rgb_grad, depth_grad, threshold=0.20, depth_discon_thresh=0.06):
     """
     Mechanism C: Texture-Copying Suppression Gate.
     Identifies RGB texture edges (e.g. wall wallpaper, fabric, text) that do NOT
@@ -294,15 +294,10 @@ def compute_texture_suppression_gate(rgb_grad, depth_grad, threshold=0.20):
       guidance_gate: [0, 1] weight where 1.0 = allow RGB guidance, ~0.0 = suppress texture copy.
       false_texture: [0, 1] penalty where RGB edge is high and depth gradient is near zero.
     """
-    if np.any(depth_grad > 0):
-        norm_d_grad = depth_grad / (np.percentile(depth_grad[depth_grad > 0], 95) + 1e-5)
-    else:
-        norm_d_grad = depth_grad
-    norm_d_grad = np.clip(norm_d_grad, 0.0, 1.0)
-
-    # False texture: strong RGB color gradient coinciding with flat depth gradient
+    # High RGB gradient excess above threshold
     rgb_excess = np.clip((rgb_grad - threshold) / (1.0 - threshold + 1e-4), 0.0, 1.0)
-    depth_flat = np.clip(1.0 - norm_d_grad / 0.15, 0.0, 1.0)
+    # Geometric depth flatness: 1.0 when depth discontinuity gradient is low, 0.0 at depth steps
+    depth_flat = np.clip(1.0 - (depth_grad / depth_discon_thresh), 0.0, 1.0)
     false_texture = rgb_excess * depth_flat
 
     # Guidance gate: 1.0 where depth edge exists or flat region, lower where false texture occurs
@@ -338,7 +333,7 @@ def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, 
     if apply_suppression:
         guidance_gate, false_texture = compute_texture_suppression_gate(rgb_grad, depth_rel_grad)
         # Adaptively increase epsilon on false texture surfaces to suppress texture transfer
-        eps_map = eps_base * (1.0 + 25.0 * false_texture)
+        eps_map = eps_base * (1.0 + 50.0 * false_texture)
     else:
         guidance_gate = np.ones((h, w), dtype=np.float32)
         eps_map = np.full((h, w), eps_base, dtype=np.float32)
@@ -479,6 +474,8 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
 
     return {
         "reconstructed_depth": rec.astype(np.float32),
+        "classical_baseline": base_up.astype(np.float32) if "base_up" in locals() else rec.astype(np.float32),
+        "cnn_baseline": cnn_depth.astype(np.float32) if "cnn_depth" in locals() else rec.astype(np.float32),
         "confidence_map": conf.astype(np.float32),
         "rgb_edges": rgb_grad.astype(np.float32),
         "depth_edges": depth_discon.astype(np.float32),

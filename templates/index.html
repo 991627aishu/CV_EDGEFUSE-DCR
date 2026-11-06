@@ -342,6 +342,7 @@
       justify-content: center;
       min-height: 220px;
       background: #030712;
+      position: relative;
     }
     .panel-body img {
       width: 100%;
@@ -349,6 +350,28 @@
       max-height: 340px;
       object-fit: contain;
       border-radius: 4px;
+      display: none;
+    }
+    .panel-body img[src]:not([src=""]) {
+      display: block;
+    }
+    .panel-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #64748b;
+      font-size: 11px;
+      text-align: center;
+      padding: 16px;
+      pointer-events: none;
+    }
+    .panel-placeholder svg {
+      width: 26px;
+      height: 26px;
+      stroke: #64748b;
+      opacity: 0.6;
     }
     .empty-state {
       font-size: 12px;
@@ -680,13 +703,21 @@
             <div class="view-panel">
               <div class="panel-header">RGB Guidance Image</div>
               <div class="panel-body">
-                <img id="view-rgb" src="" alt="RGB">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>RGB Guidance View</span>
+                </div>
+                <img id="view-rgb" alt="RGB">
               </div>
             </div>
             <div class="view-panel">
               <div class="panel-header">Input Low-Res / Sparse Depth</div>
               <div class="panel-body">
-                <img id="view-lr-depth" src="" alt="Low-Res Depth">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>Sparse / Low-Res Depth Map</span>
+                </div>
+                <img id="view-lr-depth" alt="Low-Res Depth">
               </div>
             </div>
             <div class="view-panel" style="border-color: rgba(59, 130, 246, 0.4);">
@@ -695,7 +726,11 @@
                 <span class="badge badge-primary">Proposed</span>
               </div>
               <div class="panel-body">
-                <img id="view-reconstructed" src="" alt="Reconstructed Depth">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>Reconstructed depth will appear here</span>
+                </div>
+                <img id="view-reconstructed" alt="Reconstructed Depth">
               </div>
             </div>
           </div>
@@ -707,19 +742,31 @@
             <div class="view-panel">
               <div class="panel-header">A0: Classical Baseline (Bilinear)</div>
               <div class="panel-body">
-                <img id="view-classical" src="" alt="Classical Baseline">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>Bilinear interpolation baseline</span>
+                </div>
+                <img id="view-classical" alt="Classical Baseline">
               </div>
             </div>
             <div class="view-panel">
               <div class="panel-header">A2: Deep Learning Alone (EdgeFuseNet)</div>
               <div class="panel-body">
-                <img id="view-cnn" src="" alt="CNN Alone">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>CNN direct inference</span>
+                </div>
+                <img id="view-cnn" alt="CNN Alone">
               </div>
             </div>
             <div class="view-panel" style="border-color: rgba(59, 130, 246, 0.4);">
               <div class="panel-header" style="color: #60a5fa;">A5: EdgeFuse-DCR Full Hybrid</div>
               <div class="panel-body">
-                <img id="view-hybrid-comp" src="" alt="Full Hybrid">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>Full hybrid reconstruction</span>
+                </div>
+                <img id="view-hybrid-comp" alt="Full Hybrid">
               </div>
             </div>
           </div>
@@ -731,13 +778,21 @@
             <div class="view-panel">
               <div class="panel-header">Edge Overlay (Red: RGB Edges, Cyan: Depth Discontinuities)</div>
               <div class="panel-body">
-                <img id="view-boundary" src="" alt="Boundary Overlay">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>Geometric edge alignment</span>
+                </div>
+                <img id="view-boundary" alt="Boundary Overlay">
               </div>
             </div>
             <div class="view-panel">
               <div class="panel-header">Validity Mask (Measured Seeds)</div>
               <div class="panel-body">
-                <img id="view-valid-mask" src="" alt="Validity Mask">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>Sensor seed mask</span>
+                </div>
+                <img id="view-valid-mask" alt="Validity Mask">
               </div>
             </div>
           </div>
@@ -749,13 +804,21 @@
             <div class="view-panel">
               <div class="panel-header">Estimated Confidence Map (Viridis: Yellow=High, Purple=Low)</div>
               <div class="panel-body">
-                <img id="view-confidence" src="" alt="Confidence Map">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>Multi-source confidence map</span>
+                </div>
+                <img id="view-confidence" alt="Confidence Map">
               </div>
             </div>
             <div class="view-panel">
               <div class="panel-header">Ground-Truth Absolute Error Map (Jet: Blue=0m, Red=High Error)</div>
               <div class="panel-body">
-                <img id="view-error" src="" alt="Error Map">
+                <div class="panel-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span>Available when Ground Truth is present</span>
+                </div>
+                <img id="view-error" alt="Error Map">
               </div>
             </div>
           </div>
@@ -907,6 +970,21 @@
       event.target.classList.add('active');
     }
 
+    function setViewImage(imgId, b64) {
+      const img = document.getElementById(imgId);
+      if (!img) return;
+      const ph = img.parentElement ? img.parentElement.querySelector('.panel-placeholder') : null;
+      if (b64 && b64.length > 50) {
+        img.src = b64;
+        img.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+      } else {
+        img.removeAttribute('src');
+        img.style.display = 'none';
+        if (ph) ph.style.display = 'flex';
+      }
+    }
+
     function handleFileChange(type) {
       if (type === 'rgb') {
         const input = document.getElementById('rgb-file-input');
@@ -917,7 +995,7 @@
           document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
           // Preview RGB
           const reader = new FileReader();
-          reader.onload = e => { document.getElementById('view-rgb').src = e.target.result; };
+          reader.onload = e => { setViewImage('view-rgb', e.target.result); };
           reader.readAsDataURL(uploadedRgbFile);
         }
       } else {
@@ -934,7 +1012,9 @@
     async function loadDemoSample(sampleId) {
       currentDemo = sampleId;
       document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
-      document.getElementById(`demo-${sampleId}`).classList.add('active');
+      const activeBtn = document.getElementById(`demo-${sampleId}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
       uploadedRgbFile = null;
       uploadedDepthFile = null;
       document.getElementById('rgb-file-name').innerText = 'Choose or drop RGB image';
@@ -942,11 +1022,14 @@
 
       try {
         const res = await fetch(`/api/demo/${sampleId}`);
+        if (!res.ok) {
+          throw new Error(`Server returned HTTP ${res.status}`);
+        }
         const data = await res.json();
         if (data.rgb_b64) {
-          document.getElementById('view-rgb').src = data.rgb_b64;
-          document.getElementById('view-lr-depth').src = data.lr_depth_b64;
-          document.getElementById('view-valid-mask').src = data.valid_mask_b64;
+          setViewImage('view-rgb', data.rgb_b64);
+          setViewImage('view-lr-depth', data.lr_depth_b64);
+          setViewImage('view-valid-mask', data.valid_mask_b64);
           document.getElementById('sample-dimensions').innerText = `${data.dimensions} (${data.dataset_name})`;
           showToast(`Loaded ${data.dataset_name} sample.`);
           // Automatically trigger reconstruction on demo select
@@ -1000,25 +1083,32 @@
           throw new Error(data.detail || 'Reconstruction failed.');
         }
 
-        // Update visuals
-        document.getElementById('view-reconstructed').src = data.reconstructed_b64;
-        document.getElementById('view-hybrid-comp').src = data.reconstructed_b64;
-        document.getElementById('view-classical').src = data.classical_b64;
-        document.getElementById('view-cnn').src = data.cnn_b64;
-        document.getElementById('view-confidence').src = data.confidence_b64;
-        document.getElementById('view-boundary').src = data.boundary_b64;
+        // Update visuals with safe helper (no broken icons)
+        setViewImage('view-reconstructed', data.reconstructed_b64);
+        setViewImage('view-hybrid-comp', data.reconstructed_b64);
+        setViewImage('view-classical', data.classical_b64);
+        setViewImage('view-cnn', data.cnn_b64);
+        setViewImage('view-confidence', data.confidence_b64);
+        setViewImage('view-boundary', data.boundary_b64);
+        setViewImage('view-error', data.error_b64);
 
-        if (data.error_b64) {
-          document.getElementById('view-error').src = data.error_b64;
+        if (data.warning) {
+          showToast(data.warning, false);
         }
 
         // Update metrics
-        if (data.metrics) {
+        if (data.has_gt && data.metrics) {
           document.getElementById('val-rmse').innerHTML = `${data.metrics.rmse.toFixed(3)}<span class="metric-unit">m</span>`;
           document.getElementById('val-mae').innerHTML = `${data.metrics.mae.toFixed(3)}<span class="metric-unit">m</span>`;
           document.getElementById('val-psnr').innerHTML = `${data.metrics.psnr.toFixed(2)}<span class="metric-unit">dB</span>`;
           document.getElementById('val-ssim').innerText = data.metrics.ssim.toFixed(4);
           document.getElementById('val-f1').innerText = data.metrics.boundary_f1.toFixed(3);
+        } else {
+          document.getElementById('val-rmse').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A (No GT)</span>`;
+          document.getElementById('val-mae').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A</span>`;
+          document.getElementById('val-psnr').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A</span>`;
+          document.getElementById('val-ssim').innerText = `N/A`;
+          document.getElementById('val-f1').innerText = `N/A`;
         }
         document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
 

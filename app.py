@@ -96,34 +96,89 @@ def encode_image_base64(img_rgb):
 
 def parse_depth_bytes(file_bytes, filename=""):
     """
-    Parses uploaded depth map bytes.
+    Parses and strictly validates uploaded depth map bytes.
     Supports:
-      - .npy: float32 / float64 numpy array
-      - 16-bit PNG: (if values > 255, assumes mm / 1000.0 or KITTI / 256.0)
-      - 8-bit PNG/JPG
+      - .npy: 2D float32/float64 metric depth array
+      - 16-bit PNG: physical metric depth (KITTI / 256.0 or mm / 1000.0)
+      - 8-bit PNG: single-channel grayscale only, with documented normalization
+    Rejects:
+      - Ordinary 3-channel color photographs (RGB)
+      - Corrupt or non-depth files
     """
-    if filename.endswith(".npy"):
-        depth = np.load(io.BytesIO(file_bytes))
-        return depth.astype(np.float32)
+    fname_lower = filename.lower()
+    warning_msg = None
 
-    # Image format
-    pil_img = Image.open(io.BytesIO(file_bytes))
+    if fname_lower.endswith(".npy"):
+        try:
+            depth = np.load(io.BytesIO(file_bytes))
+        except Exception as e:
+            raise ValueError(f"Corrupted or invalid .npy array: {str(e)}")
+
+        if depth.ndim == 3 and depth.shape[2] == 1:
+            depth = depth.squeeze(axis=2)
+        elif depth.ndim != 2:
+            raise ValueError(f"Invalid .npy array shape {depth.shape}. Depth maps must be 2-dimensional (H x W).")
+
+        if not np.issubdtype(depth.dtype, np.number):
+            raise ValueError(f"Unsupported .npy data type: {depth.dtype}.")
+
+        depth = depth.astype(np.float32)
+        if depth.size == 0 or np.all(depth <= 0) or not np.any(np.isfinite(depth)):
+            raise ValueError("Uploaded .npy depth map contains no positive valid depth measurements.")
+
+        return depth, None
+
+    # Image file parsing
+    try:
+        pil_img = Image.open(io.BytesIO(file_bytes))
+    except Exception as e:
+        raise ValueError(f"Unsupported image file or decoding failure: {str(e)}")
+
     arr = np.array(pil_img)
 
-    if len(arr.shape) == 3:
-        arr = cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY)
+    # Check for ordinary color photographs (3 or 4 channels)
+    if arr.ndim == 3:
+        if arr.shape[2] >= 3:
+            # Compare R, G, B channels to detect color photos
+            diff_rg = float(np.abs(arr[:, :, 0].astype(np.float32) - arr[:, :, 1].astype(np.float32)).mean())
+            diff_gb = float(np.abs(arr[:, :, 1].astype(np.float32) - arr[:, :, 2].astype(np.float32)).mean())
+            if diff_rg > 2.0 or diff_gb > 2.0:
+                raise ValueError(
+                    "Validation Error: The uploaded depth file appears to be an ordinary RGB color photograph! "
+                    "Ordinary color photographs cannot be interpreted as geometric depth. "
+                    "Please upload a true depth map (.npy array or 16-bit depth PNG)."
+                )
+            # Channels are identical (grayscale stored in RGB container)
+            arr = arr[:, :, 0]
+        elif arr.shape[2] == 1:
+            arr = arr.squeeze(axis=2)
+        else:
+            raise ValueError(f"Unsupported channel format: {arr.shape}.")
+
+    if arr.ndim != 2:
+        raise ValueError(f"Invalid depth dimensions: {arr.shape}. Depth must be a 2D planar map.")
 
     if arr.dtype == np.uint16:
-        # Check if KITTI scale (max > 5000) or NYU mm scale
+        # 16-bit physical sensor depth
         if arr.max() > 10000:
             depth = arr.astype(np.float32) / 1000.0  # mm to meters
         else:
             depth = arr.astype(np.float32) / 256.0   # KITTI standard
-    else:
-        # 8-bit normalized depth: scale to 0.5 - 6.0 meters
+        warning_msg = None
+    elif arr.dtype == np.uint8:
+        # 8-bit normalized depth
+        warning_msg = (
+            "Note: 8-bit depth input detected (256 discrete levels). "
+            "Converted to metric range [0.5m - 6.0m]. For best precision, use 16-bit PNG or .npy."
+        )
         depth = (arr.astype(np.float32) / 255.0) * 5.5 + 0.5
+    else:
+        depth = arr.astype(np.float32)
 
-    return depth.astype(np.float32)
+    if depth.size == 0 or np.all(depth <= 0) or not np.any(np.isfinite(depth)):
+        raise ValueError("Depth map contains zero valid positive measurements.")
+
+    return depth.astype(np.float32), warning_msg
 
 
 # ---------------------------------------------------------------------------
@@ -217,6 +272,7 @@ async def run_reconstruction(
     # 1. Load Inputs
     gt_depth = None
     max_eval_depth = 10.0
+    depth_warning = None
 
     if demo_sample_id:
         if demo_sample_id == "nyu":
@@ -255,13 +311,41 @@ async def run_reconstruction(
             raise HTTPException(status_code=400, detail=f"Invalid RGB image file: {str(e)}")
 
         try:
-            depth_input = parse_depth_bytes(depth_bytes, filename=depth_file.filename)
+            depth_input, depth_warning = parse_depth_bytes(depth_bytes, filename=depth_file.filename)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid Depth Map file: {str(e)}")
+            raise HTTPException(status_code=400, detail=str(e))
 
-    # 2. Validate Inputs
-    if depth_input.size == 0 or np.all(depth_input <= 0):
-        raise HTTPException(status_code=400, detail="Depth map contains no valid positive measurements.")
+    # 2. Validate Dimensions & Memory Safeguard
+    h_rgb, w_rgb = rgb_image.shape[:2]
+    h_d, w_d = depth_input.shape[:2]
+
+    valid_dims = (
+        (h_d == h_rgb and w_d == w_rgb) or
+        (h_d == max(1, h_rgb // upsample_factor) and w_d == max(1, w_rgb // upsample_factor)) or
+        (abs((w_d / max(1, h_d)) - (w_rgb / max(1, h_rgb))) < 0.08)
+    )
+
+    if not valid_dims:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Dimension mismatch error: RGB image is {w_rgb}x{h_rgb}, but Depth map is {w_d}x{h_d}. "
+                   f"Depth dimensions must match RGB dimensions or be downscaled by factor {upsample_factor}× "
+                   f"({w_rgb // upsample_factor}x{h_rgb // upsample_factor})."
+        )
+
+    # Memory safeguard for 512MB RAM environment: cap max dimension to 960px
+    max_dim = 960
+    if max(h_rgb, w_rgb) > max_dim:
+        scale = max_dim / float(max(h_rgb, w_rgb))
+        new_w = int(w_rgb * scale)
+        new_h = int(h_rgb * scale)
+        rgb_image = cv2.resize(rgb_image, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        if h_d != h_rgb or w_d != w_rgb:
+            depth_input = cv2.resize(depth_input, (max(1, new_w // upsample_factor), max(1, new_h // upsample_factor)), interpolation=cv2.INTER_NEAREST)
+        else:
+            depth_input = cv2.resize(depth_input, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+        if gt_depth is not None:
+            gt_depth = cv2.resize(gt_depth, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
 
     # 3. Execute Reconstruction
     res = reconstruct_depth(
@@ -279,18 +363,17 @@ async def run_reconstruction(
     depth_edges = res["depth_edges"]
     texture_gate = res["texture_gate"]
 
-    # 4. Generate Visualizations
+    # 4. Generate Visualizations (Single-pass baselines to optimize 512MB RAM & cut latency)
     rec_colored = colorize_depth(rec_depth)
     rec_b64 = encode_image_base64(rec_colored)
 
-    # Classical baseline for visual comparison (Bilinear)
-    classical_res = reconstruct_depth(rgb_image, depth_input, factor=upsample_factor, method="bilinear")
-    classical_colored = colorize_depth(classical_res["reconstructed_depth"])
+    classical_depth = res.get("classical_baseline", rec_depth)
+    cnn_depth = res.get("cnn_baseline", rec_depth)
+
+    classical_colored = colorize_depth(classical_depth)
     classical_b64 = encode_image_base64(classical_colored)
 
-    # Deep learning alone baseline
-    cnn_res = reconstruct_depth(rgb_image, depth_input, factor=upsample_factor, method="cnn", cnn_model=MODEL, device=DEVICE)
-    cnn_colored = colorize_depth(cnn_res["reconstructed_depth"])
+    cnn_colored = colorize_depth(cnn_depth)
     cnn_b64 = encode_image_base64(cnn_colored)
 
     # Confidence map visualization (Viridis)
@@ -329,6 +412,8 @@ async def run_reconstruction(
     return {
         "success": True,
         "method": method,
+        "has_gt": gt_depth is not None,
+        "warning": depth_warning,
         "latency_ms": round(total_latency, 1),
         "peak_ram_mb": round(peak_mem / (1024 * 1024), 2),
         "reconstructed_b64": rec_b64,
@@ -393,4 +478,5 @@ def get_benchmark_table():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)

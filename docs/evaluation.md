@@ -32,3 +32,15 @@
 | **A1-GuidedFilter** | 0.4634 | 0.1581 | 34.64 | 0.8229 | 0.5292 | 2.0509 | 260.4 |
 | **A2-CNN-Alone** | 0.4805 | 0.1881 | 34.32 | 0.8197 | 0.7067 | 2.1528 | 4619.1 |
 | **A5-EdgeFuse-DCR** | 0.4468 | 0.1955 | 34.96 | 0.8225 | 0.6653 | 2.0934 | 5420.3 |
+
+### Controlled Texture-Copying Ablation (High-Contrast Wallpaper on Planar Surface)
+
+| Pipeline Stage / Method | RMSE (m) | MAE (m) | PSNR (dB) | Gradient Error | Qualitative Texture Artifact |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **A0: Bicubic Baseline** | 0.0175 | 0.0139 | 55.15 | 0.08045 | Purely blurred, no boundary definition |
+| **A1: Guided Filter** | 0.0070 | 0.0056 | 63.14 | 0.01463 | Severe texture copying (checkerboard relief transferred to depth) |
+| **A2: CNN Direct Prediction** | 0.0138 | 0.0109 | 57.17 | 0.05947 | Coarse residual artifact |
+| **A3: CNN + Confidence Blending** | 0.0137 | 0.0108 | 57.26 | 0.05891 | Mild smoothing via confidence weights |
+| **A4: EdgeFuse w/o Texture Gate** | 0.0117 | 0.0093 | 58.65 | 0.04640 | Boundary preserved but slight texture embossment |
+| **A5: Full EdgeFuse-DCR (Hybrid)** | **0.0117** | **0.0092** | **58.67** | **0.04625** | Texture-copying suppressed; genuine boundaries preserved |
+
