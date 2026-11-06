@@ -1,0 +1,21 @@
+# Datasets and large binary files
+Datasets/
+*.zip
+*.mat
+*.pfm
+*.pth
+*.pt
+!models/edgefuse_dcr_compact.pth
+__pycache__/
+*.py[cod]
+*$py.class
+.vscode/
+.idea/
+.pytest_cache/
+.coverage
+dist/
+build/
+*.egg-info/
+.DS_Store
+Thumbs.db
+

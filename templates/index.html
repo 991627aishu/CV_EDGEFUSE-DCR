@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EdgeFuse-DCR | Intelligent Depth Reconstruction & Refinement</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: #0f172a;
+      --bg-card-hover: #1e293b;
+      --border-color: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+
+    /* Header */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 14px 28px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: #fff;
+    }
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .header-badges {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      border: 1px solid var(--border-color);
+      background: rgba(30, 41, 59, 0.6);
+      color: var(--text-muted);
+    }
+    .badge-primary {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #60a5fa;
+    }
+    .badge-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 1024px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Controls Sidebar */
+    .demo-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .btn-demo {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text-main);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    .btn-demo:hover {
+      background: #334155;
+      border-color: var(--primary);
+    }
+    .btn-demo.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: var(--primary);
+      color: #93c5fd;
+    }
+    .btn-demo span {
+      display: block;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Upload Area */
+    .upload-group {
+      margin-bottom: 14px;
+    }
+    .upload-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .file-dropzone {
+      border: 1px dashed #334155;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(15, 23, 42, 0.5);
+      transition: all 0.2s;
+    }
+    .file-dropzone:hover {
+      border-color: var(--primary);
+      background: rgba(30, 41, 59, 0.4);
+    }
+    .file-dropzone input { display: none; }
+    .file-info {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .form-select, .form-input {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text-main);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .form-select:focus, .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Toggle Switches */
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid rgba(51, 65, 85, 0.4);
+    }
+    .toggle-text {
+      font-size: 12px;
+      color: var(--text-main);
+    }
+    .toggle-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Execute Button */
+    .btn-reconstruct {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: none;
+      color: #fff;
+      padding: 13px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      transition: all 0.2s;
+      margin-top: 10px;
+    }
+    .btn-reconstruct:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+    }
+    .btn-reconstruct:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Results Showcase */
+    .view-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(30, 41, 59, 0.5);
+    }
+    .tab-btn.active {
+      color: #60a5fa;
+      background: rgba(59, 130, 246, 0.15);
+    }
+
+    /* Viewport Grids */
+    .viewport-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .view-panel {
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      padding: 8px 12px;
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-body {
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      background: #030712;
+    }
+    .panel-body img {
+      width: 100%;
+      height: auto;
+      max-height: 340px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+    .empty-state {
+      font-size: 12px;
+      color: #475569;
+      text-align: center;
+    }
+
+    /* Metrics Bar */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #3b82f6;
+    }
+    .metric-card.accent-emerald::before { background: var(--accent-emerald); }
+    .metric-card.accent-cyan::before { background: var(--accent-cyan); }
+    .metric-card.accent-amber::before { background: var(--accent-amber); }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-top: 4px;
+    }
+    .metric-unit {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 2px;
+    }
+
+    /* Table */
+    .benchmark-table-wrapper {
+      overflow-x: auto;
+      margin-top: 14px;
+    }
+    table.benchmark-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+    table.benchmark-table th {
+      background: #1e293b;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 10px 12px;
+      border-bottom: 2px solid #334155;
+    }
+    table.benchmark-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #1e293b;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    table.benchmark-table tr:hover {
+      background: rgba(30, 41, 59, 0.4);
+    }
+    table.benchmark-table tr.highlight {
+      background: rgba(59, 130, 246, 0.12);
+      border-left: 3px solid #3b82f6;
+    }
+
+    /* Download Actions */
+    .download-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .btn-download {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-download:hover {
+      background: #334155;
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      display: none;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header>
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-logo">EF</div>
+        <div class="brand-text">
+          <h1>EDGEFUSE-DCR</h1>
+          <p>Edge-Aware Confidence-Guided Depth Completion & Refinement</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <div class="badge badge-primary">P4: Depth Upsampling & Refinement</div>
+        <div class="badge badge-status">
+          <div class="status-dot"></div>
+          <span id="backend-status">Model Ready (PyTorch CPU)</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <div class="container">
+
+    <!-- Left Sidebar: Controls & Inputs -->
+    <div>
+
+      <!-- Built-in Demos -->
+      <div class="card">
+        <div class="card-title">
+          <span>1. Built-in Research Demos</span>
+          <span style="font-size: 11px; color: var(--primary);">1-Click Run</span>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+          Select a verified dataset sample to test without manual file upload:
+        </p>
+        <div class="demo-buttons">
+          <button class="btn-demo active" id="demo-nyu" onclick="loadDemoSample('nyu')">
+            NYU Depth V2
+            <span>Indoor Scene (4x Low-Res)</span>
+          </button>
+          <button class="btn-demo" id="demo-kitti" onclick="loadDemoSample('kitti')">
+            KITTI Benchmark
+            <span>Outdoor LiDAR (Sparse)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Upload -->
+      <div class="card">
+        <div class="card-title">
+          <span>2. Custom Input Upload</span>
+        </div>
+        <div class="upload-group">
+          <label class="upload-label">RGB Guidance Image (PNG/JPG)</label>
+          <div class="file-dropzone" onclick="document.getElementById('rgb-file-input').click()">
+            <input type="file" id="rgb-file-input" accept="image/*" onchange="handleFileChange('rgb')">
+            <span id="rgb-file-name" style="font-size: 12px; color: #94a3b8;">Choose or drop RGB image</span>
+          </div>
+        </div>
+
+        <div class="upload-group">
+          <label class="upload-label">Depth Map (.npy, 16-bit PNG, or 8-bit)</label>
+          <div class="file-dropzone" onclick="document.getElementById('depth-file-input').click()">
+            <input type="file" id="depth-file-input" accept=".npy,image/*" onchange="handleFileChange('depth')">
+            <span id="depth-file-name" style="font-size: 12px; color: #94a3b8;">Choose or drop Depth Map</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reconstruction Settings -->
+      <div class="card">
+        <div class="card-title">3. Reconstruction Settings</div>
+
+        <div class="form-group">
+          <label>Upsampling Factor</label>
+          <select id="upsample-factor" class="form-select">
+            <option value="2">2× Upsampling</option>
+            <option value="4" selected>4× Upsampling (Standard)</option>
+            <option value="8">8× Upsampling</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Reconstruction Algorithm</label>
+          <select id="method-select" class="form-select">
+            <option value="hybrid" selected>A5: EdgeFuse-DCR Full Hybrid (Ours)</option>
+            <option value="cnn_boundary">A4: CNN + Confidence + Boundary Refinement</option>
+            <option value="cnn_confidence">A3: CNN + Confidence-Aware Guidance</option>
+            <option value="cnn">A2: Deep Learning Alone (EdgeFuseNet)</option>
+            <option value="guided">A1: Guided Filter (RGB-Guided)</option>
+            <option value="joint_bilateral">A1: Joint Bilateral Filter</option>
+            <option value="bilinear">A0: Bilinear (Validity-Normalized)</option>
+            <option value="bicubic">A0: Bicubic Interpolation</option>
+            <option value="nearest">A0: Nearest Neighbor</option>
+          </select>
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-text">Texture-Copy Suppression</div>
+            <div class="toggle-sub">Suppresses false edges from flat textured surfaces</div>
+          </div>
+          <input type="checkbox" id="toggle-texture" checked style="accent-color: var(--primary); cursor: pointer;">
+        </div>
+
+        <button class="btn-reconstruct" id="btn-run" onclick="executeReconstruction()">
+          <div class="spinner" id="spinner"></div>
+          <span id="btn-text">Execute Depth Reconstruction</span>
+        </button>
+      </div>
+
+      <!-- Downloads -->
+      <div class="card">
+        <div class="card-title">4. Numerical & Visual Exports</div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+          Export reconstructed floating-point metric depth values:
+        </p>
+        <div class="download-bar">
+          <a href="/api/download/npy" class="btn-download" download="edgefuse_dcr_depth.npy">
+            ⬇ Numeric Depth (.npy)
+          </a>
+          <a href="/api/download/png" class="btn-download" download="edgefuse_dcr_preview.png">
+            ⬇ Visualized Map (.png)
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Interactive Results & Analytics -->
+    <div>
+
+      <!-- Quantitative Metrics Banner -->
+      <div class="metrics-grid" id="metrics-container">
+        <div class="metric-card accent-cyan">
+          <div class="metric-label">RMSE</div>
+          <div class="metric-value" id="val-rmse">0.114<span class="metric-unit">m</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">MAE</div>
+          <div class="metric-value" id="val-mae">0.042<span class="metric-unit">m</span></div>
+        </div>
+        <div class="metric-card accent-emerald">
+          <div class="metric-label">PSNR</div>
+          <div class="metric-value" id="val-psnr">38.83<span class="metric-unit">dB</span></div>
+        </div>
+        <div class="metric-card accent-emerald">
+          <div class="metric-label">SSIM</div>
+          <div class="metric-value" id="val-ssim">0.9780</div>
+        </div>
+        <div class="metric-card accent-amber">
+          <div class="metric-label">Boundary F1</div>
+          <div class="metric-value" id="val-f1">0.820</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Latency</div>
+          <div class="metric-value" id="val-latency">482<span class="metric-unit">ms</span></div>
+        </div>
+      </div>
+
+      <!-- Main Visual Showcase -->
+      <div class="card">
+        <div class="card-title">
+          <span>Reconstruction Showcase & Diagnostic Visuals</span>
+          <span id="sample-dimensions" style="font-size: 11px; color: var(--text-muted);">640 x 480 px</span>
+        </div>
+
+        <div class="view-tabs">
+          <button class="tab-btn active" onclick="switchTab('tab-primary')">Primary Reconstruction</button>
+          <button class="tab-btn" onclick="switchTab('tab-comparative')">Ablation Progression (A0 vs A2 vs A5)</button>
+          <button class="tab-btn" onclick="switchTab('tab-edges')">Edge & Discontinuity Analysis</button>
+          <button class="tab-btn" onclick="switchTab('tab-diagnostics')">Confidence & Error Maps</button>
+        </div>
+
+        <!-- Tab 1: Primary Reconstruction -->
+        <div id="tab-primary" class="tab-content">
+          <div class="viewport-grid">
+            <div class="view-panel">
+              <div class="panel-header">RGB Guidance Image</div>
+              <div class="panel-body">
+                <img id="view-rgb" src="" alt="RGB">
+              </div>
+            </div>
+            <div class="view-panel">
+              <div class="panel-header">Input Low-Res / Sparse Depth</div>
+              <div class="panel-body">
+                <img id="view-lr-depth" src="" alt="Low-Res Depth">
+              </div>
+            </div>
+            <div class="view-panel" style="border-color: rgba(59, 130, 246, 0.4);">
+              <div class="panel-header" style="color: #60a5fa;">
+                EdgeFuse-DCR Final Reconstruction
+                <span class="badge badge-primary">Proposed</span>
+              </div>
+              <div class="panel-body">
+                <img id="view-reconstructed" src="" alt="Reconstructed Depth">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Comparative Progression -->
+        <div id="tab-comparative" class="tab-content" style="display: none;">
+          <div class="viewport-grid">
+            <div class="view-panel">
+              <div class="panel-header">A0: Classical Baseline (Bilinear)</div>
+              <div class="panel-body">
+                <img id="view-classical" src="" alt="Classical Baseline">
+              </div>
+            </div>
+            <div class="view-panel">
+              <div class="panel-header">A2: Deep Learning Alone (EdgeFuseNet)</div>
+              <div class="panel-body">
+                <img id="view-cnn" src="" alt="CNN Alone">
+              </div>
+            </div>
+            <div class="view-panel" style="border-color: rgba(59, 130, 246, 0.4);">
+              <div class="panel-header" style="color: #60a5fa;">A5: EdgeFuse-DCR Full Hybrid</div>
+              <div class="panel-body">
+                <img id="view-hybrid-comp" src="" alt="Full Hybrid">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Edge & Discontinuity Alignment -->
+        <div id="tab-edges" class="tab-content" style="display: none;">
+          <div class="viewport-grid">
+            <div class="view-panel">
+              <div class="panel-header">Edge Overlay (Red: RGB Edges, Cyan: Depth Discontinuities)</div>
+              <div class="panel-body">
+                <img id="view-boundary" src="" alt="Boundary Overlay">
+              </div>
+            </div>
+            <div class="view-panel">
+              <div class="panel-header">Validity Mask (Measured Seeds)</div>
+              <div class="panel-body">
+                <img id="view-valid-mask" src="" alt="Validity Mask">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Confidence & Error Map -->
+        <div id="tab-diagnostics" class="tab-content" style="display: none;">
+          <div class="viewport-grid">
+            <div class="view-panel">
+              <div class="panel-header">Estimated Confidence Map (Viridis: Yellow=High, Purple=Low)</div>
+              <div class="panel-body">
+                <img id="view-confidence" src="" alt="Confidence Map">
+              </div>
+            </div>
+            <div class="view-panel">
+              <div class="panel-header">Ground-Truth Absolute Error Map (Jet: Blue=0m, Red=High Error)</div>
+              <div class="panel-body">
+                <img id="view-error" src="" alt="Error Map">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Comparative Benchmark Table -->
+      <div class="card">
+        <div class="card-title">
+          <span>Comparative Benchmark & Ablation Study (Official Evaluation)</span>
+          <span class="badge">NYU Depth V2 (Indoor)</span>
+        </div>
+        <div class="benchmark-table-wrapper">
+          <table class="benchmark-table">
+            <thead>
+              <tr>
+                <th>Pipeline Stage / Method</th>
+                <th>RMSE (m)</th>
+                <th>MAE (m)</th>
+                <th>PSNR (dB)</th>
+                <th>SSIM</th>
+                <th>Boundary F1</th>
+                <th>Grad MAE</th>
+                <th>Latency</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>A0: Nearest Neighbor</strong></td>
+                <td>0.1556</td>
+                <td>0.0394</td>
+                <td>36.16</td>
+                <td>0.9583</td>
+                <td>0.7363</td>
+                <td>0.2237</td>
+                <td>24.5 ms</td>
+              </tr>
+              <tr>
+                <td><strong>A0: Bilinear Interpolation</strong></td>
+                <td>0.1274</td>
+                <td>0.0393</td>
+                <td>37.90</td>
+                <td>0.9740</td>
+                <td>0.8426</td>
+                <td>0.1655</td>
+                <td>19.1 ms</td>
+              </tr>
+              <tr>
+                <td><strong>A0: Bicubic Interpolation</strong></td>
+                <td>0.1327</td>
+                <td>0.0433</td>
+                <td>37.55</td>
+                <td>0.9717</td>
+                <td>0.8044</td>
+                <td>0.1818</td>
+                <td>19.6 ms</td>
+              </tr>
+              <tr>
+                <td><strong>A1: Joint Bilateral Filter</strong></td>
+                <td>0.1215</td>
+                <td>0.0505</td>
+                <td>38.31</td>
+                <td>0.9786</td>
+                <td>0.7634</td>
+                <td>0.1507</td>
+                <td>60.4 ms</td>
+              </tr>
+              <tr>
+                <td><strong>A1: Guided Filter</strong></td>
+                <td>0.1264</td>
+                <td>0.0554</td>
+                <td>37.96</td>
+                <td>0.9777</td>
+                <td>0.7479</td>
+                <td>0.1523</td>
+                <td>64.5 ms</td>
+              </tr>
+              <tr>
+                <td><strong>A2: Deep Learning (EdgeFuseNet Alone)</strong></td>
+                <td>0.1272</td>
+                <td>0.0404</td>
+                <td>37.91</td>
+                <td>0.9738</td>
+                <td>0.8421</td>
+                <td>0.1664</td>
+                <td>667.5 ms</td>
+              </tr>
+              <tr>
+                <td><strong>A3: CNN + Confidence-Aware Guidance</strong></td>
+                <td>0.1273</td>
+                <td>0.0393</td>
+                <td>37.90</td>
+                <td>0.9740</td>
+                <td>0.8426</td>
+                <td>0.1655</td>
+                <td>444.8 ms</td>
+              </tr>
+              <tr>
+                <td><strong>A4: CNN + Confidence + Boundary Refinement</strong></td>
+                <td>0.1143</td>
+                <td>0.0423</td>
+                <td>38.84</td>
+                <td>0.9781</td>
+                <td>0.8203</td>
+                <td>0.1520</td>
+                <td>534.7 ms</td>
+              </tr>
+              <tr class="highlight">
+                <td><strong>A5: EdgeFuse-DCR Full Hybrid (Ours)</strong></td>
+                <td><strong>0.1144</strong></td>
+                <td><strong>0.0424</strong></td>
+                <td><strong>38.83</strong></td>
+                <td><strong>0.9780</strong></td>
+                <td><strong>0.8199</strong></td>
+                <td><strong>0.1522</strong></td>
+                <td>482.0 ms</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- JavaScript Interaction -->
+  <script>
+    let currentDemo = 'nyu';
+    let uploadedRgbFile = null;
+    let uploadedDepthFile = null;
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.style.borderColor = isError ? '#f43f5e' : '#3b82f6';
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 4000);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(tabId).style.display = 'block';
+      event.target.classList.add('active');
+    }
+
+    function handleFileChange(type) {
+      if (type === 'rgb') {
+        const input = document.getElementById('rgb-file-input');
+        if (input.files.length > 0) {
+          uploadedRgbFile = input.files[0];
+          document.getElementById('rgb-file-name').innerText = uploadedRgbFile.name;
+          currentDemo = null;
+          document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
+          // Preview RGB
+          const reader = new FileReader();
+          reader.onload = e => { document.getElementById('view-rgb').src = e.target.result; };
+          reader.readAsDataURL(uploadedRgbFile);
+        }
+      } else {
+        const input = document.getElementById('depth-file-input');
+        if (input.files.length > 0) {
+          uploadedDepthFile = input.files[0];
+          document.getElementById('depth-file-name').innerText = uploadedDepthFile.name;
+          currentDemo = null;
+          document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
+        }
+      }
+    }
+
+    async function loadDemoSample(sampleId) {
+      currentDemo = sampleId;
+      document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
+      document.getElementById(`demo-${sampleId}`).classList.add('active');
+      uploadedRgbFile = null;
+      uploadedDepthFile = null;
+      document.getElementById('rgb-file-name').innerText = 'Choose or drop RGB image';
+      document.getElementById('depth-file-name').innerText = 'Choose or drop Depth Map';
+
+      try {
+        const res = await fetch(`/api/demo/${sampleId}`);
+        const data = await res.json();
+        if (data.rgb_b64) {
+          document.getElementById('view-rgb').src = data.rgb_b64;
+          document.getElementById('view-lr-depth').src = data.lr_depth_b64;
+          document.getElementById('view-valid-mask').src = data.valid_mask_b64;
+          document.getElementById('sample-dimensions').innerText = `${data.dimensions} (${data.dataset_name})`;
+          showToast(`Loaded ${data.dataset_name} sample.`);
+          // Automatically trigger reconstruction on demo select
+          executeReconstruction();
+        }
+      } catch (err) {
+        showToast('Error loading demo: ' + err.message, true);
+      }
+    }
+
+    async function executeReconstruction() {
+      const btn = document.getElementById('btn-run');
+      const spinner = document.getElementById('spinner');
+      const btnText = document.getElementById('btn-text');
+
+      btn.disabled = true;
+      spinner.style.display = 'block';
+      btnText.innerText = 'Reconstructing Depth...';
+
+      const formData = new FormData();
+      const method = document.getElementById('method-select').value;
+      const factor = document.getElementById('upsample-factor').value;
+      const textureSupp = document.getElementById('toggle-texture').checked;
+
+      formData.append('method', method);
+      formData.append('upsample_factor', factor);
+      formData.append('apply_texture_suppression', textureSupp);
+
+      if (currentDemo) {
+        formData.append('demo_sample_id', currentDemo);
+      } else {
+        if (!uploadedRgbFile || !uploadedDepthFile) {
+          showToast('Please upload both RGB and Depth files or select a Demo.', true);
+          btn.disabled = false;
+          spinner.style.display = 'none';
+          btnText.innerText = 'Execute Depth Reconstruction';
+          return;
+        }
+        formData.append('rgb_file', uploadedRgbFile);
+        formData.append('depth_file', uploadedDepthFile);
+      }
+
+      try {
+        const res = await fetch('/api/reconstruct', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.detail || 'Reconstruction failed.');
+        }
+
+        // Update visuals
+        document.getElementById('view-reconstructed').src = data.reconstructed_b64;
+        document.getElementById('view-hybrid-comp').src = data.reconstructed_b64;
+        document.getElementById('view-classical').src = data.classical_b64;
+        document.getElementById('view-cnn').src = data.cnn_b64;
+        document.getElementById('view-confidence').src = data.confidence_b64;
+        document.getElementById('view-boundary').src = data.boundary_b64;
+
+        if (data.error_b64) {
+          document.getElementById('view-error').src = data.error_b64;
+        }
+
+        // Update metrics
+        if (data.metrics) {
+          document.getElementById('val-rmse').innerHTML = `${data.metrics.rmse.toFixed(3)}<span class="metric-unit">m</span>`;
+          document.getElementById('val-mae').innerHTML = `${data.metrics.mae.toFixed(3)}<span class="metric-unit">m</span>`;
+          document.getElementById('val-psnr').innerHTML = `${data.metrics.psnr.toFixed(2)}<span class="metric-unit">dB</span>`;
+          document.getElementById('val-ssim').innerText = data.metrics.ssim.toFixed(4);
+          document.getElementById('val-f1').innerText = data.metrics.boundary_f1.toFixed(3);
+        }
+        document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
+
+        showToast(`Reconstruction complete via ${method.toUpperCase()} (${data.latency_ms} ms)`);
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+        btnText.innerText = 'Execute Depth Reconstruction';
+      }
+    }
+
+    // Initialize with NYU Demo on load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadDemoSample('nyu');
+    });
+  </script>
+</body>
+</html>
+

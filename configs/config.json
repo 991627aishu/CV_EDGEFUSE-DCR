@@ -1,0 +1,22 @@
+{
+  "project_name": "EdgeFuse-DCR",
+  "version": "1.0.0",
+  "dataset_paths": {
+    "nyu_mat": "Datasets/Extracted_Dataset_Files/NYU Depth V2/nyu_depth_v2_labeled.mat",
+    "kitti_root": "Datasets/Extracted_Dataset_Files/KITTI Depth Completion/data_depth_selection/depth_selection/val_selection_cropped",
+    "middlebury_root": "Datasets/Extracted_Dataset_Files/Middlebury 2021/all/data"
+  },
+  "default_upsample_factor": 4,
+  "confidence_params": {
+    "local_window": 5,
+    "depth_variance_thresh": 0.05,
+    "gradient_scale": 1.0
+  },
+  "texture_suppression": {
+    "gradient_ratio_thresh": 0.35,
+    "edge_agreement_weight": 0.8
+  },
+  "model_checkpoint": "EDGEFUSE_DCR/models/edgefuse_dcr_compact.pth",
+  "device": "cpu"
+}
+
