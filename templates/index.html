@@ -3,25 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EdgeFuse-DCR | Intelligent Depth Reconstruction & Refinement</title>
+  <title>EdgeFuse-DCR | Edge-Aware Confidence-Guided Depth Completion & Refinement</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #090d16;
-      --bg-card: #0f172a;
-      --bg-card-hover: #1e293b;
+      --bg-dark: #070b12;
+      --bg-panel: #0d1322;
+      --bg-card: #111a2e;
+      --bg-card-hover: #18243e;
       --border-color: #1e293b;
-      --border-accent: #3b82f6;
+      --border-focus: #3b82f6;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
+      --text-dim: #64748b;
       --primary: #3b82f6;
       --primary-hover: #2563eb;
       --accent-cyan: #06b6d4;
       --accent-emerald: #10b981;
       --accent-amber: #f59e0b;
       --accent-rose: #f43f5e;
+      --accent-indigo: #6366f1;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,24 +34,32 @@
       color: var(--text-main);
       line-height: 1.5;
       padding-bottom: 60px;
+      overflow-x: hidden;
     }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
     /* Header */
     header {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(13, 19, 34, 0.92);
+      backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border-color);
       position: sticky;
       top: 0;
-      z-index: 50;
-      padding: 14px 28px;
+      z-index: 100;
+      padding: 12px 24px;
     }
     .header-content {
-      max-width: 1400px;
+      max-width: 1560px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
     }
     .brand {
       display: flex;
@@ -56,32 +67,39 @@
       gap: 12px;
     }
     .brand-logo {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #3b82f6, #06b6d4);
-      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 18px;
+      font-size: 19px;
       color: #fff;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
     .brand-text h1 {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .brand-text p {
       font-size: 11px;
       color: var(--text-muted);
       letter-spacing: 0.02em;
       text-transform: uppercase;
+      font-weight: 500;
     }
     .header-badges {
       display: flex;
       gap: 8px;
       align-items: center;
+      flex-wrap: wrap;
     }
     .badge {
       font-size: 11px;
@@ -91,16 +109,27 @@
       border: 1px solid var(--border-color);
       background: rgba(30, 41, 59, 0.6);
       color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
     .badge-primary {
       background: rgba(59, 130, 246, 0.15);
       border-color: rgba(59, 130, 246, 0.4);
       color: #60a5fa;
     }
+    .badge-accent {
+      background: rgba(6, 182, 212, 0.15);
+      border-color: rgba(6, 182, 212, 0.4);
+      color: #22d3ee;
+    }
     .badge-status {
       display: flex;
       align-items: center;
       gap: 6px;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
     }
     .status-dot {
       width: 7px;
@@ -109,18 +138,45 @@
       background: var(--accent-emerald);
       box-shadow: 0 0 8px var(--accent-emerald);
     }
+    .btn-toggle-sidebar {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-toggle-sidebar:hover {
+      background: #334155;
+      color: #fff;
+    }
 
     /* Main Container */
     .container {
-      max-width: 1400px;
-      margin: 24px auto;
+      max-width: 1560px;
+      margin: 20px auto;
       padding: 0 20px;
       display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 24px;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+      transition: grid-template-columns 0.25s ease;
     }
-    @media (max-width: 1024px) {
+    .container.sidebar-collapsed {
+      grid-template-columns: 0px 1fr;
+    }
+    .container.sidebar-collapsed .sidebar {
+      display: none;
+    }
+    @media (max-width: 1120px) {
       .container { grid-template-columns: 1fr; }
+      .container.sidebar-collapsed { grid-template-columns: 1fr; }
+      .container.sidebar-collapsed .sidebar { display: block; }
     }
 
     /* Cards */
@@ -128,107 +184,142 @@
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     }
     .card-title {
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       color: var(--text-muted);
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    /* Controls Sidebar */
-    .demo-buttons {
+    /* Dataset Explorer Navigation */
+    .dataset-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .btn-dataset-tab {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: var(--text-muted);
+      padding: 7px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+    .btn-dataset-tab:hover {
+      background: #1e293b;
+      color: var(--text-main);
+    }
+    .btn-dataset-tab.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: #3b82f6;
+      color: #60a5fa;
+    }
+
+    /* Gallery Cards Grid */
+    .gallery-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 8px;
-      margin-bottom: 16px;
+      max-height: 250px;
+      overflow-y: auto;
+      padding-right: 4px;
+      margin-bottom: 10px;
     }
-    .btn-demo {
+    .gallery-item {
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .gallery-item:hover {
+      background: #131c31;
+      border-color: #3b82f6;
+      transform: translateY(-1px);
+    }
+    .gallery-item.active {
+      background: rgba(37, 99, 235, 0.12);
+      border-color: #3b82f6;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+    }
+    .gallery-thumb {
+      width: 52px;
+      height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
       background: #1e293b;
       border: 1px solid #334155;
-      color: var(--text-main);
-      padding: 10px;
-      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .gallery-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .gallery-title {
       font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.2s;
+      font-weight: 600;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .btn-demo:hover {
-      background: #334155;
-      border-color: var(--primary);
-    }
-    .btn-demo.active {
-      background: rgba(59, 130, 246, 0.15);
-      border-color: var(--primary);
-      color: #93c5fd;
-    }
-    .btn-demo span {
-      display: block;
+    .gallery-meta {
       font-size: 10px;
-      color: var(--text-muted);
+      color: #64748b;
+      display: flex;
+      gap: 6px;
       margin-top: 2px;
     }
+    .gallery-badge {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: #1e293b;
+      color: #94a3b8;
+    }
 
-    /* Upload Area */
-    .upload-group {
-      margin-bottom: 14px;
-    }
-    .upload-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      display: block;
-    }
-    .file-dropzone {
-      border: 1px dashed #334155;
-      border-radius: 8px;
-      padding: 12px;
-      text-align: center;
-      cursor: pointer;
-      background: rgba(15, 23, 42, 0.5);
-      transition: all 0.2s;
-    }
-    .file-dropzone:hover, .file-dropzone.dropzone-dragover {
-      border-color: var(--primary);
-      background: rgba(30, 41, 59, 0.6);
-    }
-    .file-dropzone input { display: none; }
-    .dropzone-content {
+    .gallery-nav-bar {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      gap: 5px;
-      pointer-events: none;
-    }
-    .file-info {
+      padding-top: 6px;
+      border-top: 1px solid #1e293b;
       font-size: 11px;
       color: var(--text-muted);
-      margin-top: 4px;
     }
-    .btn-clear-uploads {
-      background: transparent;
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      color: #f87171;
+    .btn-nav-arrow {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 3px 8px;
       border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 10px;
-      font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      font-size: 11px;
     }
-    .btn-clear-uploads:hover {
-      background: rgba(239, 68, 68, 0.15);
-      border-color: #ef4444;
+    .btn-nav-arrow:hover { background: #334155; color: #fff; }
+
+    /* Upload UI System (Cleanly separated, non-overlapping) */
+    .upload-group {
+      margin-bottom: 12px;
     }
     .upload-header {
       display: flex;
@@ -236,68 +327,94 @@
       align-items: center;
       margin-bottom: 6px;
     }
+    .upload-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
     .upload-badge {
       font-size: 9px;
       font-weight: 700;
       padding: 2px 6px;
       border-radius: 4px;
-      margin-right: 4px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.04em;
     }
-    .rgb-badge {
-      background: rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.35);
-    }
-    .depth-badge {
-      background: rgba(245, 158, 11, 0.2);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.35);
-    }
+    .rgb-badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .depth-badge { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .gt-badge { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
     .file-status-badge {
       font-size: 10px;
-      color: #64748b;
-      font-weight: 500;
-      transition: color 0.2s;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #1e293b;
+      color: var(--text-muted);
+      border: 1px solid #334155;
     }
-    .file-status-badge.status-ready {
-      color: #34d399;
-      font-weight: 600;
+    .status-ready { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.35); }
+    .status-loading { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.35); }
+    .status-error { background: rgba(244, 63, 94, 0.15); color: #fb7185; border-color: rgba(244, 63, 94, 0.35); }
+
+    .file-dropzone {
+      border: 1.5px dashed #334155;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
     }
-    .file-status-badge.status-error {
-      color: #f87171;
-      font-weight: 600;
+    .file-dropzone:hover {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.05);
     }
-    .file-status-badge.status-loading {
-      color: #60a5fa;
-      font-weight: 600;
+    .file-dropzone.dropzone-dragover {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
     }
+    .file-dropzone input[type="file"] {
+      display: none;
+    }
+    .dropzone-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      pointer-events: none;
+    }
+    .dropzone-content svg {
+      stroke: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    /* File Info Card */
     .file-info-card {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid #334155;
-      border-radius: 6px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
       padding: 8px 10px;
       margin-top: 6px;
     }
     .file-thumb {
       width: 44px;
-      height: 44px;
+      height: 34px;
       border-radius: 4px;
       object-fit: cover;
-      background: #030712;
-      border: 1px solid #1e293b;
+      background: #1e293b;
+      border: 1px solid #334155;
       flex-shrink: 0;
     }
     .file-details {
       flex: 1;
       min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
     }
     .file-name-row {
       display: flex;
@@ -308,426 +425,483 @@
       font-size: 11px;
       font-weight: 600;
       color: #f1f5f9;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 170px;
+      max-width: 220px;
+    }
+    .file-meta-row {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .btn-remove-file {
       background: none;
       border: none;
-      color: #94a3b8;
-      font-size: 13px;
-      font-weight: bold;
+      color: #64748b;
+      font-size: 14px;
       cursor: pointer;
       padding: 0 4px;
-      border-radius: 3px;
       line-height: 1;
       transition: color 0.15s;
     }
-    .btn-remove-file:hover {
-      color: #ef4444;
-    }
-    .file-meta-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 10px;
-      color: #94a3b8;
-    }
+    .btn-remove-file:hover { color: #f43f5e; }
 
-    /* Form Fields */
+    /* Form Controls */
     .form-group {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .form-group label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
       display: block;
-      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 5px;
     }
-    .form-select, .form-input {
+    .form-select {
       width: 100%;
-      background: #1e293b;
+      background: #0f172a;
       border: 1px solid #334155;
       color: var(--text-main);
-      padding: 9px 12px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .form-select:focus {
+      border-color: #3b82f6;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .checkbox-group input {
+      accent-color: var(--primary);
+      width: 15px;
+      height: 15px;
+    }
+    .checkbox-group span {
+      font-size: 11px;
+      font-weight: 500;
+      color: #cbd5e1;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb, #0284c7);
+      color: #fff;
+      border: none;
+      padding: 11px 16px;
       border-radius: 8px;
       font-size: 13px;
-      outline: none;
-      transition: border 0.2s;
-    }
-    .form-select:focus, .form-input:focus {
-      border-color: var(--primary);
-    }
-
-    /* Toggle Switches */
-    .toggle-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-top: 1px solid rgba(51, 65, 85, 0.4);
-    }
-    .toggle-text {
-      font-size: 12px;
-      color: var(--text-main);
-    }
-    .toggle-sub {
-      font-size: 10px;
-      color: var(--text-muted);
-    }
-
-    /* Execute Button */
-    .btn-reconstruct {
-      width: 100%;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      border: none;
-      color: #fff;
-      padding: 13px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-      transition: all 0.2s;
-      margin-top: 10px;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
-    .btn-reconstruct:hover {
-      background: linear-gradient(135deg, #1d4ed8, #1e40af);
-      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #1d4ed8, #0369a1);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
     }
-    .btn-reconstruct:disabled {
+    .btn-primary:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
-    /* Results Showcase */
-    .view-tabs {
+    /* Workspace / Metrics Bar */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 900px) {
+      .metrics-bar { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .metrics-bar { grid-template-columns: repeat(2, 1fr); }
+    }
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    }
+    .metric-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .metric-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 4px;
       display: flex;
-      gap: 8px;
+      align-items: baseline;
+      gap: 3px;
+    }
+    .metric-unit {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* Tabs Header */
+    .tabs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 12px;
       margin-bottom: 16px;
-      overflow-x: auto;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .tabs-list {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
     }
     .tab-btn {
-      background: transparent;
-      border: none;
+      background: #0f172a;
+      border: 1px solid #1e293b;
       color: var(--text-muted);
-      font-size: 13px;
-      font-weight: 500;
-      padding: 6px 12px;
-      border-radius: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
-      white-space: nowrap;
+      transition: all 0.15s ease;
     }
     .tab-btn:hover {
+      background: #1e293b;
       color: var(--text-main);
-      background: rgba(30, 41, 59, 0.5);
     }
     .tab-btn.active {
-      color: #60a5fa;
       background: rgba(59, 130, 246, 0.15);
+      border-color: #3b82f6;
+      color: #60a5fa;
     }
 
-    /* Viewport Grids */
+    /* Viewport Display Panels */
     .viewport-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 16px;
     }
+    @media (max-width: 960px) {
+      .viewport-grid { grid-template-columns: 1fr; }
+    }
+    .viewport-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 768px) {
+      .viewport-grid-2 { grid-template-columns: 1fr; }
+    }
     .view-panel {
-      background: #0b1120;
-      border: 1px solid #1e293b;
-      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
     }
     .panel-header {
       padding: 8px 12px;
-      background: #0f172a;
-      border-bottom: 1px solid #1e293b;
+      background: rgba(15, 23, 42, 0.8);
+      border-bottom: 1px solid var(--border-color);
       font-size: 11px;
       font-weight: 600;
-      color: var(--text-muted);
+      color: #cbd5e1;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .panel-body {
-      padding: 8px;
+      padding: 10px;
+      background: #070a12;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 220px;
-      background: #030712;
+      min-height: 250px;
       position: relative;
     }
     .panel-body img {
-      width: 100%;
+      max-width: 100%;
       height: auto;
-      max-height: 340px;
+      border-radius: 6px;
       object-fit: contain;
-      border-radius: 4px;
-      display: none;
-    }
-    .panel-body img[src] {
-      display: block;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
     .panel-placeholder {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       gap: 8px;
-      color: #64748b;
+      color: #475569;
       font-size: 11px;
-      text-align: center;
-      padding: 16px;
-      pointer-events: none;
     }
     .panel-placeholder svg {
-      width: 26px;
-      height: 26px;
-      stroke: #64748b;
-      opacity: 0.6;
-    }
-    .empty-state {
-      font-size: 12px;
-      color: #475569;
-      text-align: center;
+      width: 36px;
+      height: 36px;
+      stroke: #334155;
     }
 
-    /* Metrics Bar */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
+    /* Comparative Benchmark Table */
+    .benchmark-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 20px;
     }
-    .metric-card {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 8px;
-      padding: 12px 14px;
-      position: relative;
-      overflow: hidden;
-    }
-    .metric-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: #3b82f6;
-    }
-    .metric-card.accent-emerald::before { background: var(--accent-emerald); }
-    .metric-card.accent-cyan::before { background: var(--accent-cyan); }
-    .metric-card.accent-amber::before { background: var(--accent-amber); }
-
-    .metric-label {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    .metric-value {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
-      font-weight: 700;
-      color: #f8fafc;
-      margin-top: 4px;
-    }
-    .metric-unit {
-      font-size: 11px;
-      font-weight: 400;
-      color: var(--text-muted);
-      margin-left: 2px;
-    }
-
-    /* Table */
-    .benchmark-table-wrapper {
+    .table-responsive {
       overflow-x: auto;
-      margin-top: 14px;
+      margin-top: 12px;
     }
-    table.benchmark-table {
+    .bench-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
       text-align: left;
     }
-    table.benchmark-table th {
-      background: #1e293b;
+    .bench-table th {
+      background: #0b1120;
       color: var(--text-muted);
       font-weight: 600;
       padding: 10px 12px;
-      border-bottom: 2px solid #334155;
+      border-bottom: 1px solid #1e293b;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
     }
-    table.benchmark-table td {
-      padding: 10px 12px;
+    .bench-table td {
+      padding: 9px 12px;
       border-bottom: 1px solid #1e293b;
       font-family: 'JetBrains Mono', monospace;
+      color: #cbd5e1;
+      white-space: nowrap;
     }
-    table.benchmark-table tr:hover {
-      background: rgba(30, 41, 59, 0.4);
+    .bench-table tr:hover td {
+      background: #162035;
     }
-    table.benchmark-table tr.highlight {
-      background: rgba(59, 130, 246, 0.12);
-      border-left: 3px solid #3b82f6;
+    .bench-table tr.highlight td {
+      background: rgba(59, 130, 246, 0.1);
+      color: #93c5fd;
+      font-weight: 700;
+    }
+    .bench-table tr.highlight td strong {
+      color: #38bdf8;
+    }
+    .bench-table tr.live-row td {
+      background: rgba(16, 185, 129, 0.15) !important;
+      border-left: 3px solid #10b981;
+      color: #6ee7b7 !important;
+      font-weight: 700;
+    }
+    .badge-best {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 9px;
+      margin-left: 4px;
     }
 
-    /* Download Actions */
-    .download-bar {
-      display: flex;
-      flex-wrap: wrap;
+    /* Export Centre */
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 10px;
-      align-items: center;
       margin-top: 12px;
     }
-    .btn-download {
-      background: #1e293b;
-      border: 1px solid #334155;
+    .btn-export {
+      background: #0f172a;
+      border: 1px solid #1e293b;
       color: #cbd5e1;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 8px 14px;
-      border-radius: 6px;
-      text-decoration: none;
-      display: inline-flex;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
       align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+      text-decoration: none;
     }
-    .btn-download:hover {
-      background: #334155;
+    .btn-export:hover:not(.disabled) {
+      background: #1e293b;
+      border-color: #3b82f6;
       color: #fff;
-      border-color: var(--primary);
+    }
+    .btn-export.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      font-size: 12px;
+      z-index: 1000;
+      display: none;
+      max-width: 380px;
+      animation: fadeIn 0.2s ease;
+    }
+    #toast.toast-error {
+      border-color: rgba(244, 63, 94, 0.6);
+      background: #1e101c;
+      color: #fda4af;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     /* Spinner */
     .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top-color: #fff;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-left-color: #fff;
       border-radius: 50%;
+      width: 14px;
+      height: 14px;
       animation: spin 0.8s linear infinite;
       display: none;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 13px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      z-index: 999;
-      display: none;
-      max-width: 400px;
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation -->
+  <!-- Sticky Header -->
   <header>
     <div class="header-content">
       <div class="brand">
         <div class="brand-logo">EF</div>
         <div class="brand-text">
-          <h1>EDGEFUSE-DCR</h1>
+          <h1>EDGEFUSE-DCR <span style="font-size: 11px; font-weight: 500; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">RESEARCH</span></h1>
           <p>Edge-Aware Confidence-Guided Depth Completion & Refinement</p>
         </div>
       </div>
       <div class="header-badges">
-        <div class="badge badge-primary">P4: Depth Upsampling & Refinement</div>
-        <div class="badge badge-status">
-          <div class="status-dot"></div>
-          <span id="backend-status">Model Ready (PyTorch CPU)</span>
-        </div>
+        <span class="badge badge-primary">P4: Depth Upsampling & Refinement</span>
+        <span class="badge badge-status">
+          <span class="status-dot"></span>
+          EdgeFuseNet Ready (1.31M CPU)
+        </span>
+        <span id="header-sample-pill" class="badge badge-accent">Sample: Living Room (NYU V2)</span>
+        <button type="button" class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Toggle sidebar to expand workspace">
+          <span>◫</span> Toggle Panel
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Grid -->
-  <div class="container">
+  <!-- Main Container -->
+  <div class="container" id="main-container">
 
-    <!-- Left Sidebar: Controls & Inputs -->
-    <div>
+    <!-- Controls Sidebar -->
+    <div class="sidebar" id="sidebar-panel">
 
-      <!-- Built-in Demos -->
+      <!-- 1. Dataset Explorer -->
       <div class="card">
         <div class="card-title">
-          <span>1. Built-in Research Demos</span>
-          <span style="font-size: 11px; color: var(--primary);">1-Click Run</span>
+          <span>1. Dataset Explorer</span>
+          <span id="gallery-count-badge" class="badge" style="font-size: 10px; padding: 2px 6px;">3 Scenes Available</span>
         </div>
-        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
-          Select a verified dataset sample to test without manual file upload:
-        </p>
-        <div class="demo-buttons">
-          <button class="btn-demo active" id="demo-nyu" onclick="loadDemoSample('nyu')">
-            NYU Depth V2
-            <span>Indoor Scene (4x Low-Res)</span>
-          </button>
-          <button class="btn-demo" id="demo-kitti" onclick="loadDemoSample('kitti')">
-            KITTI Benchmark
-            <span>Outdoor LiDAR (Sparse 4%)</span>
-          </button>
-          <button class="btn-demo" id="demo-middlebury" onclick="loadDemoSample('middlebury')">
-            Middlebury 2021
-            <span>Stereo Metric Depth (Artroom1)</span>
-          </button>
+
+        <!-- Dataset Selection Tabs -->
+        <div class="dataset-tabs">
+          <button type="button" id="tab-dset-nyu" class="btn-dataset-tab active" onclick="switchDatasetGallery('nyu')">NYU V2</button>
+          <button type="button" id="tab-dset-kitti" class="btn-dataset-tab" onclick="switchDatasetGallery('kitti')">KITTI LiDAR</button>
+          <button type="button" id="tab-dset-middlebury" class="btn-dataset-tab" onclick="switchDatasetGallery('middlebury')">Middlebury</button>
+        </div>
+
+        <!-- Dynamic Gallery Grid -->
+        <div id="gallery-container" class="gallery-grid">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div class="gallery-nav-bar">
+          <button type="button" class="btn-nav-arrow" onclick="navigateSample(-1)">◀ Prev</button>
+          <span id="gallery-active-label" style="font-weight: 600; color: #94a3b8;">Sample 1 of 3</span>
+          <button type="button" class="btn-nav-arrow" onclick="navigateSample(1)">Next ▶</button>
         </div>
       </div>
 
-      <!-- Custom Upload -->
-      <div class="card" id="card-custom-upload">
+      <!-- 2. Custom Input Upload System -->
+      <div class="card">
         <div class="card-title">
           <span>2. Custom Input Upload</span>
-          <button type="button" class="btn-clear-uploads" id="btn-clear-all" onclick="clearBothUploads()" title="Clear uploaded custom files">Clear Both</button>
+          <button type="button" onclick="clearAllUploads()" style="background: none; border: none; color: #64748b; font-size: 10px; cursor: pointer;">Clear All</button>
         </div>
 
-        <!-- RGB Guidance Image Upload -->
+        <!-- 2.1 RGB Guidance Upload Card -->
         <div class="upload-group">
           <div class="upload-header">
             <label class="upload-label">
-              <span class="upload-badge rgb-badge">RGB Guidance</span>
-              Photo / Scene Color (JPG, PNG)
+              <span class="upload-badge rgb-badge">RGB</span>
+              RGB Guidance Image (PNG/JPG)
             </label>
             <span id="rgb-status-badge" class="file-status-badge">Awaiting File</span>
           </div>
 
           <div class="file-dropzone" id="rgb-dropzone" onclick="document.getElementById('rgb-file-input').click()">
-            <input type="file" id="rgb-file-input" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleFileChange('rgb')">
+            <input type="file" id="rgb-file-input" accept="image/png,image/jpeg,image/webp,image/*" onchange="handleFileChange('rgb')">
             <div id="rgb-empty-view" class="dropzone-content">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
               <span id="rgb-file-name" style="font-size: 11px; font-weight: 500; color: #cbd5e1;">Click or drop RGB image (PNG/JPG)</span>
-              <span style="font-size: 10px; color: #64748b;">Supports PNG, JPG, JPEG with auto EXIF orientation</span>
+              <span style="font-size: 10px; color: #64748b;">High-resolution structural guidance</span>
             </div>
           </div>
 
-          <!-- RGB File Info Card (Visible after selection) -->
           <div id="rgb-info-card" class="file-info-card" style="display: none;">
             <img id="rgb-thumb" class="file-thumb" alt="RGB Preview">
             <div class="file-details">
@@ -736,19 +910,19 @@
                 <button type="button" class="btn-remove-file" onclick="removeSelectedFile('rgb', event)" title="Remove RGB file">✕</button>
               </div>
               <div class="file-meta-row">
-                <span id="rgb-info-meta" class="file-meta-text">640 × 480 px • 245 KB • PNG</span>
-                <span class="badge badge-success" style="font-size: 9px; padding: 1px 5px;">Ready</span>
+                <span id="rgb-info-meta">640 × 480 px • 120 KB</span>
+                <span class="badge badge-primary" style="font-size: 9px; padding: 1px 5px;">Ready</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Depth Map Upload -->
-        <div class="upload-group" style="margin-top: 14px;">
+        <!-- 2.2 Input Depth Map Upload Card -->
+        <div class="upload-group">
           <div class="upload-header">
             <label class="upload-label">
-              <span class="upload-badge depth-badge">Depth Map</span>
-              Sparse / Low-Res Depth (.npy, PNG)
+              <span class="upload-badge depth-badge">Depth</span>
+              Input Depth Map (.npy, 16-bit PNG, 8-bit)
             </label>
             <span id="depth-status-badge" class="file-status-badge">Awaiting File</span>
           </div>
@@ -756,15 +930,14 @@
           <div class="file-dropzone" id="depth-dropzone" onclick="document.getElementById('depth-file-input').click()">
             <input type="file" id="depth-file-input" accept=".npy,image/png,image/jpeg,image/*" onchange="handleFileChange('depth')">
             <div id="depth-empty-view" class="dropzone-content">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="M2 12h20M12 2v20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/>
               </svg>
-              <span id="depth-file-name" style="font-size: 11px; font-weight: 500; color: #cbd5e1;">Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)</span>
-              <span style="font-size: 10px; color: #64748b;">Accepts genuine geometric depth (rejects ordinary color photos)</span>
+              <span id="depth-file-name" style="font-size: 11px; font-weight: 500; color: #cbd5e1;">Click or drop Depth Map (.npy, 16-bit PNG)</span>
+              <span style="font-size: 10px; color: #64748b;">Accepts genuine geometric depth (rejects photos)</span>
             </div>
           </div>
 
-          <!-- Depth File Info Card (Visible after selection) -->
           <div id="depth-info-card" class="file-info-card" style="display: none;">
             <img id="depth-thumb" class="file-thumb" alt="Depth Preview">
             <div class="file-details">
@@ -773,15 +946,35 @@
                 <button type="button" class="btn-remove-file" onclick="removeSelectedFile('depth', event)" title="Remove Depth file">✕</button>
               </div>
               <div class="file-meta-row">
-                <span id="depth-info-meta" class="file-meta-text">160 × 120 px • 75 KB • Valid: 100%</span>
+                <span id="depth-info-meta">160 × 120 px • 100% Valid</span>
                 <span class="badge badge-success" style="font-size: 9px; padding: 1px 5px;">Ready</span>
               </div>
             </div>
-        <!-- 3. Ground-Truth Depth Map Upload (Optional Reference) -->
-        <div class="upload-group" style="margin-top: 14px;">
+          </div>
+
+          <!-- Scientific Calibration Selector -->
+          <div style="margin-top: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">Physical Scale Calibration:</span>
+              <span style="font-size: 10px; color: #38bdf8;">Scientific Honesty</span>
+            </div>
+            <select id="depth-scale-select" class="form-select" style="font-size: 11px; padding: 5px 8px;" onchange="handleDepthScaleChange()">
+              <option value="auto" selected>Auto-Detect Physical Scale</option>
+              <option value="relative">Relative / Normalized [0.0 - 1.0 rel] (Uncalibrated)</option>
+              <option value="mm_to_m">Calibrated: Millimeters to Meters (/1000 - Kinect, RealSense)</option>
+              <option value="cm_to_m">Calibrated: Centimeters to Meters (/100)</option>
+              <option value="kitti">Calibrated: KITTI LiDAR Scale (/256)</option>
+              <option value="raw_meters">Calibrated: Raw Float Meters (1.0)</option>
+              <option value="norm_metric">Calibrated: Standard Range [0.5m - 6.0m]</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2.3 Ground-Truth Depth Map Upload Card (Cleanly Separated) -->
+        <div class="upload-group" style="margin-top: 10px; border-top: 1px solid #1e293b; padding-top: 10px;">
           <div class="upload-header">
             <label class="upload-label">
-              <span class="upload-badge gt-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">Ground Truth</span>
+              <span class="upload-badge gt-badge">Ground Truth</span>
               Reference Depth Map (Optional — .npy, PNG)
             </label>
             <span id="gt-status-badge" class="file-status-badge">Optional (None)</span>
@@ -790,16 +983,15 @@
           <div class="file-dropzone" id="gt-dropzone" onclick="document.getElementById('gt-file-input').click()">
             <input type="file" id="gt-file-input" accept=".npy,image/png,image/jpeg,image/*" onchange="handleFileChange('gt')">
             <div id="gt-empty-view" class="dropzone-content">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <circle cx="12" cy="12" r="10"/>
                 <polyline points="12 6 12 12 14 14"/>
               </svg>
-              <span id="gt-file-name" style="font-size: 11px; font-weight: 500; color: #cbd5e1;">Click or drop Reference Ground Truth (.npy or PNG)</span>
-              <span style="font-size: 10px; color: #64748b;">Optional reference for calculating true RMSE/MAE error maps</span>
+              <span id="gt-file-name" style="font-size: 11px; font-weight: 500; color: #cbd5e1;">Click or drop Reference Ground Truth</span>
+              <span style="font-size: 10px; color: #64748b;">Optional reference to compute true RMSE/MAE error maps</span>
             </div>
           </div>
 
-          <!-- GT File Info Card -->
           <div id="gt-info-card" class="file-info-card" style="display: none;">
             <img id="gt-thumb" class="file-thumb" alt="GT Preview">
             <div class="file-details">
@@ -808,40 +1000,20 @@
                 <button type="button" class="btn-remove-file" onclick="removeSelectedFile('gt', event)" title="Remove Ground Truth file">✕</button>
               </div>
               <div class="file-meta-row">
-                <span id="gt-info-meta" class="file-meta-text">640 × 480 px • 100% Valid</span>
+                <span id="gt-info-meta">640 × 480 px • 100% Valid</span>
                 <span class="badge badge-success" style="font-size: 9px; padding: 1px 5px;">Reference Loaded</span>
               </div>
             </div>
           </div>
         </div>
-
-          </div>
-
-          <!-- Depth Scale Configuration -->
-          <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Depth Physical Scale Calibration</label>
-              <span style="font-size: 10px; color: var(--primary);">Documented Units</span>
-            </div>
-            <select id="depth-scale-select" class="form-select" style="font-size: 11px; padding: 6px 10px;" onchange="handleDepthScaleChange()">
-              <option value="auto" selected>Auto-Detect Format & Physical Scale</option>
-              <option value="relative">Relative / Normalized Depth [0.0 - 1.0 rel] (Uncalibrated)</option>
-              <option value="mm_to_m">Calibrated Metric: Millimeters to Meters (/ 1000.0 — Kinect, RealSense)</option>
-              <option value="cm_to_m">Calibrated Metric: Centimeters to Meters (/ 100.0)</option>
-              <option value="kitti">Calibrated Metric: KITTI LiDAR Scale (/ 256.0)</option>
-              <option value="raw_meters">Calibrated Metric: Raw Float32 Metric Depth (Scale = 1.0)</option>
-              <option value="norm_metric">Calibrated Metric: Standard Indoor Range [0.5m - 6.0m]</option>
-            </select>
-          </div>
-        </div>
       </div>
 
-      <!-- Reconstruction Settings -->
+      <!-- 3. Reconstruction Settings -->
       <div class="card">
         <div class="card-title">3. Reconstruction Settings</div>
 
         <div class="form-group">
-          <label>Upsampling Factor</label>
+          <label>Upsampling Factor (P4 Core Task)</label>
           <select id="upsample-factor" class="form-select">
             <option value="2">2× Upsampling</option>
             <option value="4" selected>4× Upsampling (Standard)</option>
@@ -858,87 +1030,107 @@
             <option value="cnn">A2: Deep Learning Alone (EdgeFuseNet)</option>
             <option value="guided">A1: Guided Filter (RGB-Guided)</option>
             <option value="joint_bilateral">A1: Joint Bilateral Filter</option>
-            <option value="bilinear">A0: Bilinear (Validity-Normalized)</option>
             <option value="bicubic">A0: Bicubic Interpolation</option>
+            <option value="bilinear">A0: Bilinear (Validity-Normalized)</option>
             <option value="nearest">A0: Nearest Neighbor</option>
           </select>
         </div>
 
-        <div class="toggle-row">
-          <div>
-            <div class="toggle-text">Texture-Copy Suppression</div>
-            <div class="toggle-sub">Suppresses false edges from flat textured surfaces</div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="checkbox-group">
+            <input type="checkbox" id="toggle-texture" checked>
+            <span>Texture-Copy Suppression Gate (Mechanism C)</span>
+          </label>
+          <div style="font-size: 10px; color: #64748b; margin-top: 3px; padding-left: 23px;">
+            Suppresses false depth edges caused by wall textures or painted text.
           </div>
-          <input type="checkbox" id="toggle-texture" checked style="accent-color: var(--primary); cursor: pointer;">
         </div>
 
-        <button class="btn-reconstruct" id="btn-run" onclick="executeReconstruction()">
-          <div class="spinner" id="spinner"></div>
+        <button type="button" id="btn-run" class="btn-primary" onclick="executeReconstruction()">
+          <div id="spinner" class="spinner"></div>
           <span id="btn-text">Execute Depth Reconstruction</span>
         </button>
       </div>
 
-      <!-- Downloads -->
+      <!-- 4. Numerical & Visual Exports -->
       <div class="card">
         <div class="card-title">4. Numerical & Visual Exports</div>
-        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
-          Export reconstructed floating-point metric depth values:
-        </p>
-        <div class="download-bar">
-          <a href="/api/download/npy" class="btn-download" download="edgefuse_dcr_depth.npy">
-            ⬇ Numeric Depth (.npy)
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+          Export reconstructed depth arrays and diagnostic maps:
+        </div>
+        <div class="export-grid">
+          <a id="exp-npy" href="/api/download/npy" class="btn-export" title="Export float32 numpy depth array">
+            <span>Float32 Array</span>
+            <span class="badge" style="font-size: 9px;">.NPY</span>
           </a>
-          <a href="/api/download/png" class="btn-download" download="edgefuse_dcr_preview.png">
-            ⬇ Visualized Map (.png)
+          <a id="exp-png" href="/api/download/png" class="btn-export" title="Export colorized depth visualization">
+            <span>Depth Preview</span>
+            <span class="badge" style="font-size: 9px;">.PNG</span>
+          </a>
+          <a id="exp-conf" href="/api/download/confidence" class="btn-export" title="Export estimated confidence map">
+            <span>Confidence Map</span>
+            <span class="badge" style="font-size: 9px;">.PNG</span>
+          </a>
+          <a id="exp-mask" href="/api/download/valid_mask" class="btn-export" title="Export original sensor validity mask">
+            <span>Validity Mask</span>
+            <span class="badge" style="font-size: 9px;">.PNG</span>
+          </a>
+          <a id="exp-err" href="/api/download/error_map" class="btn-export" title="Export ground-truth error heatmap">
+            <span>Error Heatmap</span>
+            <span class="badge" style="font-size: 9px;">.PNG</span>
+          </a>
+          <a id="exp-json" href="/api/download/report_json" class="btn-export" title="Export full evaluation report with metrics">
+            <span>Audit Report</span>
+            <span class="badge" style="font-size: 9px;">.JSON</span>
           </a>
         </div>
       </div>
 
     </div>
 
-    <!-- Right Column: Interactive Results & Analytics -->
-    <div>
+    <!-- Main Workspace -->
+    <div class="workspace">
 
-      <!-- Quantitative Metrics Banner -->
-      <div class="metrics-grid" id="metrics-container">
-        <div class="metric-card accent-cyan">
+      <!-- Metrics Bar -->
+      <div class="metrics-bar">
+        <div class="metric-card">
           <div class="metric-label" id="lbl-m1">RMSE</div>
-          <div class="metric-value" id="val-rmse">0.114<span class="metric-unit">m</span></div>
+          <div class="metric-value" id="val-rmse">--<span class="metric-unit">m</span></div>
         </div>
         <div class="metric-card">
           <div class="metric-label" id="lbl-m2">MAE</div>
-          <div class="metric-value" id="val-mae">0.042<span class="metric-unit">m</span></div>
-        </div>
-        <div class="metric-card accent-emerald">
-          <div class="metric-label" id="lbl-m3">PSNR</div>
-          <div class="metric-value" id="val-psnr">38.83<span class="metric-unit">dB</span></div>
-        </div>
-        <div class="metric-card accent-emerald">
-          <div class="metric-label" id="lbl-m4">SSIM</div>
-          <div class="metric-value" id="val-ssim">0.9780</div>
-        </div>
-        <div class="metric-card accent-amber">
-          <div class="metric-label" id="lbl-m5">Boundary F1</div>
-          <div class="metric-value" id="val-f1">0.820</div>
+          <div class="metric-value" id="val-mae">--<span class="metric-unit">m</span></div>
         </div>
         <div class="metric-card">
-          <div class="metric-label" id="lbl-m6">Latency</div>
-          <div class="metric-value" id="val-latency">482<span class="metric-unit">ms</span></div>
+          <div class="metric-label" id="lbl-m3">PSNR</div>
+          <div class="metric-value" id="val-psnr">--<span class="metric-unit">dB</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label" id="lbl-m4">SSIM</div>
+          <div class="metric-value" id="val-ssim">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label" id="lbl-m5">BOUNDARY F1</div>
+          <div class="metric-value" id="val-f1">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label" id="lbl-m6">LATENCY</div>
+          <div class="metric-value" id="val-latency">--<span class="metric-unit">ms</span></div>
         </div>
       </div>
 
-      <!-- Main Visual Showcase -->
-      <div class="card">
-        <div class="card-title">
-          <span>Reconstruction Showcase & Diagnostic Visuals</span>
-          <span id="sample-dimensions" style="font-size: 11px; color: var(--text-muted);">640 x 480 px</span>
-        </div>
-
-        <div class="view-tabs">
-          <button class="tab-btn active" onclick="switchTab('tab-primary')">Primary Reconstruction</button>
-          <button class="tab-btn" onclick="switchTab('tab-comparative')">Ablation Progression (A0 vs A2 vs A5)</button>
-          <button class="tab-btn" onclick="switchTab('tab-edges')">Edge & Discontinuity Analysis</button>
-          <button class="tab-btn" onclick="switchTab('tab-diagnostics')">Confidence & Error Maps</button>
+      <!-- Visualization Laboratory Card -->
+      <div class="card" style="padding: 16px;">
+        <div class="tabs-header">
+          <div class="tabs-list">
+            <button type="button" class="tab-btn active" onclick="switchTab('tab-primary', this)">Primary Reconstruction</button>
+            <button type="button" class="tab-btn" onclick="switchTab('tab-comparative', this)">Ablation Progression (A0 vs A2 vs A5)</button>
+            <button type="button" class="tab-btn" onclick="switchTab('tab-edges', this)">Edge & Discontinuity Analysis</button>
+            <button type="button" class="tab-btn" onclick="switchTab('tab-diagnostics', this)">Confidence & Error Maps</button>
+          </div>
+          <div id="sample-dimensions" style="font-size: 11px; font-weight: 600; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">
+            640 x 480 (NYU Depth V2)
+          </div>
         </div>
 
         <!-- Tab 1: Primary Reconstruction -->
@@ -951,9 +1143,10 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                   <span>RGB Guidance View</span>
                 </div>
-                <img id="view-rgb" alt="RGB">
+                <img id="view-rgb" alt="RGB Guidance">
               </div>
             </div>
+
             <div class="view-panel">
               <div class="panel-header">Input Low-Res / Sparse Depth</div>
               <div class="panel-body">
@@ -961,12 +1154,13 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                   <span>Sparse / Low-Res Depth Map</span>
                 </div>
-                <img id="view-lr-depth" alt="Low-Res Depth">
+                <img id="view-lr-depth" alt="Input Depth">
               </div>
             </div>
-            <div class="view-panel" style="border-color: rgba(59, 130, 246, 0.4);">
+
+            <div class="view-panel" style="border-color: rgba(59, 130, 246, 0.45);">
               <div class="panel-header" style="color: #60a5fa;">
-                EdgeFuse-DCR Final Reconstruction
+                <span>EdgeFuse-DCR Final Reconstruction</span>
                 <span class="badge badge-primary">Proposed</span>
               </div>
               <div class="panel-body">
@@ -980,7 +1174,7 @@
           </div>
         </div>
 
-        <!-- Tab 2: Comparative Progression -->
+        <!-- Tab 2: Ablation Progression -->
         <div id="tab-comparative" class="tab-content" style="display: none;">
           <div class="viewport-grid">
             <div class="view-panel">
@@ -990,9 +1184,10 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                   <span>Bilinear interpolation baseline</span>
                 </div>
-                <img id="view-classical" alt="Classical Baseline">
+                <img id="view-classical" alt="A0 Baseline">
               </div>
             </div>
+
             <div class="view-panel">
               <div class="panel-header">A2: Deep Learning Alone (EdgeFuseNet)</div>
               <div class="panel-body">
@@ -1000,52 +1195,53 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                   <span>CNN direct inference</span>
                 </div>
-                <img id="view-cnn" alt="CNN Alone">
+                <img id="view-cnn" alt="A2 CNN Alone">
               </div>
             </div>
-            <div class="view-panel" style="border-color: rgba(59, 130, 246, 0.4);">
-              <div class="panel-header" style="color: #60a5fa;">A5: EdgeFuse-DCR Full Hybrid</div>
+
+            <div class="view-panel" style="border-color: rgba(59, 130, 246, 0.45);">
+              <div class="panel-header" style="color: #60a5fa;">A5: EdgeFuse-DCR Full Hybrid (Ours)</div>
               <div class="panel-body">
                 <div class="panel-placeholder">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                   <span>Full hybrid reconstruction</span>
                 </div>
-                <img id="view-hybrid-comp" alt="Full Hybrid">
+                <img id="view-hybrid-comp" alt="A5 Full Hybrid">
               </div>
             </div>
-          
+          </div>
+
           <!-- Quantitative Ablation Differentiation Card -->
-          <div id="ablation-diff-card" style="margin-top: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 8px; padding: 12px 16px;">
+          <div id="ablation-diff-card" style="margin-top: 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid #334155; border-radius: 8px; padding: 12px 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 12px; font-weight: 600; color: #93c5fd;">🔬 Scientific Ablation Differentiation (Exact Numerical Separation)</span>
-              <span id="ablation-scale-note" style="font-size: 11px; color: var(--text-muted);">Pairwise Mean Absolute Differences</span>
+              <span style="font-size: 12px; font-weight: 600; color: #93c5fd;">🔬 Quantitative Ablation Differentiation (Exact Pairwise Differences)</span>
+              <span id="ablation-scale-note" style="font-size: 11px; color: var(--text-muted);">Pairwise Mean Absolute Errors (MAE)</span>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 11px;">
-              <div style="background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 11px;">
+              <div style="background: #0b1120; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
                 <div style="color: #94a3b8; font-weight: 500;">|A5 (Hybrid) − A0 (Bilinear)|</div>
                 <div id="diff-a0-a5" style="font-family: monospace; font-size: 14px; font-weight: 700; color: #38bdf8; margin-top: 2px;">--</div>
                 <div style="color: #64748b; font-size: 10px;">Classical Edge Blur Correction</div>
               </div>
-              <div style="background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
+              <div style="background: #0b1120; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
                 <div style="color: #94a3b8; font-weight: 500;">|A5 (Hybrid) − A2 (CNN Alone)|</div>
                 <div id="diff-a2-a5" style="font-family: monospace; font-size: 14px; font-weight: 700; color: #34d399; margin-top: 2px;">--</div>
                 <div style="color: #64748b; font-size: 10px;">Texture Gate & Boundary Refinement</div>
               </div>
-              <div style="background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
+              <div style="background: #0b1120; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
                 <div style="color: #94a3b8; font-weight: 500;">|A2 (CNN) − A0 (Bilinear)|</div>
                 <div id="diff-a0-a2" style="font-family: monospace; font-size: 14px; font-weight: 700; color: #f59e0b; margin-top: 2px;">--</div>
                 <div style="color: #64748b; font-size: 10px;">Deep Geometric Prior Delta</div>
               </div>
             </div>
           </div>
-</div>
         </div>
 
         <!-- Tab 3: Edge & Discontinuity Alignment -->
         <div id="tab-edges" class="tab-content" style="display: none;">
-          <div class="viewport-grid">
+          <div class="viewport-grid-2">
             <div class="view-panel">
-              <div class="panel-header">Edge Overlay (Red: RGB Edges, Cyan: Depth Discontinuities)</div>
+              <div class="panel-header">Multi-Modal Edge Overlay (Red: RGB Edges, Cyan: Depth Discontinuities)</div>
               <div class="panel-body">
                 <div class="panel-placeholder">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -1054,8 +1250,12 @@
                 <img id="view-boundary" alt="Boundary Overlay">
               </div>
             </div>
+
             <div class="view-panel">
-              <div class="panel-header">Validity Mask (Measured Seeds)</div>
+              <div class="panel-header">
+                <span id="validity-mask-title">Validity Mask (Measured Seeds)</span>
+                <span id="validity-mask-stats" class="badge" style="font-size: 10px;">100% Valid</span>
+              </div>
               <div class="panel-body">
                 <div class="panel-placeholder">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -1063,13 +1263,23 @@
                 </div>
                 <img id="view-valid-mask" alt="Validity Mask">
               </div>
+              <!-- Detailed Validity Mask Legend & Statistics Bar -->
+              <div id="validity-stats-bar" style="padding: 8px 12px; background: #0b1120; border-top: 1px solid #1e293b; font-size: 11px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <div style="color: #94a3b8;">
+                  <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 2px; margin-right: 4px;"></span>White: Measured Valid Seed &nbsp;|&nbsp;
+                  <span style="display: inline-block; width: 8px; height: 8px; background: #000; border: 1px solid #475569; border-radius: 2px; margin-right: 4px;"></span>Black: Unmeasured / Void
+                </div>
+                <div id="validity-px-counts" style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">
+                  Valid: 100% (Dense Input)
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Tab 4: Confidence & Error Map -->
+        <!-- Tab 4: Confidence & Error Maps -->
         <div id="tab-diagnostics" class="tab-content" style="display: none;">
-          <div class="viewport-grid">
+          <div class="viewport-grid-2">
             <div class="view-panel">
               <div class="panel-header">Estimated Confidence Map (Viridis: Yellow=High, Purple=Low)</div>
               <div class="panel-body">
@@ -1080,14 +1290,23 @@
                 <img id="view-confidence" alt="Confidence Map">
               </div>
             </div>
+
             <div class="view-panel">
               <div class="panel-header">Ground-Truth Absolute Error Map (Jet: Blue=0m, Red=High Error)</div>
               <div class="panel-body">
-                <div class="panel-placeholder">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                  <span>Available when Ground Truth is present</span>
+                <!-- Clean explanatory empty state when GT is absent -->
+                <div id="gt-error-empty-state" class="panel-placeholder" style="max-width: 320px; text-align: center;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 40px; height: 40px; stroke: #64748b;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <span style="font-weight: 600; color: #cbd5e1; font-size: 12px;">Ground Truth Reference Required</span>
+                  <span style="font-size: 11px; color: #64748b; line-height: 1.4;">
+                    To calculate physical RMSE and render an absolute error heatmap, please select a built-in benchmark dataset or upload a calibrated GT depth map.
+                  </span>
                 </div>
-                <img id="view-error" alt="Error Map">
+                <img id="view-error" alt="Absolute Error Map" style="display: none;">
               </div>
             </div>
           </div>
@@ -1095,60 +1314,55 @@
 
       </div>
 
-      <!-- Comparative Benchmark Table -->
-      <div class="card">
-        <div class="card-title">
-          <span>Comparative Benchmark & Ablation Study</span>
-          <span class="badge" id="benchmark-dataset-badge">NYU Depth V2 (Indoor — 4× Low-Res)</span>
+      <!-- Comparative Benchmark Table Card -->
+      <div class="benchmark-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+              Comparative Benchmark & Ablation Study
+            </span>
+            <div style="font-size: 11px; color: #64748b;">Standardized evaluation across all competitive pipeline stages</div>
+          </div>
+          <span id="benchmark-dataset-badge" class="badge badge-accent">NYU Depth V2 (Indoor — 4× Low-Res)</span>
         </div>
-        <div style="display: flex; gap: 8px; margin: 12px 0 8px 0; flex-wrap: wrap;">
-          <button id="btn-bench-nyu" class="btn-demo btn-bench-tab active" style="padding: 6px 14px; font-size: 12px;" onclick="switchBenchmarkDataset('nyu')">NYU Depth V2 (Indoor)</button>
-          <button id="btn-bench-kitti" class="btn-demo btn-bench-tab" style="padding: 6px 14px; font-size: 12px;" onclick="switchBenchmarkDataset('kitti')">KITTI LiDAR (Outdoor)</button>
-          <button id="btn-bench-middlebury" class="btn-demo btn-bench-tab" style="padding: 6px 14px; font-size: 12px;" onclick="switchBenchmarkDataset('middlebury')">Middlebury 2021 (Stereo)</button>
-        </div>
-        <div class="benchmark-table-wrapper">
-          <table class="benchmark-table">
+
+        <div class="table-responsive">
+          <table class="bench-table">
             <thead>
               <tr>
                 <th>Pipeline Stage / Method</th>
-                <th>RMSE (m)</th>
-                <th>MAE (m)</th>
-                <th>PSNR (dB)</th>
-                <th>SSIM</th>
-                <th>Boundary F1</th>
-                <th>Grad MAE</th>
-                <th>Latency</th>
+                <th>RMSE (m) <span style="font-size: 9px; color: #64748b;">↓</span></th>
+                <th>MAE (m) <span style="font-size: 9px; color: #64748b;">↓</span></th>
+                <th>PSNR (dB) <span style="font-size: 9px; color: #64748b;">↑</span></th>
+                <th>SSIM <span style="font-size: 9px; color: #64748b;">↑</span></th>
+                <th>Boundary F1 <span style="font-size: 9px; color: #64748b;">↑</span></th>
+                <th>Grad MAE <span style="font-size: 9px; color: #64748b;">↓</span></th>
+                <th>Latency (ms) <span style="font-size: 9px; color: #64748b;">↓</span></th>
               </tr>
             </thead>
             <tbody id="benchmark-table-body">
+              <!-- Dynamically rendered -->
             </tbody>
           </table>
         </div>
       </div>
 
     </div>
-
   </div>
 
   <!-- Toast Notification -->
-  <div class="toast" id="toast"></div>
+  <div id="toast">Notification</div>
 
-  <!-- JavaScript Interaction -->
   <script>
-    let currentDemo = 'nyu';
+    // Global State Management
+    let currentDemo = 'nyu_living_room';
+    let currentDatasetKey = 'nyu';
     let uploadedRgbFile = null;
     let uploadedDepthFile = null;
     let uploadedGtFile = null;
-
-    function showToast(msg, isError = false) {
-      const toast = document.getElementById('toast');
-      toast.innerText = msg;
-      toast.style.borderColor = isError ? '#f43f5e' : '#3b82f6';
-      toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 4500);
-    }
-
-    let currentBenchmarkDataset = 'nyu';
+    let datasetManifest = null;
+    let gallerySamples = [];
+    let activeGalleryIndex = 0;
 
     const BENCHMARK_DATA = {
       nyu: {
@@ -1187,67 +1401,18 @@
       }
     };
 
-    function switchBenchmarkDataset(datasetKey) {
-      currentBenchmarkDataset = datasetKey;
-      document.querySelectorAll('.btn-bench-tab').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById(`btn-bench-${datasetKey}`);
-      if (activeBtn) activeBtn.classList.add('active');
-
-      const data = BENCHMARK_DATA[datasetKey] || BENCHMARK_DATA['nyu'];
-      const badge = document.getElementById('benchmark-dataset-badge');
-      if (badge) badge.innerText = data.title;
-
-      renderBenchmarkTable(datasetKey);
+    function toggleSidebar() {
+      const c = document.getElementById('main-container');
+      c.classList.toggle('sidebar-collapsed');
     }
 
-    function renderBenchmarkTable(datasetKey, liveMetrics = null, liveMethod = null) {
-      const data = BENCHMARK_DATA[datasetKey] || BENCHMARK_DATA['nyu'];
-      const tbody = document.getElementById('benchmark-table-body');
-      if (!tbody) return;
-
-      let html = '';
-      data.rows.forEach(r => {
-        html += `<tr class="${r.highlight ? 'highlight' : ''}">
-          <td><strong>${r.method}</strong></td>
-          <td>${r.rmse}</td>
-          <td>${r.mae}</td>
-          <td>${r.psnr}</td>
-          <td>${r.ssim}</td>
-          <td>${r.f1}</td>
-          <td>${r.grad}</td>
-          <td>${r.latency}</td>
-        </tr>`;
-      });
-
-      if (liveMetrics) {
-        html += `<tr style="background: rgba(16, 185, 129, 0.15); border-left: 3px solid #10b981;">
-          <td><strong style="color: #34d399;">Current Live Run (${(liveMethod || 'HYBRID').toUpperCase()})</strong></td>
-          <td><strong style="color: #34d399;">${liveMetrics.rmse !== undefined && liveMetrics.rmse !== null ? Number(liveMetrics.rmse).toFixed(4) : 'N/A'}</strong></td>
-          <td>${liveMetrics.mae !== undefined && liveMetrics.mae !== null ? Number(liveMetrics.mae).toFixed(4) : 'N/A'}</td>
-          <td>${liveMetrics.psnr !== undefined && liveMetrics.psnr !== null ? Number(liveMetrics.psnr).toFixed(2) : 'N/A'}</td>
-          <td>${liveMetrics.ssim !== undefined && liveMetrics.ssim !== null ? Number(liveMetrics.ssim).toFixed(4) : 'N/A'}</td>
-          <td>${liveMetrics.boundary_f1 !== undefined && liveMetrics.boundary_f1 !== null ? Number(liveMetrics.boundary_f1).toFixed(3) : 'N/A'}</td>
-          <td>${liveMetrics.grad_mae !== undefined && liveMetrics.grad_mae !== null ? Number(liveMetrics.grad_mae).toFixed(4) : 'N/A'}</td>
-          <td>${liveMetrics.latency_ms ? liveMetrics.latency_ms + ' ms' : 'Live'}</td>
-        </tr>`;
-      }
-
-      tbody.innerHTML = html;
-    }
-
-    function switchTab(tabId, btnElement) {
-      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      const targetTab = document.getElementById(tabId);
-      if (targetTab) targetTab.style.display = 'block';
-      if (btnElement) {
-        btnElement.classList.add('active');
-      } else if (window.event && window.event.target && window.event.target.classList.contains('tab-btn')) {
-        window.event.target.classList.add('active');
-      } else {
-        const defaultBtn = document.querySelector(`button[onclick*="${tabId}"]`);
-        if (defaultBtn) defaultBtn.classList.add('active');
-      }
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.className = isError ? 'toast-error' : '';
+      toast.style.display = 'block';
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
     }
 
     function formatBytes(bytes) {
@@ -1258,6 +1423,22 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
+    // Set view image safely with placeholder management
+    function setViewImage(imgId, b64) {
+      const img = document.getElementById(imgId);
+      if (!img) return;
+      const ph = img.parentElement ? img.parentElement.querySelector('.panel-placeholder') : null;
+      if (b64 && b64.length > 50) {
+        img.src = b64;
+        img.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+      } else {
+        img.removeAttribute('src');
+        img.style.display = 'none';
+        if (ph) ph.style.display = 'flex';
+      }
+    }
+
     function clearReconstructionPanels() {
       setViewImage('view-reconstructed', null);
       setViewImage('view-hybrid-comp', null);
@@ -1265,7 +1446,12 @@
       setViewImage('view-cnn', null);
       setViewImage('view-confidence', null);
       setViewImage('view-boundary', null);
-      setViewImage('view-error', null);
+      
+      const errImg = document.getElementById('view-error');
+      const errEmpty = document.getElementById('gt-error-empty-state');
+      if (errImg) errImg.style.display = 'none';
+      if (errEmpty) errEmpty.style.display = 'flex';
+
       document.getElementById('diff-a0-a5').innerText = '--';
       document.getElementById('diff-a2-a5').innerText = '--';
       document.getElementById('diff-a0-a2').innerText = '--';
@@ -1287,42 +1473,182 @@
       document.getElementById('val-latency').innerHTML = '--';
     }
 
-    function updateReconstructButtonState() {
-      const btn = document.getElementById('btn-run');
-      const btnText = document.getElementById('btn-text');
-      if (currentDemo) {
-        btn.disabled = false;
-        btnText.innerText = 'Execute Depth Reconstruction';
-      } else if (uploadedRgbFile && uploadedDepthFile) {
-        btn.disabled = false;
-        btnText.innerText = uploadedGtFile ? 'Execute Reconstruction & Ground Truth Audit' : 'Execute Depth Reconstruction';
-      } else if (uploadedRgbFile && !uploadedDepthFile) {
-        btn.disabled = false;
-        btnText.innerText = 'Upload Depth Map to Run';
-      } else if (!uploadedRgbFile && uploadedDepthFile) {
-        btn.disabled = false;
-        btnText.innerText = 'Upload RGB Image to Run';
-      } else {
-        btn.disabled = false;
-        btnText.innerText = 'Execute Depth Reconstruction';
+    function switchTab(tabId, btnElement) {
+      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      const targetTab = document.getElementById(tabId);
+      if (targetTab) targetTab.style.display = 'block';
+      if (btnElement) btnElement.classList.add('active');
+    }
+
+    // Benchmark Table Rendering
+    function renderBenchmarkTable(datasetKey, liveMetrics = null, liveMethod = null) {
+      const data = BENCHMARK_DATA[datasetKey] || BENCHMARK_DATA['nyu'];
+      const tbody = document.getElementById('benchmark-table-body');
+      if (!tbody) return;
+
+      const badge = document.getElementById('benchmark-dataset-badge');
+      if (badge) badge.innerText = data.title;
+
+      let html = '';
+      data.rows.forEach(r => {
+        html += `<tr class="${r.highlight ? 'highlight' : ''}">
+          <td><strong>${r.method}</strong></td>
+          <td>${r.rmse}</td>
+          <td>${r.mae}</td>
+          <td>${r.psnr}</td>
+          <td>${r.ssim}</td>
+          <td>${r.f1}</td>
+          <td>${r.grad}</td>
+          <td>${r.latency}</td>
+        </tr>`;
+      });
+
+      if (liveMetrics) {
+        html += `<tr class="live-row">
+          <td><strong>Current Live Run (${(liveMethod || 'HYBRID').toUpperCase()})</strong></td>
+          <td><strong>${liveMetrics.rmse !== undefined && liveMetrics.rmse !== null ? Number(liveMetrics.rmse).toFixed(4) : 'N/A'}</strong></td>
+          <td>${liveMetrics.mae !== undefined && liveMetrics.mae !== null ? Number(liveMetrics.mae).toFixed(4) : 'N/A'}</td>
+          <td>${liveMetrics.psnr !== undefined && liveMetrics.psnr !== null ? Number(liveMetrics.psnr).toFixed(2) : 'N/A'}</td>
+          <td>${liveMetrics.ssim !== undefined && liveMetrics.ssim !== null ? Number(liveMetrics.ssim).toFixed(4) : 'N/A'}</td>
+          <td>${liveMetrics.boundary_f1 !== undefined && liveMetrics.boundary_f1 !== null ? Number(liveMetrics.boundary_f1).toFixed(3) : 'N/A'}</td>
+          <td>${liveMetrics.grad_mae !== undefined && liveMetrics.grad_mae !== null ? Number(liveMetrics.grad_mae).toFixed(4) : 'N/A'}</td>
+          <td>${liveMetrics.latency_ms ? liveMetrics.latency_ms + ' ms' : 'Live'}</td>
+        </tr>`;
+      }
+
+      tbody.innerHTML = html;
+    }
+
+    // Dataset Explorer Gallery Implementation
+    async function loadDatasetGallery() {
+      try {
+        const res = await fetch('/api/dataset/gallery');
+        if (!res.ok) throw new Error('Could not load dataset manifest.');
+        datasetManifest = await res.json();
+        switchDatasetGallery('nyu', false);
+      } catch (err) {
+        console.error('Gallery load error:', err);
       }
     }
 
-    function setViewImage(imgId, b64) {
-      const img = document.getElementById(imgId);
-      if (!img) return;
-      const ph = img.parentElement ? img.parentElement.querySelector('.panel-placeholder') : null;
-      if (b64 && b64.length > 50) {
-        img.src = b64;
-        img.style.display = 'block';
-        if (ph) ph.style.display = 'none';
-      } else {
-        img.removeAttribute('src');
-        img.style.display = 'none';
-        if (ph) ph.style.display = 'flex';
+    function switchDatasetGallery(dsetKey, autoSelectFirst = true) {
+      currentDatasetKey = dsetKey;
+      document.querySelectorAll('.btn-dataset-tab').forEach(b => b.classList.remove('active'));
+      const activeTabBtn = document.getElementById(`tab-dset-${dsetKey}`);
+      if (activeTabBtn) activeTabBtn.classList.add('active');
+
+      if (!datasetManifest || !datasetManifest.datasets || !datasetManifest.datasets[dsetKey]) return;
+      const dset = datasetManifest.datasets[dsetKey];
+      gallerySamples = dset.samples || [];
+
+      document.getElementById('gallery-count-badge').innerText = `${gallerySamples.length} Scenes Available`;
+
+      const container = document.getElementById('gallery-container');
+      container.innerHTML = '';
+
+      gallerySamples.forEach((sample, idx) => {
+        const item = document.createElement('div');
+        item.className = `gallery-item ${sample.id === currentDemo ? 'active' : ''}`;
+        item.id = `gal-item-${sample.id}`;
+        item.onclick = () => selectGallerySample(sample.id, idx);
+
+        item.innerHTML = `
+          <div class="gallery-info">
+            <div class="gallery-title">${sample.title}</div>
+            <div class="gallery-meta">
+              <span class="gallery-badge">${sample.dimensions}</span>
+              <span class="gallery-badge" style="color: #34d399;">${sample.valid_percent}% Valid</span>
+              <span class="gallery-badge">${sample.depth_range}</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      if (autoSelectFirst && gallerySamples.length > 0) {
+        selectGallerySample(gallerySamples[0].id, 0);
       }
     }
 
+    function selectGallerySample(sampleId, idx) {
+      currentDemo = sampleId;
+      activeGalleryIndex = idx;
+
+      document.querySelectorAll('.gallery-item').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById(`gal-item-${sampleId}`);
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('gallery-active-label').innerText = `Scene ${idx + 1} of ${gallerySamples.length}`;
+
+      // Reset custom uploads
+      uploadedRgbFile = null;
+      uploadedDepthFile = null;
+      uploadedGtFile = null;
+
+      const rIn = document.getElementById('rgb-file-input'); if (rIn) rIn.value = '';
+      const dIn = document.getElementById('depth-file-input'); if (dIn) dIn.value = '';
+      const gIn = document.getElementById('gt-file-input'); if (gIn) gIn.value = '';
+
+      document.getElementById('rgb-info-card').style.display = 'none';
+      document.getElementById('rgb-empty-view').style.display = 'flex';
+      document.getElementById('rgb-file-name').innerText = 'Click or drop RGB image (PNG/JPG)';
+      document.getElementById('rgb-status-badge').innerText = 'Awaiting File';
+      document.getElementById('rgb-status-badge').className = 'file-status-badge';
+
+      document.getElementById('depth-info-card').style.display = 'none';
+      document.getElementById('depth-empty-view').style.display = 'flex';
+      document.getElementById('depth-file-name').innerText = 'Click or drop Depth Map (.npy, 16-bit PNG)';
+      document.getElementById('depth-status-badge').innerText = 'Awaiting File';
+      document.getElementById('depth-status-badge').className = 'file-status-badge';
+
+      document.getElementById('gt-info-card').style.display = 'none';
+      document.getElementById('gt-empty-view').style.display = 'flex';
+      document.getElementById('gt-file-name').innerText = 'Click or drop Reference Ground Truth';
+      document.getElementById('gt-status-badge').innerText = 'Optional (None)';
+      document.getElementById('gt-status-badge').className = 'file-status-badge';
+
+      loadDemoData(sampleId);
+    }
+
+    function navigateSample(direction) {
+      if (!gallerySamples || gallerySamples.length === 0) return;
+      let newIdx = activeGalleryIndex + direction;
+      if (newIdx < 0) newIdx = gallerySamples.length - 1;
+      if (newIdx >= gallerySamples.length) newIdx = 0;
+      selectGallerySample(gallerySamples[newIdx].id, newIdx);
+    }
+
+    async function loadDemoData(sampleId) {
+      clearReconstructionPanels();
+      try {
+        const res = await fetch(`/api/demo/${sampleId}`);
+        if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+        const data = await res.json();
+
+        setViewImage('view-rgb', data.rgb_b64);
+        setViewImage('view-lr-depth', data.lr_depth_b64);
+        setViewImage('view-valid-mask', data.valid_mask_b64);
+
+        document.getElementById('sample-dimensions').innerText = `${data.dimensions} (${data.dataset_name} — ${data.title})`;
+        document.getElementById('header-sample-pill').innerText = `Sample: ${data.title.split('(')[0]}`;
+
+        // Update Validity Mask Stats in Tab 3
+        const st = data.valid_mask_stats || {};
+        document.getElementById('validity-mask-title').innerText = `Validity Mask (${data.seed_label})`;
+        document.getElementById('validity-mask-stats').innerText = `${data.valid_percent}% Valid`;
+        document.getElementById('validity-px-counts').innerText = `${st.valid_pixels} Valid / ${st.invalid_pixels} Void (${st.total_pixels} total px)`;
+
+        renderBenchmarkTable(data.dataset_key);
+        showToast(`Loaded ${data.title} (${data.dimensions})`);
+
+        executeReconstruction();
+      } catch (err) {
+        showToast('Error loading sample: ' + err.message, true);
+      }
+    }
+
+    // Custom Upload System Implementation
     function handleFileChange(type, droppedFile = null) {
       if (type === 'rgb') {
         const input = document.getElementById('rgb-file-input');
@@ -1336,10 +1662,9 @@
 
         uploadedRgbFile = file;
         currentDemo = null;
-        document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.gallery-item').forEach(el => el.classList.remove('active'));
         clearReconstructionPanels();
 
-        document.getElementById('rgb-file-name').innerText = file.name;
         const reader = new FileReader();
         reader.onload = e => {
           const dataUrl = e.target.result;
@@ -1354,12 +1679,12 @@
             const badge = document.getElementById('rgb-status-badge');
             badge.innerText = 'Ready (RGB)';
             badge.className = 'file-status-badge status-ready';
-            document.getElementById('sample-dimensions').innerText = `RGB [${img.naturalWidth}×${img.naturalHeight} px] (Custom RGB)`;
+            document.getElementById('sample-dimensions').innerText = `RGB [${img.naturalWidth}×${img.naturalHeight} px] (Custom Input)`;
+            document.getElementById('header-sample-pill').innerText = `Custom Upload (${file.name})`;
           };
           img.src = dataUrl;
         };
         reader.readAsDataURL(file);
-        updateReconstructButtonState();
 
       } else if (type === 'depth') {
         const input = document.getElementById('depth-file-input');
@@ -1368,11 +1693,10 @@
 
         uploadedDepthFile = file;
         currentDemo = null;
-        document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.gallery-item').forEach(el => el.classList.remove('active'));
         clearReconstructionPanels();
 
         previewDepthMap(file);
-        updateReconstructButtonState();
 
       } else if (type === 'gt') {
         const input = document.getElementById('gt-file-input');
@@ -1381,7 +1705,6 @@
 
         uploadedGtFile = file;
         previewGtDepthMap(file);
-        updateReconstructButtonState();
       }
     }
 
@@ -1393,38 +1716,35 @@
       const formData = new FormData();
       formData.append('depth_file', file);
       const scaleSelect = document.getElementById('depth-scale-select');
-      if (scaleSelect) {
-        formData.append('depth_scale', scaleSelect.value);
-      }
+      if (scaleSelect) formData.append('depth_scale', scaleSelect.value);
 
       try {
-        const res = await fetch('/api/preview_depth', {
-          method: 'POST',
-          body: formData
-        });
+        const res = await fetch('/api/preview_depth', { method: 'POST', body: formData });
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || 'Depth validation failed.');
-        }
+        if (!res.ok) throw new Error(data.detail || 'Depth validation failed.');
 
         document.getElementById('depth-thumb').src = data.preview_b64;
         setViewImage('view-lr-depth', data.preview_b64);
         setViewImage('view-valid-mask', data.valid_mask_b64);
+
         document.getElementById('depth-info-name').innerText = file.name;
-        document.getElementById('depth-info-meta').innerText = `${data.width} × ${data.height} px • Valid: ${data.valid_percent}% (${data.valid_pixels} px / ${data.invalid_pixels} void) • [${data.min_depth} - ${data.max_depth} ${data.depth_unit}]`;
+        document.getElementById('depth-info-meta').innerText = `${data.width} × ${data.height} px • Valid: ${data.valid_percent}% • [${data.min_depth} - ${data.max_depth} ${data.depth_unit}]`;
         document.getElementById('depth-info-card').style.display = 'flex';
         document.getElementById('depth-empty-view').style.display = 'none';
+
         badge.innerText = `Ready (${data.depth_type.toUpperCase()})`;
         badge.className = 'file-status-badge status-ready';
 
-        if (data.warning) {
-          showToast(data.warning, false);
-        }
+        // Update validity statistics in Tab 3
+        document.getElementById('validity-mask-title').innerText = `Validity Mask (${data.valid_percent < 35 ? 'Measured Seeds' : 'Valid Input Pixels'})`;
+        document.getElementById('validity-mask-stats').innerText = `${data.valid_percent}% Valid`;
+        document.getElementById('validity-px-counts').innerText = `${data.valid_pixels} Valid / ${data.invalid_pixels} Void (${data.total_pixels} total px)`;
+
+        if (data.warning) showToast(data.warning, false);
       } catch (err) {
         uploadedDepthFile = null;
         const input = document.getElementById('depth-file-input');
         if (input) input.value = '';
-        document.getElementById('depth-file-name').innerText = 'Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)';
         document.getElementById('depth-info-card').style.display = 'none';
         document.getElementById('depth-empty-view').style.display = 'flex';
         badge.innerText = 'Invalid Depth';
@@ -1435,7 +1755,6 @@
         clearReconstructionPanels();
         showToast(err.message, true);
       }
-      updateReconstructButtonState();
     }
 
     async function previewGtDepthMap(file) {
@@ -1446,25 +1765,19 @@
       const formData = new FormData();
       formData.append('depth_file', file);
       const scaleSelect = document.getElementById('depth-scale-select');
-      if (scaleSelect) {
-        formData.append('depth_scale', scaleSelect.value);
-      }
+      if (scaleSelect) formData.append('depth_scale', scaleSelect.value);
 
       try {
-        const res = await fetch('/api/preview_depth', {
-          method: 'POST',
-          body: formData
-        });
+        const res = await fetch('/api/preview_depth', { method: 'POST', body: formData });
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || 'Ground Truth validation failed.');
-        }
+        if (!res.ok) throw new Error(data.detail || 'Ground Truth validation failed.');
 
         document.getElementById('gt-thumb').src = data.preview_b64;
         document.getElementById('gt-info-name').innerText = file.name;
         document.getElementById('gt-info-meta').innerText = `${data.width} × ${data.height} px • ${data.valid_percent}% Valid • Reference Ready`;
         document.getElementById('gt-info-card').style.display = 'flex';
         document.getElementById('gt-empty-view').style.display = 'none';
+
         badge.innerText = 'Reference Ready';
         badge.className = 'file-status-badge status-ready';
         showToast('Ground Truth reference loaded. Error map will be generated upon execution.');
@@ -1478,7 +1791,6 @@
         badge.className = 'file-status-badge status-error';
         showToast(err.message, true);
       }
-      updateReconstructButtonState();
     }
 
     function removeSelectedFile(type, event) {
@@ -1489,10 +1801,8 @@
         if (input) input.value = '';
         document.getElementById('rgb-info-card').style.display = 'none';
         document.getElementById('rgb-empty-view').style.display = 'flex';
-        document.getElementById('rgb-file-name').innerText = 'Click or drop RGB image (PNG/JPG)';
-        const badge = document.getElementById('rgb-status-badge');
-        badge.innerText = 'Awaiting File';
-        badge.className = 'file-status-badge';
+        document.getElementById('rgb-status-badge').innerText = 'Awaiting File';
+        document.getElementById('rgb-status-badge').className = 'file-status-badge';
         setViewImage('view-rgb', null);
         clearReconstructionPanels();
       } else if (type === 'depth') {
@@ -1501,10 +1811,8 @@
         if (input) input.value = '';
         document.getElementById('depth-info-card').style.display = 'none';
         document.getElementById('depth-empty-view').style.display = 'flex';
-        document.getElementById('depth-file-name').innerText = 'Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)';
-        const badge = document.getElementById('depth-status-badge');
-        badge.innerText = 'Awaiting File';
-        badge.className = 'file-status-badge';
+        document.getElementById('depth-status-badge').innerText = 'Awaiting File';
+        document.getElementById('depth-status-badge').className = 'file-status-badge';
         setViewImage('view-lr-depth', null);
         setViewImage('view-valid-mask', null);
         clearReconstructionPanels();
@@ -1514,19 +1822,18 @@
         if (input) input.value = '';
         document.getElementById('gt-info-card').style.display = 'none';
         document.getElementById('gt-empty-view').style.display = 'flex';
-        document.getElementById('gt-file-name').innerText = 'Click or drop Reference Ground Truth (.npy or PNG)';
-        const badge = document.getElementById('gt-status-badge');
-        badge.innerText = 'Optional (None)';
-        badge.className = 'file-status-badge';
+        document.getElementById('gt-status-badge').innerText = 'Optional (None)';
+        document.getElementById('gt-status-badge').className = 'file-status-badge';
         setViewImage('view-error', null);
+        const errEmpty = document.getElementById('gt-error-empty-state');
+        if (errEmpty) errEmpty.style.display = 'flex';
       }
       if (!uploadedRgbFile && !uploadedDepthFile) {
         resetMetricsToPlaceholder();
       }
-      updateReconstructButtonState();
     }
 
-    function clearBothUploads() {
+    function clearAllUploads() {
       removeSelectedFile('rgb');
       removeSelectedFile('depth');
       removeSelectedFile('gt');
@@ -1535,12 +1842,8 @@
     }
 
     function handleDepthScaleChange() {
-      if (uploadedDepthFile) {
-        previewDepthMap(uploadedDepthFile);
-      }
-      if (uploadedGtFile) {
-        previewGtDepthMap(uploadedGtFile);
-      }
+      if (uploadedDepthFile) previewDepthMap(uploadedDepthFile);
+      if (uploadedGtFile) previewGtDepthMap(uploadedGtFile);
     }
 
     function setupDragDrop() {
@@ -1562,86 +1865,21 @@
           }, false);
         });
         zone.addEventListener('drop', e => {
-          const dt = e.dataTransfer;
-          const files = dt.files;
-          if (files && files.length > 0) {
-            handleFileChange(type, files[0]);
-          }
+          const files = e.dataTransfer.files;
+          if (files && files.length > 0) handleFileChange(type, files[0]);
         }, false);
       });
     }
 
-    async function loadDemoSample(sampleId) {
-      currentDemo = sampleId;
-      document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById(`demo-${sampleId}`);
-      if (activeBtn) activeBtn.classList.add('active');
-
-      switchBenchmarkDataset(sampleId);
-
-      // Reset any custom upload UI state
-      uploadedRgbFile = null;
-      uploadedDepthFile = null;
-      uploadedGtFile = null;
-
-      const rgbIn = document.getElementById('rgb-file-input');
-      if (rgbIn) rgbIn.value = '';
-      const depthIn = document.getElementById('depth-file-input');
-      if (depthIn) depthIn.value = '';
-      const gtIn = document.getElementById('gt-file-input');
-      if (gtIn) gtIn.value = '';
-
-      document.getElementById('rgb-info-card').style.display = 'none';
-      document.getElementById('rgb-empty-view').style.display = 'flex';
-      document.getElementById('rgb-file-name').innerText = 'Click or drop RGB image (PNG/JPG)';
-      document.getElementById('rgb-status-badge').innerText = 'Awaiting File';
-      document.getElementById('rgb-status-badge').className = 'file-status-badge';
-
-      document.getElementById('depth-info-card').style.display = 'none';
-      document.getElementById('depth-empty-view').style.display = 'flex';
-      document.getElementById('depth-file-name').innerText = 'Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)';
-      document.getElementById('depth-status-badge').innerText = 'Awaiting File';
-      document.getElementById('depth-status-badge').className = 'file-status-badge';
-
-      document.getElementById('gt-info-card').style.display = 'none';
-      document.getElementById('gt-empty-view').style.display = 'flex';
-      document.getElementById('gt-file-name').innerText = 'Click or drop Reference Ground Truth (.npy or PNG)';
-      document.getElementById('gt-status-badge').innerText = 'Optional (None)';
-      document.getElementById('gt-status-badge').className = 'file-status-badge';
-
-      clearReconstructionPanels();
-
-      try {
-        const res = await fetch(`/api/demo/${sampleId}`);
-        if (!res.ok) {
-          throw new Error(`Server returned HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        if (data.rgb_b64) {
-          setViewImage('view-rgb', data.rgb_b64);
-          setViewImage('view-lr-depth', data.lr_depth_b64);
-          setViewImage('view-valid-mask', data.valid_mask_b64);
-          document.getElementById('sample-dimensions').innerText = `${data.dimensions} (${data.dataset_name})`;
-          showToast(`Loaded ${data.dataset_name} sample.`);
-          executeReconstruction();
-        }
-      } catch (err) {
-        showToast('Error loading demo: ' + err.message, true);
-      }
-      updateReconstructButtonState();
-    }
-
+    // Execution Core
     async function executeReconstruction() {
       const btn = document.getElementById('btn-run');
       const spinner = document.getElementById('spinner');
       const btnText = document.getElementById('btn-text');
 
       if (!currentDemo && (!uploadedRgbFile || !uploadedDepthFile)) {
-        if (!uploadedRgbFile) {
-          showToast('Please upload an RGB Guidance Image before executing.', true);
-        } else {
-          showToast('Please upload a valid Depth Map (.npy or 16-bit PNG) before executing.', true);
-        }
+        if (!uploadedRgbFile) showToast('Please upload an RGB Guidance Image before executing.', true);
+        else showToast('Please upload a valid Depth Map before executing.', true);
         return;
       }
 
@@ -1663,48 +1901,44 @@
       } else {
         formData.append('rgb_file', uploadedRgbFile);
         formData.append('depth_file', uploadedDepthFile);
-        if (uploadedGtFile) {
-          formData.append('gt_file', uploadedGtFile);
-        }
+        if (uploadedGtFile) formData.append('gt_file', uploadedGtFile);
         const scaleSelect = document.getElementById('depth-scale-select');
-        if (scaleSelect) {
-          formData.append('depth_scale', scaleSelect.value);
-        }
+        if (scaleSelect) formData.append('depth_scale', scaleSelect.value);
       }
 
       try {
-        const res = await fetch('/api/reconstruct', {
-          method: 'POST',
-          body: formData
-        });
+        const res = await fetch('/api/reconstruct', { method: 'POST', body: formData });
         const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Reconstruction failed.');
 
-        if (!res.ok) {
-          throw new Error(data.detail || 'Reconstruction failed.');
-        }
-
-        // Update visuals with safe helper (no broken icons)
-        if (data.input_depth_b64) {
-          setViewImage('view-lr-depth', data.input_depth_b64);
-        }
-        if (data.valid_mask_b64) {
-          setViewImage('view-valid-mask', data.valid_mask_b64);
-        }
+        if (data.input_depth_b64) setViewImage('view-lr-depth', data.input_depth_b64);
+        if (data.valid_mask_b64) setViewImage('view-valid-mask', data.valid_mask_b64);
         setViewImage('view-reconstructed', data.reconstructed_b64);
         setViewImage('view-hybrid-comp', data.reconstructed_b64);
         setViewImage('view-classical', data.classical_b64);
         setViewImage('view-cnn', data.cnn_b64);
         setViewImage('view-confidence', data.confidence_b64);
         setViewImage('view-boundary', data.boundary_b64);
-        setViewImage('view-error', data.error_b64);
 
-        // Update dimension indicator
-        if (data.alignment_info) {
-          const a = data.alignment_info;
-          document.getElementById('sample-dimensions').innerText = `RGB [${a.rgb_orig}] • Depth [${a.depth_orig}] → Target [${a.processed_rgb}] (${a.upsample_factor}× Factor)`;
+        // Ground-Truth Error Map Handling (Clean State)
+        const errImg = document.getElementById('view-error');
+        const errEmpty = document.getElementById('gt-error-empty-state');
+        if (data.has_gt && data.error_b64) {
+          errImg.src = data.error_b64;
+          errImg.style.display = 'block';
+          if (errEmpty) errEmpty.style.display = 'none';
+        } else {
+          errImg.style.display = 'none';
+          if (errEmpty) errEmpty.style.display = 'flex';
         }
 
-        // Update ablation pairwise differentiation card
+        // Dimensions indicator
+        if (data.alignment_info) {
+          const a = data.alignment_info;
+          document.getElementById('sample-dimensions').innerText = `RGB [${a.rgb_orig}] • Depth [${a.depth_orig}] → Output [${a.processed_rgb}] (${a.upsample_factor}× Factor)`;
+        }
+
+        // Ablation Differences
         if (data.algorithm_comparison) {
           const comp = data.algorithm_comparison;
           document.getElementById('diff-a0-a5').innerText = `${comp.diff_a0_a5_mae} ${comp.unit}`;
@@ -1712,11 +1946,9 @@
           document.getElementById('diff-a0-a2').innerText = `${comp.diff_a0_a2_mae} ${comp.unit}`;
         }
 
-        if (data.warning) {
-          showToast(data.warning, false);
-        }
+        if (data.warning) showToast(data.warning, false);
 
-        // Update metrics
+        // Metrics Display
         if (data.has_gt && data.metrics) {
           document.getElementById('lbl-m1').innerText = 'RMSE';
           document.getElementById('val-rmse').innerHTML = `${data.metrics.rmse.toFixed(4)}<span class="metric-unit">m</span>`;
@@ -1736,9 +1968,8 @@
           document.getElementById('lbl-m6').innerText = 'LATENCY';
           document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
 
-          renderBenchmarkTable(currentDemo || 'nyu', { ...data.metrics, latency_ms: data.latency_ms }, method);
+          renderBenchmarkTable(currentDatasetKey || 'nyu', { ...data.metrics, latency_ms: data.latency_ms }, method);
         } else {
-          // Custom Upload: Display Input Sensor Statistics
           const stats = data.input_stats || {};
           const unit = stats.depth_unit || 'm';
           document.getElementById('lbl-m1').innerText = 'INPUT COVERAGE';
@@ -1759,7 +1990,7 @@
           document.getElementById('lbl-m6').innerText = 'LATENCY';
           document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
 
-          renderBenchmarkTable(currentDemo || 'nyu', null, null);
+          renderBenchmarkTable(currentDatasetKey || 'nyu', null, null);
         }
 
         showToast(`Reconstruction complete via ${method.toUpperCase()} (${data.latency_ms} ms)`);
@@ -1770,15 +2001,13 @@
         btn.disabled = false;
         spinner.style.display = 'none';
         btnText.innerText = 'Execute Depth Reconstruction';
-        updateReconstructButtonState();
       }
     }
 
-    // Initialize with NYU Demo on load
+    // Initialization
     window.addEventListener('DOMContentLoaded', () => {
       setupDragDrop();
-      renderBenchmarkTable('nyu');
-      loadDemoSample('nyu');
+      loadDatasetGallery();
     });
   </script>
 </body>

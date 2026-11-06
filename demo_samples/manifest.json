@@ -1,0 +1,159 @@
+{
+  "datasets": {
+    "nyu": {
+      "name": "NYU Depth V2",
+      "environment": "Indoor (Kinect v1 Structured Light)",
+      "sensor": "Microsoft Kinect v1 (RGB + IR Depth)",
+      "depth_type": "metric",
+      "unit": "m",
+      "max_eval_depth": 10.0,
+      "description": "Dense indoor RGB-D scenes captured with Microsoft Kinect v1. Evaluates 4x edge-preserving super-resolution against sensor ground truth.",
+      "samples": [
+        {
+          "id": "nyu_living_room",
+          "title": "Living Room (Sofa & Furnishings)",
+          "scene_name": "Living",
+          "dimensions": "640 x 480",
+          "lr_dimensions": "160 x 120 (4x)",
+          "valid_percent": 100.0,
+          "depth_range": "1.80m - 3.62m",
+          "rgb_file": "nyu_living_room_rgb.png",
+          "input_file": "nyu_living_room_depth_lr.npy",
+          "gt_file": "nyu_living_room_depth_gt.npy",
+          "has_gt": true
+        },
+        {
+          "id": "nyu_bedroom",
+          "title": "Bedroom (Bed & Shelving)",
+          "scene_name": "Bedroom",
+          "dimensions": "640 x 480",
+          "lr_dimensions": "160 x 120 (4x)",
+          "valid_percent": 100.0,
+          "depth_range": "0.71m - 9.92m",
+          "rgb_file": "nyu_bedroom_rgb.png",
+          "input_file": "nyu_bedroom_depth_lr.npy",
+          "gt_file": "nyu_bedroom_depth_gt.npy",
+          "has_gt": true
+        },
+        {
+          "id": "nyu_study_office",
+          "title": "Study Office (Desk & Bookcase)",
+          "scene_name": "Study",
+          "dimensions": "640 x 480",
+          "lr_dimensions": "160 x 120 (4x)",
+          "valid_percent": 100.0,
+          "depth_range": "1.30m - 5.26m",
+          "rgb_file": "nyu_study_office_rgb.png",
+          "input_file": "nyu_study_office_depth_lr.npy",
+          "gt_file": "nyu_study_office_depth_gt.npy",
+          "has_gt": true
+        }
+      ]
+    },
+    "kitti": {
+      "name": "KITTI Depth Completion",
+      "environment": "Outdoor Autonomous Driving (Velodyne HDL-64E LiDAR)",
+      "sensor": "Velodyne HDL-64E 64-beam LiDAR + PointGrey Flea2 RGB",
+      "depth_type": "metric",
+      "unit": "m",
+      "max_eval_depth": 80.0,
+      "description": "Sparse outdoor LiDAR range measurements (~4% valid seeds) paired with stereo front-camera imagery. Evaluates depth completion and boundary adherence.",
+      "samples": [
+        {
+          "id": "kitti_road_01",
+          "title": "Road 01 (Suburban Transit & Cars)",
+          "scene_name": "Road",
+          "dimensions": "1216 x 352",
+          "lr_dimensions": "1216 x 352 (Sparse LiDAR ~4.4%)",
+          "valid_percent": 4.4,
+          "depth_range": "1.2m - 78.5m",
+          "rgb_file": "kitti_road_01_rgb.png",
+          "input_file": "kitti_road_01_depth_sparse.npy",
+          "gt_file": "kitti_road_01_depth_gt.npy",
+          "has_gt": true
+        },
+        {
+          "id": "kitti_residential_02",
+          "title": "Residential 02 (Neighborhood Avenue)",
+          "scene_name": "Residential",
+          "dimensions": "1216 x 352",
+          "lr_dimensions": "1216 x 352 (Sparse LiDAR ~4.4%)",
+          "valid_percent": 4.4,
+          "depth_range": "1.2m - 78.5m",
+          "rgb_file": "kitti_residential_02_rgb.png",
+          "input_file": "kitti_residential_02_depth_sparse.npy",
+          "gt_file": "kitti_residential_02_depth_gt.npy",
+          "has_gt": true
+        },
+        {
+          "id": "kitti_drive_03",
+          "title": "Drive 03 (Commercial Intersection)",
+          "scene_name": "Drive",
+          "dimensions": "1216 x 352",
+          "lr_dimensions": "1216 x 352 (Sparse LiDAR ~4.4%)",
+          "valid_percent": 4.4,
+          "depth_range": "1.2m - 78.5m",
+          "rgb_file": "kitti_drive_03_rgb.png",
+          "input_file": "kitti_drive_03_depth_sparse.npy",
+          "gt_file": "kitti_drive_03_depth_gt.npy",
+          "has_gt": true
+        }
+      ]
+    },
+    "middlebury": {
+      "name": "Middlebury Stereo 2021",
+      "environment": "Indoor Stereo Metric Depth (Structured Lighting & Multi-view)",
+      "sensor": "High-Resolution DSLR Stereo Rig + Structured Light GT",
+      "depth_type": "metric",
+      "unit": "m",
+      "max_eval_depth": 25.0,
+      "description": "High-precision disparity-to-depth evaluation dataset with sub-millimeter geometric accuracy across complex occluding contours.",
+      "samples": [
+        {
+          "id": "middlebury_artroom1",
+          "title": "Artroom 1 (Studio & Easel)",
+          "scene_name": "artroom1",
+          "dimensions": "960 x 540",
+          "lr_dimensions": "240 x 135 (4x)",
+          "valid_percent": 92.7,
+          "depth_range": "6.56m - 16.92m",
+          "rgb_file": "middlebury_artroom1_rgb.png",
+          "input_file": "middlebury_artroom1_depth_lr.npy",
+          "gt_file": "middlebury_artroom1_depth_gt.npy",
+          "has_gt": true
+        },
+        {
+          "id": "middlebury_chess1",
+          "title": "Chess 1 (Macro Board & Pieces)",
+          "scene_name": "chess1",
+          "dimensions": "960 x 540",
+          "lr_dimensions": "240 x 135 (4x)",
+          "valid_percent": 85.2,
+          "depth_range": "0.76m - 2.58m",
+          "rgb_file": "middlebury_chess1_rgb.png",
+          "input_file": "middlebury_chess1_depth_lr.npy",
+          "gt_file": "middlebury_chess1_depth_gt.npy",
+          "has_gt": true
+        },
+        {
+          "id": "middlebury_ladder1",
+          "title": "Ladder 1 (Fine Contours & Slats)",
+          "scene_name": "ladder1",
+          "dimensions": "960 x 540",
+          "lr_dimensions": "240 x 135 (4x)",
+          "valid_percent": 94.7,
+          "depth_range": "5.72m - 18.26m",
+          "rgb_file": "middlebury_ladder1_rgb.png",
+          "input_file": "middlebury_ladder1_depth_lr.npy",
+          "gt_file": "middlebury_ladder1_depth_gt.npy",
+          "has_gt": true
+        }
+      ]
+    }
+  },
+  "alias_map": {
+    "nyu": "nyu_living_room",
+    "kitti": "kitti_road_01",
+    "middlebury": "middlebury_artroom1"
+  }
+}

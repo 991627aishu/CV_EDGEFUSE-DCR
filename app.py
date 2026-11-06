@@ -61,6 +61,67 @@ DEMO_DIR = "EDGEFUSE_DCR/demo_samples"
 if not os.path.exists(DEMO_DIR):
     DEMO_DIR = "demo_samples"
 
+MANIFEST_PATH = os.path.join(DEMO_DIR, "manifest.json")
+MANIFEST = {}
+if os.path.exists(MANIFEST_PATH):
+    try:
+        with open(MANIFEST_PATH, "r", encoding="utf-8") as mf:
+            MANIFEST = json.load(mf)
+        print(f"Loaded dataset gallery manifest from {MANIFEST_PATH}")
+    except Exception as e:
+        print(f"Warning: Failed to parse manifest ({e})")
+
+def resolve_demo_sample(sample_id: str):
+    """Resolves sample ID using manifest.json or fallback aliases."""
+    target_id = sample_id
+    if "alias_map" in MANIFEST and sample_id in MANIFEST["alias_map"]:
+        target_id = MANIFEST["alias_map"][sample_id]
+
+    for dkey, dinfo in MANIFEST.get("datasets", {}).items():
+        for s in dinfo.get("samples", []):
+            if s["id"] == target_id:
+                return {
+                    "dataset_key": dkey,
+                    "dataset_name": dinfo["name"],
+                    "title": s["title"],
+                    "sensor": dinfo.get("sensor", "Physical Depth Sensor"),
+                    "max_eval_depth": dinfo.get("max_eval_depth", 10.0),
+                    "rgb_path": os.path.join(DEMO_DIR, s["rgb_file"]),
+                    "input_path": os.path.join(DEMO_DIR, s["input_file"]),
+                    "gt_path": os.path.join(DEMO_DIR, s["gt_file"]),
+                    "depth_range": s.get("depth_range", ""),
+                    "valid_percent": s.get("valid_percent", 100.0),
+                    "dimensions": s.get("dimensions", ""),
+                    "has_gt": s.get("has_gt", True)
+                }
+
+    # Fallbacks for standard legacy IDs
+    if target_id in ("nyu", "nyu_living_room"):
+        return {
+            "dataset_key": "nyu", "dataset_name": "NYU Depth V2 (Indoor)", "title": "Living Room (Sofa & Furnishings)",
+            "sensor": "Microsoft Kinect v1", "max_eval_depth": 10.0,
+            "rgb_path": os.path.join(DEMO_DIR, "nyu_rgb.png"), "input_path": os.path.join(DEMO_DIR, "nyu_depth_lr.npy"),
+            "gt_path": os.path.join(DEMO_DIR, "nyu_depth_gt.npy"), "depth_range": "1.80m - 3.62m",
+            "valid_percent": 100.0, "dimensions": "640 x 480", "has_gt": True
+        }
+    elif target_id in ("kitti", "kitti_road_01"):
+        return {
+            "dataset_key": "kitti", "dataset_name": "KITTI Depth Completion (Outdoor)", "title": "Road 01 (Suburban Transit & Cars)",
+            "sensor": "Velodyne HDL-64E LiDAR", "max_eval_depth": 80.0,
+            "rgb_path": os.path.join(DEMO_DIR, "kitti_rgb.png"), "input_path": os.path.join(DEMO_DIR, "kitti_depth_sparse.npy"),
+            "gt_path": os.path.join(DEMO_DIR, "kitti_depth_gt.npy"), "depth_range": "1.2m - 78.5m",
+            "valid_percent": 4.4, "dimensions": "1216 x 352", "has_gt": True
+        }
+    elif target_id in ("middlebury", "middlebury_artroom1"):
+        return {
+            "dataset_key": "middlebury", "dataset_name": "Middlebury Stereo 2021", "title": "Artroom 1 (Studio & Easel)",
+            "sensor": "High-Res DSLR Stereo Rig", "max_eval_depth": 25.0,
+            "rgb_path": os.path.join(DEMO_DIR, "middlebury_rgb.png"), "input_path": os.path.join(DEMO_DIR, "middlebury_depth_lr.npy"),
+            "gt_path": os.path.join(DEMO_DIR, "middlebury_depth_gt.npy"), "depth_range": "6.56m - 16.92m",
+            "valid_percent": 92.7, "dimensions": "960 x 540", "has_gt": True
+        }
+    return None
+
 
 # ---------------------------------------------------------------------------
 # Helpers for Array & Visualization Encoding
@@ -480,51 +541,69 @@ def get_index():
         return f.read()
 
 
+@app.get("/api/dataset/gallery")
+def get_dataset_gallery():
+    """Returns manifest of all available authentic dataset samples across NYU, KITTI, and Middlebury."""
+    return MANIFEST
+
+
 @app.get("/api/demo/{sample_id}")
 def get_demo_sample(sample_id: str):
-    """Loads a verified dataset benchmark sample."""
-    if sample_id == "nyu":
-        dataset_name = "NYU Depth V2 (Indoor)"
-        rgb_p = os.path.join(DEMO_DIR, "nyu_rgb.png")
-        depth_p = os.path.join(DEMO_DIR, "nyu_depth_lr.npy")
-        gt_p = os.path.join(DEMO_DIR, "nyu_depth_gt.npy")
-        max_depth = 10.0
-    elif sample_id == "kitti":
-        dataset_name = "KITTI LiDAR Benchmark (Outdoor)"
-        rgb_p = os.path.join(DEMO_DIR, "kitti_rgb.png")
-        depth_p = os.path.join(DEMO_DIR, "kitti_depth_sparse.npy")
-        gt_p = os.path.join(DEMO_DIR, "kitti_depth_gt.npy")
-        max_depth = 80.0
-    elif sample_id == "middlebury":
-        dataset_name = "Middlebury Stereo 2021 (Artroom1)"
-        rgb_p = os.path.join(DEMO_DIR, "middlebury_rgb.png")
-        depth_p = os.path.join(DEMO_DIR, "middlebury_depth_lr.npy")
-        gt_p = os.path.join(DEMO_DIR, "middlebury_depth_gt.npy")
-        max_depth = 25.0
-    else:
-        raise HTTPException(status_code=404, detail="Demo sample not found.")
+    """Loads a verified dataset benchmark sample with complete scientific metadata."""
+    info = resolve_demo_sample(sample_id)
+    if not info:
+        raise HTTPException(status_code=404, detail=f"Demo sample '{sample_id}' not found.")
+
+    rgb_p = info["rgb_path"]
+    depth_p = info["input_path"]
+    gt_p = info["gt_path"]
 
     if not (os.path.exists(rgb_p) and os.path.exists(depth_p)):
-        raise HTTPException(status_code=500, detail="Demo files not found on disk.")
+        raise HTTPException(status_code=500, detail=f"Demo files for '{sample_id}' not found on disk.")
 
     rgb = np.array(Image.open(rgb_p))
     lr_depth = np.load(depth_p)
     gt_depth = np.load(gt_p) if os.path.exists(gt_p) else None
 
+    # Compute genuine sensor measurement validity mask directly from original input
+    valid_mask = (lr_depth > 0.05) & np.isfinite(lr_depth)
+    tot_px = int(lr_depth.size)
+    val_px = int(np.sum(valid_mask))
+    inval_px = int(tot_px - val_px)
+    cov_pct = round(val_px / max(1, tot_px) * 100.0, 2)
+    is_sparse = cov_pct < 35.0
+    seed_label = "Measured Seeds / Valid Measurements" if is_sparse else "Valid Input Pixels"
+
     rgb_b64 = encode_image_base64(rgb)
-    lr_colored = colorize_depth(lr_depth, vmax=max_depth)
+    lr_colored = colorize_depth(lr_depth, valid_mask=valid_mask, vmax=info["max_eval_depth"])
     lr_b64 = encode_image_base64(lr_colored)
-    mask_b64 = encode_image_base64(((lr_depth > 0.05).astype(np.uint8) * 255))
+    mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
     return {
-        "dataset_name": dataset_name,
+        "success": True,
         "sample_id": sample_id,
+        "dataset_key": info["dataset_key"],
+        "dataset_name": info["dataset_name"],
+        "title": info["title"],
+        "sensor": info["sensor"],
+        "dimensions": f"{rgb.shape[1]} x {rgb.shape[0]}",
+        "lr_dimensions": f"{lr_depth.shape[1]} x {lr_depth.shape[0]}",
+        "depth_range": info["depth_range"],
+        "valid_percent": cov_pct,
+        "is_sparse": is_sparse,
+        "seed_label": seed_label,
+        "valid_mask_stats": {
+            "total_pixels": tot_px,
+            "valid_pixels": val_px,
+            "invalid_pixels": inval_px,
+            "coverage_percent": cov_pct,
+            "seed_label": seed_label
+        },
         "rgb_b64": rgb_b64,
         "lr_depth_b64": lr_b64,
         "valid_mask_b64": mask_b64,
-        "dimensions": f"{rgb.shape[1]} x {rgb.shape[0]}",
         "has_gt": gt_depth is not None,
-        "max_depth": max_depth
+        "max_depth": info["max_eval_depth"]
     }
 
 
@@ -595,29 +674,21 @@ async def run_reconstruction(
     depth_unit = "m"
     alignment_info = None
 
+    sample_title = "Custom Input Upload"
     if demo_sample_id:
-        if demo_sample_id == "nyu":
-            rgb_p = os.path.join(DEMO_DIR, "nyu_rgb.png")
-            depth_p = os.path.join(DEMO_DIR, "nyu_depth_lr.npy")
-            gt_p = os.path.join(DEMO_DIR, "nyu_depth_gt.npy")
-            max_eval_depth = 10.0
-        elif demo_sample_id == "kitti":
-            rgb_p = os.path.join(DEMO_DIR, "kitti_rgb.png")
-            depth_p = os.path.join(DEMO_DIR, "kitti_depth_sparse.npy")
-            gt_p = os.path.join(DEMO_DIR, "kitti_depth_gt.npy")
-            max_eval_depth = 80.0
-        elif demo_sample_id == "middlebury":
-            rgb_p = os.path.join(DEMO_DIR, "middlebury_rgb.png")
-            depth_p = os.path.join(DEMO_DIR, "middlebury_depth_lr.npy")
-            gt_p = os.path.join(DEMO_DIR, "middlebury_depth_gt.npy")
-            max_eval_depth = 25.0
-        else:
-            raise HTTPException(status_code=400, detail="Unknown demo sample ID.")
+        info = resolve_demo_sample(demo_sample_id)
+        if not info:
+            raise HTTPException(status_code=400, detail=f"Unknown demo sample ID: {demo_sample_id}")
 
-        rgb_image = np.array(Image.open(rgb_p))
-        depth_input = np.load(depth_p)
-        if os.path.exists(gt_p):
-            gt_depth = np.load(gt_p)
+        if not (os.path.exists(info["rgb_path"]) and os.path.exists(info["input_path"])):
+            raise HTTPException(status_code=500, detail=f"Dataset files for '{demo_sample_id}' not found on disk.")
+
+        rgb_image = np.array(Image.open(info["rgb_path"]))
+        depth_input = np.load(info["input_path"])
+        if os.path.exists(info["gt_path"]):
+            gt_depth = np.load(info["gt_path"])
+        max_eval_depth = info["max_eval_depth"]
+        sample_title = info["title"]
 
     else:
         if not (rgb_file and rgb_file.filename and depth_file and depth_file.filename):
@@ -664,7 +735,8 @@ async def run_reconstruction(
         factor=upsample_factor,
         method=method,
         cnn_model=MODEL,
-        device=DEVICE
+        device=DEVICE,
+        apply_suppression=apply_texture_suppression
     )
 
     rec_depth = res["reconstructed_depth"]
@@ -743,15 +815,23 @@ async def run_reconstruction(
     app.state.last_rec = {
         "depth": rec_depth,
         "colored": rec_colored,
+        "conf_colored": cv2.cvtColor(conf_colored, cv2.COLOR_BGR2RGB),
+        "mask_img": (valid_mask.astype(np.uint8) * 255),
+        "err_colored": cv2.cvtColor(err_colored, cv2.COLOR_BGR2RGB) if has_gt else None,
         "metrics": metrics,
         "method": method,
+        "factor": upsample_factor,
+        "sample_name": sample_title,
         "is_custom": demo_sample_id is None,
         "has_gt": has_gt,
-        "timestamp": time.time()
+        "timestamp": time.time(),
+        "input_stats": input_stats,
+        "algorithm_comparison": algo_comparison
     }
 
     return {
         "success": True,
+        "sample_name": sample_title,
         "method": method,
         "has_gt": has_gt,
         "warning": depth_warning,
@@ -780,12 +860,12 @@ async def run_reconstruction(
 
 @app.get("/api/download/npy")
 def download_numeric_depth():
-    """Downloads reconstructed numeric depth map as .npy array."""
+    """Downloads reconstructed numeric depth map as raw .npy float32 array."""
     if not hasattr(app.state, "last_rec"):
         raise HTTPException(status_code=404, detail="No reconstruction performed yet.")
 
     buf = io.BytesIO()
-    np.save(buf, app.state.last_rec["depth"])
+    np.save(buf, app.state.last_rec["depth"].astype(np.float32))
     buf.seek(0)
     fname = "custom_reconstructed_depth.npy" if app.state.last_rec.get("is_custom") else "edgefuse_dcr_reconstructed_depth.npy"
     return Response(
@@ -797,7 +877,7 @@ def download_numeric_depth():
 
 @app.get("/api/download/png")
 def download_colorized_depth():
-    """Downloads colorized depth preview."""
+    """Downloads colorized depth preview as PNG."""
     if not hasattr(app.state, "last_rec"):
         raise HTTPException(status_code=404, detail="No reconstruction performed yet.")
 
@@ -810,6 +890,88 @@ def download_colorized_depth():
         content=buf.getvalue(),
         media_type="image/png",
         headers={"Content-Disposition": f"attachment; filename={fname}"}
+    )
+
+
+@app.get("/api/download/confidence")
+def download_confidence_map():
+    """Downloads estimated confidence map as Viridis PNG."""
+    if not hasattr(app.state, "last_rec") or app.state.last_rec.get("conf_colored") is None:
+        raise HTTPException(status_code=404, detail="No confidence map available.")
+
+    pil_img = Image.fromarray(app.state.last_rec["conf_colored"])
+    buf = io.BytesIO()
+    pil_img.save(buf, format="PNG")
+    buf.seek(0)
+    return Response(
+        content=buf.getvalue(),
+        media_type="image/png",
+        headers={"Content-Disposition": "attachment; filename=edgefuse_dcr_confidence_map.png"}
+    )
+
+
+@app.get("/api/download/valid_mask")
+def download_validity_mask():
+    """Downloads original measurement validity mask as Black/White PNG."""
+    if not hasattr(app.state, "last_rec") or app.state.last_rec.get("mask_img") is None:
+        raise HTTPException(status_code=404, detail="No validity mask available.")
+
+    pil_img = Image.fromarray(app.state.last_rec["mask_img"])
+    buf = io.BytesIO()
+    pil_img.save(buf, format="PNG")
+    buf.seek(0)
+    return Response(
+        content=buf.getvalue(),
+        media_type="image/png",
+        headers={"Content-Disposition": "attachment; filename=edgefuse_dcr_validity_mask.png"}
+    )
+
+
+@app.get("/api/download/error_map")
+def download_error_map():
+    """Downloads Jet absolute error heatmap (only when Ground Truth was provided)."""
+    if not hasattr(app.state, "last_rec") or not app.state.last_rec.get("has_gt") or app.state.last_rec.get("err_colored") is None:
+        raise HTTPException(status_code=404, detail="Ground Truth reference error map is not available for this run.")
+
+    pil_img = Image.fromarray(app.state.last_rec["err_colored"])
+    buf = io.BytesIO()
+    pil_img.save(buf, format="PNG")
+    buf.seek(0)
+    return Response(
+        content=buf.getvalue(),
+        media_type="image/png",
+        headers={"Content-Disposition": "attachment; filename=edgefuse_dcr_error_heatmap.png"}
+    )
+
+
+@app.get("/api/download/report_json")
+def download_evaluation_report():
+    """Downloads complete scientific evaluation metrics and run provenance as JSON."""
+    if not hasattr(app.state, "last_rec"):
+        raise HTTPException(status_code=404, detail="No reconstruction performed yet.")
+
+    rec = app.state.last_rec
+    report = {
+        "project": "EdgeFuse-DCR",
+        "problem_statement": "P4: Edge-Preserving Depth Map Upsampling and Refinement",
+        "sample": rec.get("sample_name"),
+        "method": rec.get("method"),
+        "upsample_factor": rec.get("factor", 4),
+        "is_custom_upload": rec.get("is_custom", False),
+        "has_ground_truth": rec.get("has_gt", False),
+        "metrics": rec.get("metrics"),
+        "algorithm_comparison": rec.get("algo_comparison"),
+        "input_statistics": rec.get("input_stats"),
+        "timestamp": rec.get("timestamp"),
+        "model_architecture": "EdgeFuseNet (1.31M parameters, Compact Multi-Scale Residual Encoder-Decoder)",
+        "provenance": "Generated by EdgeFuse-DCR Scientific Depth Reconstruction Engine"
+    }
+
+    report_bytes = json.dumps(report, indent=2).encode("utf-8")
+    return Response(
+        content=report_bytes,
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=edgefuse_dcr_evaluation_report.json"}
     )
 
 

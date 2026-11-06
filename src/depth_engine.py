@@ -364,7 +364,7 @@ def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, 
 # 6. Unified Reconstruction Pipeline
 # ===========================================================================
 
-def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_model=None, device="cpu"):
+def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_model=None, device="cpu", apply_suppression=True):
     """
     Unified public interface for all depth reconstruction methods.
     Supports:
@@ -374,6 +374,8 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
       - 'joint_bilateral': Joint Bilateral Filter
       - 'guided': Guided Filter
       - 'cnn': Compact Deep Learning model alone
+      - 'cnn_confidence': CNN + Confidence-Aware Guidance
+      - 'cnn_boundary': CNN + Confidence + Boundary Refinement
       - 'hybrid': Full EdgeFuse-DCR (CNN + Confidence + Boundary + Texture Gate)
     """
     t_start = time.perf_counter()
@@ -478,7 +480,7 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
         gate = res["texture_gate"]
 
     elif method == "hybrid":  # Full hybrid EdgeFuse-DCR
-        res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=True, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
+        res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=apply_suppression, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
         rec = res["final_depth"]
         conf = res["confidence_map"]
         gate = res["texture_gate"]
