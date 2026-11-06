@@ -131,3 +131,4 @@ Below is an honest, mathematically detailed analysis of four representative fail
 | **Massive Voids** | Specular scattering / IR absorption | Multi-scale confidence fallback | Semantic depth drift |
 
 Understanding and presenting these boundaries candidly during viva and demonstration showcases **mature engineering credibility** rather than superficial marketing.
+
