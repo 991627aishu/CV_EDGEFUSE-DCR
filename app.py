@@ -63,21 +63,32 @@ if not os.path.exists(DEMO_DIR):
 
 MANIFEST_PATH = os.path.join(DEMO_DIR, "manifest.json")
 MANIFEST = {}
-if os.path.exists(MANIFEST_PATH):
-    try:
-        with open(MANIFEST_PATH, "r", encoding="utf-8") as mf:
-            MANIFEST = json.load(mf)
-        print(f"Loaded dataset gallery manifest from {MANIFEST_PATH}")
-    except Exception as e:
-        print(f"Warning: Failed to parse manifest ({e})")
+MANIFEST_MTIME = 0
+
+def get_dataset_manifest():
+    global MANIFEST, MANIFEST_MTIME
+    if os.path.exists(MANIFEST_PATH):
+        try:
+            mtime = os.path.getmtime(MANIFEST_PATH)
+            if mtime != MANIFEST_MTIME or not MANIFEST:
+                with open(MANIFEST_PATH, "r", encoding="utf-8") as mf:
+                    MANIFEST = json.load(mf)
+                MANIFEST_MTIME = mtime
+        except Exception as e:
+            print(f"Warning: Failed to parse manifest ({e})")
+    return MANIFEST
+
+# Initial load
+get_dataset_manifest()
 
 def resolve_demo_sample(sample_id: str):
     """Resolves sample ID using manifest.json or fallback aliases."""
+    manifest = get_dataset_manifest()
     target_id = sample_id
-    if "alias_map" in MANIFEST and sample_id in MANIFEST["alias_map"]:
-        target_id = MANIFEST["alias_map"][sample_id]
+    if "alias_map" in manifest and sample_id in manifest["alias_map"]:
+        target_id = manifest["alias_map"][sample_id]
 
-    for dkey, dinfo in MANIFEST.get("datasets", {}).items():
+    for dkey, dinfo in manifest.get("datasets", {}).items():
         for s in dinfo.get("samples", []):
             if s["id"] == target_id:
                 return {
@@ -92,7 +103,8 @@ def resolve_demo_sample(sample_id: str):
                     "depth_range": s.get("depth_range", ""),
                     "valid_percent": s.get("valid_percent", 100.0),
                     "dimensions": s.get("dimensions", ""),
-                    "has_gt": s.get("has_gt", True)
+                    "has_gt": s.get("has_gt", True),
+                    "benchmark_rows": s.get("benchmark_rows", [])
                 }
 
     # Fallbacks for standard legacy IDs
@@ -544,7 +556,24 @@ def get_index():
 @app.get("/api/dataset/gallery")
 def get_dataset_gallery():
     """Returns manifest of all available authentic dataset samples across NYU, KITTI, and Middlebury."""
-    return MANIFEST
+    return get_dataset_manifest()
+
+
+@app.get("/api/benchmark/scene/{sample_id}")
+def get_scene_benchmark(sample_id: str):
+    """Returns authentic precomputed per-scene benchmark rows evaluated against Ground Truth."""
+    info = resolve_demo_sample(sample_id)
+    if not info:
+        raise HTTPException(status_code=404, detail=f"Scene benchmark for '{sample_id}' not found.")
+    return {
+        "success": True,
+        "sample_id": sample_id,
+        "title": info["title"],
+        "dataset_key": info["dataset_key"],
+        "dataset_name": info["dataset_name"],
+        "has_gt": info["has_gt"],
+        "benchmark_rows": info.get("benchmark_rows", [])
+    }
 
 
 @app.get("/api/demo/{sample_id}")
@@ -603,7 +632,8 @@ def get_demo_sample(sample_id: str):
         "lr_depth_b64": lr_b64,
         "valid_mask_b64": mask_b64,
         "has_gt": gt_depth is not None,
-        "max_depth": info["max_eval_depth"]
+        "max_depth": info["max_eval_depth"],
+        "benchmark_rows": info.get("benchmark_rows", [])
     }
 
 

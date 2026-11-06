@@ -205,19 +205,23 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 6px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .btn-dataset-tab {
       background: #0f172a;
       border: 1px solid #1e293b;
       color: var(--text-muted);
-      padding: 7px 8px;
+      padding: 7px 6px;
       border-radius: 8px;
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       text-align: center;
       transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: center;
     }
     .btn-dataset-tab:hover {
       background: #1e293b;
@@ -225,68 +229,153 @@
     }
     .btn-dataset-tab.active {
       background: rgba(59, 130, 246, 0.15);
-      border-color: #3b82f6;
-      color: #60a5fa;
+      border-color: #38bdf8;
+      color: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+    }
+    .btn-dataset-tab .tab-sub {
+      font-size: 9px;
+      color: #64748b;
+      font-weight: 400;
+    }
+    .btn-dataset-tab.active .tab-sub {
+      color: #93c5fd;
     }
 
-    /* Gallery Cards Grid */
+    /* Dataset Meta Banner */
+    .dataset-meta-banner {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-bottom: 8px;
+      font-size: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .meta-banner-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .meta-chip {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 500;
+    }
+    .meta-chip strong {
+      color: #e2e8f0;
+    }
+
+    /* Gallery Cards Grid with Dual Thumbnails */
     .gallery-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 8px;
-      max-height: 250px;
+      max-height: 270px;
       overflow-y: auto;
       padding-right: 4px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .gallery-item {
       background: #0b1120;
       border: 1px solid #1e293b;
       border-radius: 8px;
-      padding: 8px;
+      padding: 7px 9px;
       display: flex;
-      gap: 10px;
+      gap: 9px;
       align-items: center;
       cursor: pointer;
+      position: relative;
       transition: all 0.15s ease;
     }
     .gallery-item:hover {
       background: #131c31;
-      border-color: #3b82f6;
+      border-color: #475569;
       transform: translateY(-1px);
     }
     .gallery-item.active {
-      background: rgba(37, 99, 235, 0.12);
-      border-color: #3b82f6;
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+      background: rgba(14, 165, 233, 0.12);
+      border-color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
     }
-    .gallery-thumb {
-      width: 52px;
-      height: 40px;
-      border-radius: 6px;
-      object-fit: cover;
-      background: #1e293b;
-      border: 1px solid #334155;
+    .gallery-item.active::after {
+      content: '● ACTIVE';
+      position: absolute;
+      top: 5px;
+      right: 7px;
+      font-size: 8px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.5px;
+    }
+
+    /* Dual Thumbnails */
+    .gallery-dual-thumbs {
+      display: flex;
+      gap: 4px;
       flex-shrink: 0;
     }
+    .thumb-box {
+      position: relative;
+      width: 44px;
+      height: 34px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #0f172a;
+      border: 1px solid #334155;
+    }
+    .gallery-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .thumb-lbl {
+      position: absolute;
+      bottom: 0px;
+      right: 0px;
+      background: rgba(15, 23, 42, 0.9);
+      color: #cbd5e1;
+      font-size: 7px;
+      font-weight: 700;
+      padding: 1px 2px;
+      line-height: 1;
+      border-top-left-radius: 2px;
+    }
+
     .gallery-info {
       flex: 1;
       min-width: 0;
     }
+    .gallery-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 2px;
+    }
     .gallery-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: #f1f5f9;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 150px;
     }
     .gallery-meta {
       font-size: 10px;
       color: #64748b;
       display: flex;
-      gap: 6px;
-      margin-top: 2px;
+      gap: 4px;
+      flex-wrap: wrap;
     }
     .gallery-badge {
       font-size: 9px;
@@ -314,8 +403,10 @@
       border-radius: 4px;
       cursor: pointer;
       font-size: 11px;
+      transition: all 0.15s ease;
     }
-    .btn-nav-arrow:hover { background: #334155; color: #fff; }
+    .btn-nav-arrow:hover:not(:disabled) { background: #334155; color: #fff; }
+    .btn-nav-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
 
     /* Upload UI System (Cleanly separated, non-overlapping) */
     .upload-group {
@@ -855,20 +946,34 @@
 
         <!-- Dataset Selection Tabs -->
         <div class="dataset-tabs">
-          <button type="button" id="tab-dset-nyu" class="btn-dataset-tab active" onclick="switchDatasetGallery('nyu')">NYU V2</button>
-          <button type="button" id="tab-dset-kitti" class="btn-dataset-tab" onclick="switchDatasetGallery('kitti')">KITTI LiDAR</button>
-          <button type="button" id="tab-dset-middlebury" class="btn-dataset-tab" onclick="switchDatasetGallery('middlebury')">Middlebury</button>
+          <button type="button" id="tab-dset-nyu" class="btn-dataset-tab active" onclick="switchDatasetGallery('nyu')">
+            <span>NYU Depth V2</span>
+            <span class="tab-sub">Indoor Kinect</span>
+          </button>
+          <button type="button" id="tab-dset-kitti" class="btn-dataset-tab" onclick="switchDatasetGallery('kitti')">
+            <span>KITTI LiDAR</span>
+            <span class="tab-sub">Outdoor 64-Beam</span>
+          </button>
+          <button type="button" id="tab-dset-middlebury" class="btn-dataset-tab" onclick="switchDatasetGallery('middlebury')">
+            <span>Middlebury</span>
+            <span class="tab-sub">Stereo Depth</span>
+          </button>
         </div>
 
-        <!-- Dynamic Gallery Grid -->
+        <!-- Dynamic Dataset Metadata Banner -->
+        <div id="dataset-meta-banner" class="dataset-meta-banner">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Dynamic Gallery Grid with Dual Thumbnails -->
         <div id="gallery-container" class="gallery-grid">
           <!-- Populated dynamically via JS -->
         </div>
 
         <div class="gallery-nav-bar">
-          <button type="button" class="btn-nav-arrow" onclick="navigateSample(-1)">◀ Prev</button>
-          <span id="gallery-active-label" style="font-weight: 600; color: #94a3b8;">Sample 1 of 3</span>
-          <button type="button" class="btn-nav-arrow" onclick="navigateSample(1)">Next ▶</button>
+          <button type="button" id="btn-gallery-prev" class="btn-nav-arrow" onclick="navigateSample(-1)">◀ Prev</button>
+          <span id="gallery-active-label" style="font-weight: 700; color: #38bdf8; font-size: 11px;">Scene 1 of 3</span>
+          <button type="button" id="btn-gallery-next" class="btn-nav-arrow" onclick="navigateSample(1)">Next ▶</button>
         </div>
       </div>
 
@@ -1481,40 +1586,89 @@
       if (btnElement) btnElement.classList.add('active');
     }
 
-    // Benchmark Table Rendering
-    function renderBenchmarkTable(datasetKey, liveMetrics = null, liveMethod = null) {
-      const data = BENCHMARK_DATA[datasetKey] || BENCHMARK_DATA['nyu'];
+    let currentSceneBenchmarks = [];
+
+    // Dynamic Comparative Benchmark & Ablation Study Rendering
+    function renderBenchmarkTable(datasetKey, liveMetrics = null, liveMethod = null, sceneRows = null) {
+      const dsetKey = datasetKey || currentDatasetKey || 'nyu';
+      const rowsToRender = (sceneRows && sceneRows.length > 0) ? sceneRows : (BENCHMARK_DATA[dsetKey] ? BENCHMARK_DATA[dsetKey].rows : []);
       const tbody = document.getElementById('benchmark-table-body');
       if (!tbody) return;
 
       const badge = document.getElementById('benchmark-dataset-badge');
-      if (badge) badge.innerText = data.title;
+      if (badge) {
+        if (sceneRows && sceneRows.length > 0 && currentDemo) {
+          const sample = gallerySamples.find(s => s.id === currentDemo);
+          const sampleTitle = sample ? sample.title : currentDemo;
+          badge.innerText = `${sampleTitle} (Ground Truth Evaluation)`;
+        } else {
+          const ref = BENCHMARK_DATA[dsetKey] || BENCHMARK_DATA['nyu'];
+          badge.innerText = ref.title;
+        }
+      }
+
+      // Compute best values across all rows for directional badges
+      let minRmse = Infinity, minMae = Infinity, maxPsnr = -Infinity, maxSsim = -Infinity, maxF1 = -Infinity, minGrad = Infinity, minLat = Infinity;
+      rowsToRender.forEach(r => {
+        const rmse = parseFloat(r.rmse); if (!isNaN(rmse) && rmse < minRmse) minRmse = rmse;
+        const mae = parseFloat(r.mae); if (!isNaN(mae) && mae < minMae) minMae = mae;
+        const psnr = parseFloat(r.psnr); if (!isNaN(psnr) && psnr > maxPsnr) maxPsnr = psnr;
+        const ssim = parseFloat(r.ssim); if (!isNaN(ssim) && ssim > maxSsim) maxSsim = ssim;
+        const f1 = parseFloat(r.f1); if (!isNaN(f1) && f1 > maxF1) maxF1 = f1;
+        const grad = parseFloat(r.grad); if (!isNaN(grad) && grad < minGrad) minGrad = grad;
+        const lat = parseFloat(r.latency); if (!isNaN(lat) && lat < minLat) minLat = lat;
+      });
 
       let html = '';
-      data.rows.forEach(r => {
-        html += `<tr class="${r.highlight ? 'highlight' : ''}">
+      rowsToRender.forEach(r => {
+        const isA5 = r.highlight || (r.key === 'hybrid') || r.method.includes('Hybrid');
+        const rmseVal = parseFloat(r.rmse);
+        const maeVal = parseFloat(r.mae);
+        const psnrVal = parseFloat(r.psnr);
+        const ssimVal = parseFloat(r.ssim);
+        const f1Val = parseFloat(r.f1);
+        const gradVal = parseFloat(r.grad);
+
+        const isBestRmse = Math.abs(rmseVal - minRmse) < 0.0001;
+        const isBestMae = Math.abs(maeVal - minMae) < 0.0001;
+        const isBestPsnr = Math.abs(psnrVal - maxPsnr) < 0.01;
+        const isBestSsim = Math.abs(ssimVal - maxSsim) < 0.0001;
+        const isBestF1 = Math.abs(f1Val - maxF1) < 0.001;
+        const isBestGrad = Math.abs(gradVal - minGrad) < 0.0001;
+
+        html += `<tr class="${isA5 ? 'highlight' : ''}">
           <td><strong>${r.method}</strong></td>
-          <td>${r.rmse}</td>
-          <td>${r.mae}</td>
-          <td>${r.psnr}</td>
-          <td>${r.ssim}</td>
-          <td>${r.f1}</td>
-          <td>${r.grad}</td>
+          <td>${isBestRmse ? `<span class="badge-best">${r.rmse}</span>` : r.rmse}</td>
+          <td>${isBestMae ? `<span class="badge-best">${r.mae}</span>` : r.mae}</td>
+          <td>${isBestPsnr ? `<span class="badge-best">${r.psnr}</span>` : r.psnr}</td>
+          <td>${isBestSsim ? `<span class="badge-best">${r.ssim}</span>` : r.ssim}</td>
+          <td>${isBestF1 ? `<span class="badge-best">${r.f1}</span>` : r.f1}</td>
+          <td>${isBestGrad ? `<span class="badge-best">${r.grad}</span>` : r.grad}</td>
           <td>${r.latency}</td>
         </tr>`;
       });
 
       if (liveMetrics) {
-        html += `<tr class="live-row">
-          <td><strong>Current Live Run (${(liveMethod || 'HYBRID').toUpperCase()})</strong></td>
-          <td><strong>${liveMetrics.rmse !== undefined && liveMetrics.rmse !== null ? Number(liveMetrics.rmse).toFixed(4) : 'N/A'}</strong></td>
-          <td>${liveMetrics.mae !== undefined && liveMetrics.mae !== null ? Number(liveMetrics.mae).toFixed(4) : 'N/A'}</td>
-          <td>${liveMetrics.psnr !== undefined && liveMetrics.psnr !== null ? Number(liveMetrics.psnr).toFixed(2) : 'N/A'}</td>
-          <td>${liveMetrics.ssim !== undefined && liveMetrics.ssim !== null ? Number(liveMetrics.ssim).toFixed(4) : 'N/A'}</td>
-          <td>${liveMetrics.boundary_f1 !== undefined && liveMetrics.boundary_f1 !== null ? Number(liveMetrics.boundary_f1).toFixed(3) : 'N/A'}</td>
-          <td>${liveMetrics.grad_mae !== undefined && liveMetrics.grad_mae !== null ? Number(liveMetrics.grad_mae).toFixed(4) : 'N/A'}</td>
-          <td>${liveMetrics.latency_ms ? liveMetrics.latency_ms + ' ms' : 'Live'}</td>
-        </tr>`;
+        if (liveMetrics.has_gt === false || liveMetrics.rmse === undefined || liveMetrics.rmse === null) {
+          html += `<tr class="live-row">
+            <td><strong>Current Live Run (${(liveMethod || 'HYBRID').toUpperCase()})</strong></td>
+            <td colspan="6" style="color: #94a3b8; font-style: italic; text-align: center; font-size: 11px;">
+              Evaluation N/A — No Reference Ground Truth depth map provided for custom upload
+            </td>
+            <td><strong>${liveMetrics.latency_ms ? liveMetrics.latency_ms + ' ms' : 'Live'}</strong></td>
+          </tr>`;
+        } else {
+          html += `<tr class="live-row">
+            <td><strong>Current Live Run (${(liveMethod || 'HYBRID').toUpperCase()})</strong></td>
+            <td><strong>${Number(liveMetrics.rmse).toFixed(4)}</strong></td>
+            <td>${Number(liveMetrics.mae).toFixed(4)}</td>
+            <td>${Number(liveMetrics.psnr).toFixed(2)}</td>
+            <td>${Number(liveMetrics.ssim).toFixed(4)}</td>
+            <td>${liveMetrics.boundary_f1 !== null && liveMetrics.boundary_f1 !== undefined ? Number(liveMetrics.boundary_f1).toFixed(3) : 'N/A'}</td>
+            <td>${liveMetrics.grad_mae !== null && liveMetrics.grad_mae !== undefined ? Number(liveMetrics.grad_mae).toFixed(4) : 'N/A'}</td>
+            <td><strong>${liveMetrics.latency_ms ? liveMetrics.latency_ms + ' ms' : 'Live'}</strong></td>
+          </tr>`;
+        }
       }
 
       tbody.innerHTML = html;
@@ -1526,13 +1680,13 @@
         const res = await fetch('/api/dataset/gallery');
         if (!res.ok) throw new Error('Could not load dataset manifest.');
         datasetManifest = await res.json();
-        switchDatasetGallery('nyu', false);
+        switchDatasetGallery('nyu', true);
       } catch (err) {
         console.error('Gallery load error:', err);
       }
     }
 
-    function switchDatasetGallery(dsetKey, autoSelectFirst = true) {
+    function switchDatasetGallery(dsetKey, autoSelect = true) {
       currentDatasetKey = dsetKey;
       document.querySelectorAll('.btn-dataset-tab').forEach(b => b.classList.remove('active'));
       const activeTabBtn = document.getElementById(`tab-dset-${dsetKey}`);
@@ -1542,44 +1696,119 @@
       const dset = datasetManifest.datasets[dsetKey];
       gallerySamples = dset.samples || [];
 
+      // Update Header Badge
       document.getElementById('gallery-count-badge').innerText = `${gallerySamples.length} Scenes Available`;
 
+      // Update Dataset Metadata Banner
+      const metaBanner = document.getElementById('dataset-meta-banner');
+      if (metaBanner) {
+        metaBanner.innerHTML = `
+          <div class="meta-banner-row">
+            <span class="meta-chip"><strong>Sensor:</strong> ${dset.sensor}</span>
+            <span class="meta-chip"><strong>Type:</strong> ${dset.type_label || dset.environment}</span>
+          </div>
+          <div class="meta-banner-row">
+            <span class="meta-chip"><strong>Grid:</strong> ${dset.resolution_info || 'Native'}</span>
+            <span class="meta-chip"><strong>Coverage:</strong> ${dset.typical_coverage || '100%'}</span>
+            <span class="meta-chip"><strong>Metric Range:</strong> 0.5 – ${dset.max_eval_depth}m</span>
+          </div>
+        `;
+      }
+
+      // Check if currentDemo belongs to this dataset
+      let targetIdx = gallerySamples.findIndex(s => s.id === currentDemo);
+      if (targetIdx === -1) {
+        targetIdx = 0;
+      }
+      activeGalleryIndex = targetIdx;
+
+      // Render Gallery Cards with Dual Thumbnails
+      renderGalleryCards();
+
+      // Trigger selection of active scene
+      if (autoSelect && gallerySamples.length > 0) {
+        selectGallerySample(gallerySamples[activeGalleryIndex].id, activeGalleryIndex);
+      } else {
+        updateGalleryActiveUI();
+      }
+    }
+
+    function renderGalleryCards() {
       const container = document.getElementById('gallery-container');
+      if (!container) return;
       container.innerHTML = '';
 
       gallerySamples.forEach((sample, idx) => {
         const item = document.createElement('div');
-        item.className = `gallery-item ${sample.id === currentDemo ? 'active' : ''}`;
+        const isActive = (idx === activeGalleryIndex);
+        item.className = `gallery-item ${isActive ? 'active' : ''}`;
         item.id = `gal-item-${sample.id}`;
         item.onclick = () => selectGallerySample(sample.id, idx);
 
         item.innerHTML = `
+          <div class="gallery-dual-thumbs">
+            <div class="thumb-box" title="RGB Guidance Image">
+              <img src="${sample.rgb_thumb_b64 || ''}" class="gallery-thumb" alt="RGB Preview" loading="lazy">
+              <span class="thumb-lbl">RGB</span>
+            </div>
+            <div class="thumb-box" title="Input Depth (Colorized Preview)">
+              <img src="${sample.depth_thumb_b64 || ''}" class="gallery-thumb" alt="Depth Preview" loading="lazy">
+              <span class="thumb-lbl">DEPTH</span>
+            </div>
+          </div>
           <div class="gallery-info">
-            <div class="gallery-title">${sample.title}</div>
+            <div class="gallery-title-row">
+              <span class="gallery-title" title="${sample.title}">${sample.title}</span>
+            </div>
             <div class="gallery-meta">
               <span class="gallery-badge">${sample.dimensions}</span>
-              <span class="gallery-badge" style="color: #34d399;">${sample.valid_percent}% Valid</span>
+              <span class="gallery-badge" style="color: ${sample.is_sparse ? '#38bdf8' : '#34d399'}; font-weight: 700;">
+                ${sample.valid_percent}% ${sample.is_sparse ? 'Seeds' : 'Valid'}
+              </span>
               <span class="gallery-badge">${sample.depth_range}</span>
             </div>
           </div>
         `;
         container.appendChild(item);
       });
+      updateGalleryActiveUI();
+    }
 
-      if (autoSelectFirst && gallerySamples.length > 0) {
-        selectGallerySample(gallerySamples[0].id, 0);
+    function updateGalleryActiveUI() {
+      // Synchronize active card class strictly by index
+      document.querySelectorAll('.gallery-item').forEach((el, idx) => {
+        if (idx === activeGalleryIndex) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+
+      // Synchronize label strictly: Scene X of Y
+      const total = gallerySamples.length;
+      const cur = total > 0 ? (activeGalleryIndex + 1) : 0;
+      const label = document.getElementById('gallery-active-label');
+      if (label) {
+        label.innerText = `Scene ${cur} of ${total}`;
       }
+
+      // Synchronize prev / next button states
+      const prevBtn = document.getElementById('btn-gallery-prev');
+      const nextBtn = document.getElementById('btn-gallery-next');
+      if (prevBtn) prevBtn.disabled = total <= 1;
+      if (nextBtn) nextBtn.disabled = total <= 1;
     }
 
     function selectGallerySample(sampleId, idx) {
+      if (typeof idx === 'number' && idx >= 0 && idx < gallerySamples.length) {
+        activeGalleryIndex = idx;
+      } else {
+        const found = gallerySamples.findIndex(s => s.id === sampleId);
+        activeGalleryIndex = (found !== -1) ? found : 0;
+      }
       currentDemo = sampleId;
-      activeGalleryIndex = idx;
 
-      document.querySelectorAll('.gallery-item').forEach(el => el.classList.remove('active'));
-      const activeEl = document.getElementById(`gal-item-${sampleId}`);
-      if (activeEl) activeEl.classList.add('active');
-
-      document.getElementById('gallery-active-label').innerText = `Scene ${idx + 1} of ${gallerySamples.length}`;
+      updateGalleryActiveUI();
 
       // Reset custom uploads
       uploadedRgbFile = null;
@@ -1626,6 +1855,8 @@
         if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
         const data = await res.json();
 
+        currentSceneBenchmarks = data.benchmark_rows || [];
+
         setViewImage('view-rgb', data.rgb_b64);
         setViewImage('view-lr-depth', data.lr_depth_b64);
         setViewImage('view-valid-mask', data.valid_mask_b64);
@@ -1639,7 +1870,7 @@
         document.getElementById('validity-mask-stats').innerText = `${data.valid_percent}% Valid`;
         document.getElementById('validity-px-counts').innerText = `${st.valid_pixels} Valid / ${st.invalid_pixels} Void (${st.total_pixels} total px)`;
 
-        renderBenchmarkTable(data.dataset_key);
+        renderBenchmarkTable(data.dataset_key, null, null, currentSceneBenchmarks);
         showToast(`Loaded ${data.title} (${data.dimensions})`);
 
         executeReconstruction();
@@ -1663,6 +1894,8 @@
         uploadedRgbFile = file;
         currentDemo = null;
         document.querySelectorAll('.gallery-item').forEach(el => el.classList.remove('active'));
+        const activeLbl = document.getElementById('gallery-active-label');
+        if (activeLbl) activeLbl.innerText = 'Custom File Active';
         clearReconstructionPanels();
 
         const reader = new FileReader();
@@ -1694,6 +1927,8 @@
         uploadedDepthFile = file;
         currentDemo = null;
         document.querySelectorAll('.gallery-item').forEach(el => el.classList.remove('active'));
+        const activeLbl = document.getElementById('gallery-active-label');
+        if (activeLbl) activeLbl.innerText = 'Custom File Active';
         clearReconstructionPanels();
 
         previewDepthMap(file);
@@ -1838,7 +2073,10 @@
       removeSelectedFile('depth');
       removeSelectedFile('gt');
       resetMetricsToPlaceholder();
-      showToast('Custom uploaded files cleared.');
+      if (gallerySamples && gallerySamples.length > 0) {
+        selectGallerySample(gallerySamples[activeGalleryIndex].id, activeGalleryIndex);
+      }
+      showToast('Custom uploaded files cleared. Restored dataset sample.');
     }
 
     function handleDepthScaleChange() {
@@ -1968,7 +2206,7 @@
           document.getElementById('lbl-m6').innerText = 'LATENCY';
           document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
 
-          renderBenchmarkTable(currentDatasetKey || 'nyu', { ...data.metrics, latency_ms: data.latency_ms }, method);
+          renderBenchmarkTable(currentDatasetKey || 'nyu', { ...data.metrics, has_gt: true, latency_ms: data.latency_ms }, method, currentSceneBenchmarks);
         } else {
           const stats = data.input_stats || {};
           const unit = stats.depth_unit || 'm';
@@ -1990,7 +2228,7 @@
           document.getElementById('lbl-m6').innerText = 'LATENCY';
           document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
 
-          renderBenchmarkTable(currentDatasetKey || 'nyu', null, null);
+          renderBenchmarkTable(currentDatasetKey || 'nyu', { has_gt: false, latency_ms: data.latency_ms }, method, currentSceneBenchmarks);
         }
 
         showToast(`Reconstruction complete via ${method.toUpperCase()} (${data.latency_ms} ms)`);
