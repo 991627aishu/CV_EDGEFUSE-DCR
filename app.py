@@ -25,6 +25,7 @@ from starlette.concurrency import run_in_threadpool
 from src.depth_engine import reconstruct_depth, detect_rgb_edges, detect_depth_discontinuities
 from src.model import load_model
 from src.evaluation import compute_depth_metrics
+from src.dataset_discovery import CATALOG
 
 from typing import Optional, Dict, Any
 
@@ -82,7 +83,25 @@ def get_dataset_manifest():
 get_dataset_manifest()
 
 def resolve_demo_sample(sample_id: str):
-    """Resolves sample ID using manifest.json or fallback aliases."""
+    """Resolves sample ID using catalog, manifest.json or fallback aliases."""
+    if sample_id in CATALOG.scenes_by_id:
+        s = CATALOG.scenes_by_id[sample_id]
+        return {
+            "dataset_key": s["dataset_key"],
+            "dataset_name": s["dataset_name"],
+            "title": s["title"],
+            "sensor": s.get("sensor", "Physical Depth Sensor"),
+            "max_eval_depth": s.get("max_eval_depth", 10.0),
+            "rgb_path": os.path.join(DEMO_DIR, s.get("rgb_file", "")),
+            "input_path": os.path.join(DEMO_DIR, s.get("input_file", "")),
+            "gt_path": os.path.join(DEMO_DIR, s.get("gt_file", "")),
+            "depth_range": s.get("depth_range", ""),
+            "valid_percent": s.get("valid_percent", 100.0),
+            "dimensions": s.get("dimensions", ""),
+            "has_gt": s.get("has_gt", True),
+            "benchmark_rows": s.get("benchmark_rows", [])
+        }
+
     manifest = get_dataset_manifest()
     target_id = sample_id
     if "alias_map" in manifest and sample_id in manifest["alias_map"]:
@@ -580,9 +599,74 @@ def get_dataset_gallery():
     return get_dataset_manifest()
 
 
+@app.get("/api/datasets")
+def get_datasets_overview():
+    """Returns dataset summary statistics and catalog metrics across all datasets."""
+    return {
+        "success": True,
+        "total_catalog_scenes": len(CATALOG.scenes),
+        "datasets": CATALOG.datasets_summary
+    }
+
+
+@app.get("/api/datasets/inventory")
+def get_datasets_inventory():
+    """Returns exact filesystem discovery audit table across all datasets."""
+    return {
+        "success": True,
+        "inventory": CATALOG.inventory_audit,
+        "total_scenes": len(CATALOG.scenes)
+    }
+
+
+@app.get("/api/datasets/{dataset_id}/scenes")
+def get_dataset_scenes(
+    dataset_id: str,
+    page: int = 1,
+    limit: int = 24,
+    search: str = "",
+    sort_by: str = "default",
+    sort_order: str = "asc",
+    filter_gt: Optional[str] = None,
+    filter_resolution: Optional[str] = None
+):
+    """Returns server-side paginated, searchable, sorted, and filtered scene records."""
+    return CATALOG.get_paginated_scenes(
+        dataset_key=dataset_id,
+        page=page,
+        limit=limit,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        filter_gt=filter_gt,
+        filter_resolution=filter_resolution
+    )
+
+
+@app.get("/api/datasets/{dataset_id}/scenes/{scene_id}")
+def get_scene_details(dataset_id: str, scene_id: str):
+    """Returns detailed metadata for a specific scene."""
+    scene = CATALOG.scenes_by_id.get(scene_id)
+    if not scene:
+        raise HTTPException(status_code=404, detail=f"Scene '{scene_id}' not found.")
+    return {"success": True, "scene": scene}
+
+
 @app.get("/api/benchmark/scene/{sample_id}")
 def get_scene_benchmark(sample_id: str):
     """Returns authentic precomputed per-scene benchmark rows evaluated against Ground Truth."""
+    if sample_id in CATALOG.scenes_by_id:
+        info = CATALOG.scenes_by_id[sample_id]
+        return {
+            "success": True,
+            "sample_id": sample_id,
+            "title": info["title"],
+            "dataset_key": info["dataset_key"],
+            "dataset_name": info["dataset_name"],
+            "has_gt": info.get("has_gt", True),
+            "benchmark_rows": info.get("benchmark_rows", [])
+        }
+
     info = resolve_demo_sample(sample_id)
     if not info:
         raise HTTPException(status_code=404, detail=f"Scene benchmark for '{sample_id}' not found.")
@@ -606,20 +690,40 @@ def get_demo_sample(sample_id: str):
     if sample_id in _DEMO_SAMPLE_CACHE:
         return _DEMO_SAMPLE_CACHE[sample_id]
 
-    info = resolve_demo_sample(sample_id)
-    if not info:
-        raise HTTPException(status_code=404, detail=f"Demo sample '{sample_id}' not found.")
+    if sample_id in CATALOG.scenes_by_id:
+        try:
+            rgb, lr_depth, gt_depth, info = CATALOG.load_scene_data(sample_id)
+            title = info.get("title", sample_id)
+            dataset_key = info.get("dataset_key", "nyu")
+            dataset_name = info.get("dataset_name", dataset_key)
+            sensor = info.get("sensor", "Physical Depth Sensor")
+            depth_range = info.get("depth_range", "0.5m - 10.0m")
+            max_eval_depth = info.get("max_eval_depth", 10.0)
+            benchmark_rows = info.get("benchmark_rows", [])
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load scene data for '{sample_id}': {str(e)}")
+    else:
+        info = resolve_demo_sample(sample_id)
+        if not info:
+            raise HTTPException(status_code=404, detail=f"Demo sample '{sample_id}' not found.")
 
-    rgb_p = info["rgb_path"]
-    depth_p = info["input_path"]
-    gt_p = info["gt_path"]
+        rgb_p = info["rgb_path"]
+        depth_p = info["input_path"]
+        gt_p = info["gt_path"]
 
-    if not (os.path.exists(rgb_p) and os.path.exists(depth_p)):
-        raise HTTPException(status_code=500, detail=f"Demo files for '{sample_id}' not found on disk.")
+        if not (os.path.exists(rgb_p) and os.path.exists(depth_p)):
+            raise HTTPException(status_code=500, detail=f"Demo files for '{sample_id}' not found on disk.")
 
-    rgb = np.array(Image.open(rgb_p))
-    lr_depth = np.load(depth_p)
-    gt_depth = np.load(gt_p) if os.path.exists(gt_p) else None
+        rgb = np.array(Image.open(rgb_p))
+        lr_depth = np.load(depth_p)
+        gt_depth = np.load(gt_p) if os.path.exists(gt_p) else None
+        title = info["title"]
+        dataset_key = info["dataset_key"]
+        dataset_name = info["dataset_name"]
+        sensor = info["sensor"]
+        depth_range = info["depth_range"]
+        max_eval_depth = info["max_eval_depth"]
+        benchmark_rows = info.get("benchmark_rows", [])
 
     # Compute genuine sensor measurement validity mask directly from original input
     valid_mask = (lr_depth > 0.05) & np.isfinite(lr_depth)
@@ -631,26 +735,26 @@ def get_demo_sample(sample_id: str):
     seed_label = "Measured Seeds / Valid Measurements" if is_sparse else "Valid Input Pixels"
 
     rgb_b64 = encode_image_base64(rgb)
-    lr_colored = colorize_depth(lr_depth, valid_mask=valid_mask, vmax=info["max_eval_depth"])
+    lr_colored = colorize_depth(lr_depth, valid_mask=valid_mask, vmax=max_eval_depth)
     lr_b64 = encode_image_base64(lr_colored)
     mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
     gt_b64 = None
     if gt_depth is not None:
         gt_vmask = (gt_depth > 0.05) & np.isfinite(gt_depth)
-        gt_colored = colorize_depth(gt_depth, valid_mask=gt_vmask, vmax=info["max_eval_depth"])
+        gt_colored = colorize_depth(gt_depth, valid_mask=gt_vmask, vmax=max_eval_depth)
         gt_b64 = encode_image_base64(gt_colored)
 
     res = {
         "success": True,
         "sample_id": sample_id,
-        "dataset_key": info["dataset_key"],
-        "dataset_name": info["dataset_name"],
-        "title": info["title"],
-        "sensor": info["sensor"],
+        "dataset_key": dataset_key,
+        "dataset_name": dataset_name,
+        "title": title,
+        "sensor": sensor,
         "dimensions": f"{rgb.shape[1]} x {rgb.shape[0]}",
         "lr_dimensions": f"{lr_depth.shape[1]} x {lr_depth.shape[0]}",
-        "depth_range": info["depth_range"],
+        "depth_range": depth_range,
         "valid_percent": cov_pct,
         "is_sparse": is_sparse,
         "seed_label": seed_label,
@@ -666,8 +770,8 @@ def get_demo_sample(sample_id: str):
         "gt_b64": gt_b64,
         "valid_mask_b64": mask_b64,
         "has_gt": gt_depth is not None,
-        "max_depth": info["max_eval_depth"],
-        "benchmark_rows": info.get("benchmark_rows", [])
+        "max_depth": max_eval_depth,
+        "benchmark_rows": benchmark_rows
     }
     _DEMO_SAMPLE_CACHE[sample_id] = res
     return res
@@ -752,19 +856,27 @@ async def run_reconstruction(
 
     sample_title = "Custom Input Upload"
     if demo_sample_id:
-        info = resolve_demo_sample(demo_sample_id)
-        if not info:
-            raise HTTPException(status_code=400, detail=f"Unknown demo sample ID: {demo_sample_id}")
+        if demo_sample_id in CATALOG.scenes_by_id:
+            try:
+                rgb_image, depth_input, gt_depth, info = CATALOG.load_scene_data(demo_sample_id)
+                max_eval_depth = info.get("max_eval_depth", 10.0)
+                sample_title = info.get("title", demo_sample_id)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed loading scene '{demo_sample_id}': {str(e)}")
+        else:
+            info = resolve_demo_sample(demo_sample_id)
+            if not info:
+                raise HTTPException(status_code=400, detail=f"Unknown demo sample ID: {demo_sample_id}")
 
-        if not (os.path.exists(info["rgb_path"]) and os.path.exists(info["input_path"])):
-            raise HTTPException(status_code=500, detail=f"Dataset files for '{demo_sample_id}' not found on disk.")
+            if not (os.path.exists(info["rgb_path"]) and os.path.exists(info["input_path"])):
+                raise HTTPException(status_code=500, detail=f"Dataset files for '{demo_sample_id}' not found on disk.")
 
-        rgb_image = np.array(Image.open(info["rgb_path"]))
-        depth_input = np.load(info["input_path"])
-        if os.path.exists(info["gt_path"]):
-            gt_depth = np.load(info["gt_path"])
-        max_eval_depth = info["max_eval_depth"]
-        sample_title = info["title"]
+            rgb_image = np.array(Image.open(info["rgb_path"]))
+            depth_input = np.load(info["input_path"])
+            if os.path.exists(info["gt_path"]):
+                gt_depth = np.load(info["gt_path"])
+            max_eval_depth = info["max_eval_depth"]
+            sample_title = info["title"]
 
     else:
         if not (rgb_file and rgb_file.filename and depth_file and depth_file.filename):

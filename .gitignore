@@ -1,5 +1,6 @@
 # Datasets and large binary files
 Datasets/
+demo_samples/.thumbs_cache/
 *.zip
 *.mat
 *.pfm
