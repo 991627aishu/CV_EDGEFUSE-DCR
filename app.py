@@ -608,6 +608,12 @@ def get_demo_sample(sample_id: str):
     lr_b64 = encode_image_base64(lr_colored)
     mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
+    gt_b64 = None
+    if gt_depth is not None:
+        gt_vmask = (gt_depth > 0.05) & np.isfinite(gt_depth)
+        gt_colored = colorize_depth(gt_depth, valid_mask=gt_vmask, vmax=info["max_eval_depth"])
+        gt_b64 = encode_image_base64(gt_colored)
+
     return {
         "success": True,
         "sample_id": sample_id,
@@ -630,6 +636,7 @@ def get_demo_sample(sample_id: str):
         },
         "rgb_b64": rgb_b64,
         "lr_depth_b64": lr_b64,
+        "gt_b64": gt_b64,
         "valid_mask_b64": mask_b64,
         "has_gt": gt_depth is not None,
         "max_depth": info["max_eval_depth"],
