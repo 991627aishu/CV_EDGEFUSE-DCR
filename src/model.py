@@ -42,7 +42,7 @@ class ResidualBlock(nn.Module):
 class EdgeFuseNet(nn.Module):
     """
     Compact RGB-guided Depth Reconstruction Network.
-    Params: ~240k parameters.
+    Params: 1,308,610 trainable parameters (1,311,508 total including BatchNorm buffers).
     Fast CPU/GPU inference (~15ms on GPU, ~40ms on CPU).
     """
     def __init__(self, in_channels=5, base_channels=32):

@@ -829,8 +829,13 @@
       <!-- Comparative Benchmark Table -->
       <div class="card">
         <div class="card-title">
-          <span>Comparative Benchmark & Ablation Study (Official Evaluation)</span>
-          <span class="badge">NYU Depth V2 (Indoor)</span>
+          <span>Comparative Benchmark & Ablation Study</span>
+          <span class="badge" id="benchmark-dataset-badge">NYU Depth V2 (Indoor — 4× Low-Res)</span>
+        </div>
+        <div style="display: flex; gap: 8px; margin: 12px 0 8px 0; flex-wrap: wrap;">
+          <button id="btn-bench-nyu" class="btn-demo btn-bench-tab active" style="padding: 6px 14px; font-size: 12px;" onclick="switchBenchmarkDataset('nyu')">NYU Depth V2 (Indoor)</button>
+          <button id="btn-bench-kitti" class="btn-demo btn-bench-tab" style="padding: 6px 14px; font-size: 12px;" onclick="switchBenchmarkDataset('kitti')">KITTI LiDAR (Outdoor)</button>
+          <button id="btn-bench-middlebury" class="btn-demo btn-bench-tab" style="padding: 6px 14px; font-size: 12px;" onclick="switchBenchmarkDataset('middlebury')">Middlebury 2021 (Stereo)</button>
         </div>
         <div class="benchmark-table-wrapper">
           <table class="benchmark-table">
@@ -846,97 +851,7 @@
                 <th>Latency</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td><strong>A0: Nearest Neighbor</strong></td>
-                <td>0.1556</td>
-                <td>0.0394</td>
-                <td>36.16</td>
-                <td>0.9583</td>
-                <td>0.7363</td>
-                <td>0.2237</td>
-                <td>24.5 ms</td>
-              </tr>
-              <tr>
-                <td><strong>A0: Bilinear Interpolation</strong></td>
-                <td>0.1274</td>
-                <td>0.0393</td>
-                <td>37.90</td>
-                <td>0.9740</td>
-                <td>0.8426</td>
-                <td>0.1655</td>
-                <td>19.1 ms</td>
-              </tr>
-              <tr>
-                <td><strong>A0: Bicubic Interpolation</strong></td>
-                <td>0.1327</td>
-                <td>0.0433</td>
-                <td>37.55</td>
-                <td>0.9717</td>
-                <td>0.8044</td>
-                <td>0.1818</td>
-                <td>19.6 ms</td>
-              </tr>
-              <tr>
-                <td><strong>A1: Joint Bilateral Filter</strong></td>
-                <td>0.1215</td>
-                <td>0.0505</td>
-                <td>38.31</td>
-                <td>0.9786</td>
-                <td>0.7634</td>
-                <td>0.1507</td>
-                <td>60.4 ms</td>
-              </tr>
-              <tr>
-                <td><strong>A1: Guided Filter</strong></td>
-                <td>0.1264</td>
-                <td>0.0554</td>
-                <td>37.96</td>
-                <td>0.9777</td>
-                <td>0.7479</td>
-                <td>0.1523</td>
-                <td>64.5 ms</td>
-              </tr>
-              <tr>
-                <td><strong>A2: Deep Learning (EdgeFuseNet Alone)</strong></td>
-                <td>0.1272</td>
-                <td>0.0404</td>
-                <td>37.91</td>
-                <td>0.9738</td>
-                <td>0.8421</td>
-                <td>0.1664</td>
-                <td>667.5 ms</td>
-              </tr>
-              <tr>
-                <td><strong>A3: CNN + Confidence-Aware Guidance</strong></td>
-                <td>0.1273</td>
-                <td>0.0393</td>
-                <td>37.90</td>
-                <td>0.9740</td>
-                <td>0.8426</td>
-                <td>0.1655</td>
-                <td>444.8 ms</td>
-              </tr>
-              <tr>
-                <td><strong>A4: CNN + Confidence + Boundary Refinement</strong></td>
-                <td>0.1143</td>
-                <td>0.0423</td>
-                <td>38.84</td>
-                <td>0.9781</td>
-                <td>0.8203</td>
-                <td>0.1520</td>
-                <td>534.7 ms</td>
-              </tr>
-              <tr class="highlight">
-                <td><strong>A5: EdgeFuse-DCR Full Hybrid (Ours)</strong></td>
-                <td><strong>0.1144</strong></td>
-                <td><strong>0.0424</strong></td>
-                <td><strong>38.83</strong></td>
-                <td><strong>0.9780</strong></td>
-                <td><strong>0.8199</strong></td>
-                <td><strong>0.1522</strong></td>
-                <td>482.0 ms</td>
-              </tr>
+            <tbody id="benchmark-table-body">
             </tbody>
           </table>
         </div>
@@ -963,11 +878,106 @@
       setTimeout(() => { toast.style.display = 'none'; }, 4000);
     }
 
-    function switchTab(tabId) {
+    let currentBenchmarkDataset = 'nyu';
+
+    const BENCHMARK_DATA = {
+      nyu: {
+        title: "NYU Depth V2 (Indoor — 4× Low-Res)",
+        rows: [
+          { method: "A0: Nearest Neighbor", rmse: "0.1556", mae: "0.0394", psnr: "36.16", ssim: "0.9583", f1: "0.7363", grad: "0.2237", latency: "16.7 ms", highlight: false },
+          { method: "A0: Bilinear Interpolation", rmse: "0.1274", mae: "0.0393", psnr: "37.90", ssim: "0.9740", f1: "0.8426", grad: "0.1655", latency: "14.2 ms", highlight: false },
+          { method: "A0: Bicubic Interpolation", rmse: "0.1327", mae: "0.0433", psnr: "37.55", ssim: "0.9717", f1: "0.8044", grad: "0.1818", latency: "12.9 ms", highlight: false },
+          { method: "A1: Joint Bilateral Filter", rmse: "0.1215", mae: "0.0505", psnr: "38.31", ssim: "0.9786", f1: "0.7634", grad: "0.1507", latency: "59.8 ms", highlight: false },
+          { method: "A1: Guided Filter", rmse: "0.1264", mae: "0.0554", psnr: "37.96", ssim: "0.9777", f1: "0.7479", grad: "0.1523", latency: "54.3 ms", highlight: false },
+          { method: "A2: Deep Learning (EdgeFuseNet Alone)", rmse: "0.1272", mae: "0.0404", psnr: "37.91", ssim: "0.9738", f1: "0.8421", grad: "0.1664", latency: "861.3 ms", highlight: false },
+          { method: "A3: CNN + Confidence Guidance", rmse: "0.1272", mae: "0.0400", psnr: "37.91", ssim: "0.9739", f1: "0.8421", grad: "0.1660", latency: "912.0 ms", highlight: false },
+          { method: "A4: CNN + Conf + Boundary Refinement", rmse: "0.1143", mae: "0.0433", psnr: "38.84", ssim: "0.9791", f1: "0.8162", grad: "0.1482", latency: "1140.2 ms", highlight: false },
+          { method: "A5: EdgeFuse-DCR Full Hybrid (Ours)", rmse: "0.1143", mae: "0.0433", psnr: "38.84", ssim: "0.9791", f1: "0.8161", grad: "0.1482", latency: "980.5 ms", highlight: true }
+        ]
+      },
+      kitti: {
+        title: "KITTI Depth Completion (Outdoor — 4.4% LiDAR)",
+        rows: [
+          { method: "A0: Nearest Neighbor", rmse: "1.3956", mae: "0.2726", psnr: "35.17", ssim: "0.1317", f1: "0.7207", grad: "31.5591", latency: "85.7 ms", highlight: false },
+          { method: "A0: Bilinear Interpolation", rmse: "1.3956", mae: "0.2726", psnr: "35.17", ssim: "0.1317", f1: "0.7207", grad: "31.5591", latency: "97.2 ms", highlight: false },
+          { method: "A1: Guided Filter", rmse: "1.0594", mae: "0.3010", psnr: "37.56", ssim: "0.1316", f1: "0.5597", grad: "31.4948", latency: "317.1 ms", highlight: false },
+          { method: "A2: Deep Learning (EdgeFuseNet Alone)", rmse: "1.4331", mae: "0.3585", psnr: "34.94", ssim: "0.1323", f1: "0.7316", grad: "31.4500", latency: "885.0 ms", highlight: false },
+          { method: "A5: EdgeFuse-DCR Full Hybrid (Ours)", rmse: "1.1732", mae: "0.3334", psnr: "36.67", ssim: "0.1324", f1: "0.7113", grad: "31.4812", latency: "920.0 ms", highlight: true }
+        ]
+      },
+      middlebury: {
+        title: "Middlebury Stereo 2021 (Artroom1 Metric Depth)",
+        rows: [
+          { method: "A0: Nearest Neighbor", rmse: "0.5472", mae: "0.1008", psnr: "33.20", ssim: "0.8210", f1: "0.6989", grad: "2.1190", latency: "86.7 ms", highlight: false },
+          { method: "A0: Bilinear Interpolation", rmse: "0.4656", mae: "0.1066", psnr: "34.60", ssim: "0.8253", f1: "0.6843", grad: "2.0328", latency: "90.9 ms", highlight: false },
+          { method: "A1: Guided Filter", rmse: "0.4634", mae: "0.1581", psnr: "34.64", ssim: "0.8229", f1: "0.5292", grad: "2.0509", latency: "260.4 ms", highlight: false },
+          { method: "A2: Deep Learning (EdgeFuseNet Alone)", rmse: "0.4805", mae: "0.1881", psnr: "34.32", ssim: "0.8197", f1: "0.7067", grad: "2.1528", latency: "920.0 ms", highlight: false },
+          { method: "A5: EdgeFuse-DCR Full Hybrid (Ours)", rmse: "0.4468", mae: "0.1955", psnr: "34.96", ssim: "0.8225", f1: "0.6653", grad: "2.0934", latency: "980.0 ms", highlight: true }
+        ]
+      }
+    };
+
+    function switchBenchmarkDataset(datasetKey) {
+      currentBenchmarkDataset = datasetKey;
+      document.querySelectorAll('.btn-bench-tab').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-bench-${datasetKey}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const data = BENCHMARK_DATA[datasetKey] || BENCHMARK_DATA['nyu'];
+      const badge = document.getElementById('benchmark-dataset-badge');
+      if (badge) badge.innerText = data.title;
+
+      renderBenchmarkTable(datasetKey);
+    }
+
+    function renderBenchmarkTable(datasetKey, liveMetrics = null, liveMethod = null) {
+      const data = BENCHMARK_DATA[datasetKey] || BENCHMARK_DATA['nyu'];
+      const tbody = document.getElementById('benchmark-table-body');
+      if (!tbody) return;
+
+      let html = '';
+      data.rows.forEach(r => {
+        html += `<tr class="${r.highlight ? 'highlight' : ''}">
+          <td><strong>${r.method}</strong></td>
+          <td>${r.rmse}</td>
+          <td>${r.mae}</td>
+          <td>${r.psnr}</td>
+          <td>${r.ssim}</td>
+          <td>${r.f1}</td>
+          <td>${r.grad}</td>
+          <td>${r.latency}</td>
+        </tr>`;
+      });
+
+      if (liveMetrics) {
+        html += `<tr style="background: rgba(16, 185, 129, 0.15); border-left: 3px solid #10b981;">
+          <td><strong style="color: #34d399;">Current Live Run (${(liveMethod || 'HYBRID').toUpperCase()})</strong></td>
+          <td><strong style="color: #34d399;">${liveMetrics.rmse !== undefined && liveMetrics.rmse !== null ? Number(liveMetrics.rmse).toFixed(4) : 'N/A'}</strong></td>
+          <td>${liveMetrics.mae !== undefined && liveMetrics.mae !== null ? Number(liveMetrics.mae).toFixed(4) : 'N/A'}</td>
+          <td>${liveMetrics.psnr !== undefined && liveMetrics.psnr !== null ? Number(liveMetrics.psnr).toFixed(2) : 'N/A'}</td>
+          <td>${liveMetrics.ssim !== undefined && liveMetrics.ssim !== null ? Number(liveMetrics.ssim).toFixed(4) : 'N/A'}</td>
+          <td>${liveMetrics.boundary_f1 !== undefined && liveMetrics.boundary_f1 !== null ? Number(liveMetrics.boundary_f1).toFixed(3) : 'N/A'}</td>
+          <td>${liveMetrics.grad_mae !== undefined && liveMetrics.grad_mae !== null ? Number(liveMetrics.grad_mae).toFixed(4) : 'N/A'}</td>
+          <td>${liveMetrics.latency_ms ? liveMetrics.latency_ms + ' ms' : 'Live'}</td>
+        </tr>`;
+      }
+
+      tbody.innerHTML = html;
+    }
+
+    function switchTab(tabId, btnElement) {
       document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(tabId).style.display = 'block';
-      event.target.classList.add('active');
+      const targetTab = document.getElementById(tabId);
+      if (targetTab) targetTab.style.display = 'block';
+      if (btnElement) {
+        btnElement.classList.add('active');
+      } else if (window.event && window.event.target && window.event.target.classList.contains('tab-btn')) {
+        window.event.target.classList.add('active');
+      } else {
+        const defaultBtn = document.querySelector(`button[onclick*="${tabId}"]`);
+        if (defaultBtn) defaultBtn.classList.add('active');
+      }
     }
 
     function setViewImage(imgId, b64) {
@@ -1014,6 +1024,8 @@
       document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
       const activeBtn = document.getElementById(`demo-${sampleId}`);
       if (activeBtn) activeBtn.classList.add('active');
+
+      switchBenchmarkDataset(sampleId);
 
       uploadedRgbFile = null;
       uploadedDepthFile = null;
@@ -1103,12 +1115,14 @@
           document.getElementById('val-psnr').innerHTML = `${data.metrics.psnr.toFixed(2)}<span class="metric-unit">dB</span>`;
           document.getElementById('val-ssim').innerText = data.metrics.ssim.toFixed(4);
           document.getElementById('val-f1').innerText = data.metrics.boundary_f1.toFixed(3);
+          renderBenchmarkTable(currentDemo || 'nyu', { ...data.metrics, latency_ms: data.latency_ms }, method);
         } else {
           document.getElementById('val-rmse').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A (No GT)</span>`;
           document.getElementById('val-mae').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A</span>`;
           document.getElementById('val-psnr').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A</span>`;
           document.getElementById('val-ssim').innerText = `N/A`;
           document.getElementById('val-f1').innerText = `N/A`;
+          renderBenchmarkTable(currentDemo || 'nyu', null, null);
         }
         document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
 
@@ -1124,6 +1138,7 @@
 
     // Initialize with NYU Demo on load
     window.addEventListener('DOMContentLoaded', () => {
+      renderBenchmarkTable('nyu');
       loadDemoSample('nyu');
     });
   </script>
