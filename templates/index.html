@@ -198,15 +198,142 @@
       background: rgba(15, 23, 42, 0.5);
       transition: all 0.2s;
     }
-    .file-dropzone:hover {
+    .file-dropzone:hover, .file-dropzone.dropzone-dragover {
       border-color: var(--primary);
-      background: rgba(30, 41, 59, 0.4);
+      background: rgba(30, 41, 59, 0.6);
     }
     .file-dropzone input { display: none; }
+    .dropzone-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+    }
     .file-info {
       font-size: 11px;
       color: var(--text-muted);
       margin-top: 4px;
+    }
+    .btn-clear-uploads {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-clear-uploads:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+    }
+    .upload-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .upload-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .rgb-badge {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+    .depth-badge {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .file-status-badge {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .file-status-badge.status-ready {
+      color: #34d399;
+      font-weight: 600;
+    }
+    .file-status-badge.status-error {
+      color: #f87171;
+      font-weight: 600;
+    }
+    .file-status-badge.status-loading {
+      color: #60a5fa;
+      font-weight: 600;
+    }
+    .file-info-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-top: 6px;
+    }
+    .file-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: #030712;
+      border: 1px solid #1e293b;
+      flex-shrink: 0;
+    }
+    .file-details {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .file-name-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .file-name-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: #f1f5f9;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 170px;
+    }
+    .btn-remove-file {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0 4px;
+      border-radius: 3px;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .btn-remove-file:hover {
+      color: #ef4444;
+    }
+    .file-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #94a3b8;
     }
 
     /* Form Fields */
@@ -571,23 +698,101 @@
       </div>
 
       <!-- Custom Upload -->
-      <div class="card">
+      <div class="card" id="card-custom-upload">
         <div class="card-title">
           <span>2. Custom Input Upload</span>
+          <button type="button" class="btn-clear-uploads" id="btn-clear-all" onclick="clearBothUploads()" title="Clear uploaded custom files">Clear Both</button>
         </div>
+
+        <!-- RGB Guidance Image Upload -->
         <div class="upload-group">
-          <label class="upload-label">RGB Guidance Image (PNG/JPG)</label>
-          <div class="file-dropzone" onclick="document.getElementById('rgb-file-input').click()">
-            <input type="file" id="rgb-file-input" accept="image/*" onchange="handleFileChange('rgb')">
-            <span id="rgb-file-name" style="font-size: 12px; color: #94a3b8;">Choose or drop RGB image</span>
+          <div class="upload-header">
+            <label class="upload-label">
+              <span class="upload-badge rgb-badge">RGB Guidance</span>
+              Photo / Scene Color (JPG, PNG)
+            </label>
+            <span id="rgb-status-badge" class="file-status-badge">Awaiting File</span>
+          </div>
+
+          <div class="file-dropzone" id="rgb-dropzone" onclick="document.getElementById('rgb-file-input').click()">
+            <input type="file" id="rgb-file-input" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleFileChange('rgb')">
+            <div id="rgb-empty-view" class="dropzone-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span id="rgb-file-name" style="font-size: 11px; font-weight: 500; color: #cbd5e1;">Click or drop RGB image (PNG/JPG)</span>
+              <span style="font-size: 10px; color: #64748b;">Supports PNG, JPG, JPEG with auto EXIF orientation</span>
+            </div>
+          </div>
+
+          <!-- RGB File Info Card (Visible after selection) -->
+          <div id="rgb-info-card" class="file-info-card" style="display: none;">
+            <img id="rgb-thumb" class="file-thumb" alt="RGB Preview">
+            <div class="file-details">
+              <div class="file-name-row">
+                <span id="rgb-info-name" class="file-name-text">image.png</span>
+                <button type="button" class="btn-remove-file" onclick="removeSelectedFile('rgb', event)" title="Remove RGB file">✕</button>
+              </div>
+              <div class="file-meta-row">
+                <span id="rgb-info-meta" class="file-meta-text">640 × 480 px • 245 KB • PNG</span>
+                <span class="badge badge-success" style="font-size: 9px; padding: 1px 5px;">Ready</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="upload-group">
-          <label class="upload-label">Depth Map (.npy, 16-bit PNG, or 8-bit)</label>
-          <div class="file-dropzone" onclick="document.getElementById('depth-file-input').click()">
-            <input type="file" id="depth-file-input" accept=".npy,image/*" onchange="handleFileChange('depth')">
-            <span id="depth-file-name" style="font-size: 12px; color: #94a3b8;">Choose or drop Depth Map</span>
+        <!-- Depth Map Upload -->
+        <div class="upload-group" style="margin-top: 14px;">
+          <div class="upload-header">
+            <label class="upload-label">
+              <span class="upload-badge depth-badge">Depth Map</span>
+              Sparse / Low-Res Depth (.npy, PNG)
+            </label>
+            <span id="depth-status-badge" class="file-status-badge">Awaiting File</span>
+          </div>
+
+          <div class="file-dropzone" id="depth-dropzone" onclick="document.getElementById('depth-file-input').click()">
+            <input type="file" id="depth-file-input" accept=".npy,image/png,image/jpeg,image/*" onchange="handleFileChange('depth')">
+            <div id="depth-empty-view" class="dropzone-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 12h20M12 2v20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/>
+              </svg>
+              <span id="depth-file-name" style="font-size: 11px; font-weight: 500; color: #cbd5e1;">Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)</span>
+              <span style="font-size: 10px; color: #64748b;">Accepts genuine geometric depth (rejects ordinary color photos)</span>
+            </div>
+          </div>
+
+          <!-- Depth File Info Card (Visible after selection) -->
+          <div id="depth-info-card" class="file-info-card" style="display: none;">
+            <img id="depth-thumb" class="file-thumb" alt="Depth Preview">
+            <div class="file-details">
+              <div class="file-name-row">
+                <span id="depth-info-name" class="file-name-text">depth.npy</span>
+                <button type="button" class="btn-remove-file" onclick="removeSelectedFile('depth', event)" title="Remove Depth file">✕</button>
+              </div>
+              <div class="file-meta-row">
+                <span id="depth-info-meta" class="file-meta-text">160 × 120 px • 75 KB • Valid: 100%</span>
+                <span class="badge badge-success" style="font-size: 9px; padding: 1px 5px;">Ready</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Depth Scale Configuration -->
+          <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Depth Physical Scale Calibration</label>
+              <span style="font-size: 10px; color: var(--primary);">Documented Units</span>
+            </div>
+            <select id="depth-scale-select" class="form-select" style="font-size: 11px; padding: 6px 10px;" onchange="handleDepthScaleChange()">
+              <option value="auto" selected>Auto-Detect Physical Scale (Recommended)</option>
+              <option value="mm_to_m">Millimeters to Meters (/ 1000.0 — Kinect, Intel RealSense)</option>
+              <option value="cm_to_m">Centimeters to Meters (/ 100.0)</option>
+              <option value="kitti">KITTI LiDAR Scale (/ 256.0)</option>
+              <option value="raw_meters">Raw Metric Meters (Scale = 1.0 — Middlebury / float32)</option>
+              <option value="norm_8bit">8-bit Normalized Mapping [0.5m - 6.0m]</option>
+            </select>
           </div>
         </div>
       </div>
@@ -658,27 +863,27 @@
       <!-- Quantitative Metrics Banner -->
       <div class="metrics-grid" id="metrics-container">
         <div class="metric-card accent-cyan">
-          <div class="metric-label">RMSE</div>
+          <div class="metric-label" id="lbl-m1">RMSE</div>
           <div class="metric-value" id="val-rmse">0.114<span class="metric-unit">m</span></div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">MAE</div>
+          <div class="metric-label" id="lbl-m2">MAE</div>
           <div class="metric-value" id="val-mae">0.042<span class="metric-unit">m</span></div>
         </div>
         <div class="metric-card accent-emerald">
-          <div class="metric-label">PSNR</div>
+          <div class="metric-label" id="lbl-m3">PSNR</div>
           <div class="metric-value" id="val-psnr">38.83<span class="metric-unit">dB</span></div>
         </div>
         <div class="metric-card accent-emerald">
-          <div class="metric-label">SSIM</div>
+          <div class="metric-label" id="lbl-m4">SSIM</div>
           <div class="metric-value" id="val-ssim">0.9780</div>
         </div>
         <div class="metric-card accent-amber">
-          <div class="metric-label">Boundary F1</div>
+          <div class="metric-label" id="lbl-m5">Boundary F1</div>
           <div class="metric-value" id="val-f1">0.820</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">Latency</div>
+          <div class="metric-label" id="lbl-m6">Latency</div>
           <div class="metric-value" id="val-latency">482<span class="metric-unit">ms</span></div>
         </div>
       </div>
@@ -980,6 +1185,61 @@
       }
     }
 
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function clearReconstructionPanels() {
+      setViewImage('view-reconstructed', null);
+      setViewImage('view-hybrid-comp', null);
+      setViewImage('view-classical', null);
+      setViewImage('view-cnn', null);
+      setViewImage('view-confidence', null);
+      setViewImage('view-boundary', null);
+      setViewImage('view-error', null);
+    }
+
+    function resetMetricsToPlaceholder() {
+      document.getElementById('lbl-m1').innerText = 'RMSE';
+      document.getElementById('lbl-m2').innerText = 'MAE';
+      document.getElementById('lbl-m3').innerText = 'PSNR';
+      document.getElementById('lbl-m4').innerText = 'SSIM';
+      document.getElementById('lbl-m5').innerText = 'BOUNDARY F1';
+      document.getElementById('lbl-m6').innerText = 'LATENCY';
+
+      document.getElementById('val-rmse').innerHTML = '--';
+      document.getElementById('val-mae').innerHTML = '--';
+      document.getElementById('val-psnr').innerHTML = '--';
+      document.getElementById('val-ssim').innerText = '--';
+      document.getElementById('val-f1').innerText = '--';
+      document.getElementById('val-latency').innerHTML = '--';
+    }
+
+    function updateReconstructButtonState() {
+      const btn = document.getElementById('btn-run');
+      const btnText = document.getElementById('btn-text');
+      if (currentDemo) {
+        btn.disabled = false;
+        btnText.innerText = 'Execute Depth Reconstruction';
+      } else if (uploadedRgbFile && uploadedDepthFile) {
+        btn.disabled = false;
+        btnText.innerText = 'Execute Depth Reconstruction';
+      } else if (uploadedRgbFile && !uploadedDepthFile) {
+        btn.disabled = false;
+        btnText.innerText = 'Upload Depth Map to Run';
+      } else if (!uploadedRgbFile && uploadedDepthFile) {
+        btn.disabled = false;
+        btnText.innerText = 'Upload RGB Image to Run';
+      } else {
+        btn.disabled = false;
+        btnText.innerText = 'Execute Depth Reconstruction';
+      }
+    }
+
     function setViewImage(imgId, b64) {
       const img = document.getElementById(imgId);
       if (!img) return;
@@ -995,28 +1255,190 @@
       }
     }
 
-    function handleFileChange(type) {
+    function handleFileChange(type, droppedFile = null) {
       if (type === 'rgb') {
         const input = document.getElementById('rgb-file-input');
-        if (input.files.length > 0) {
-          uploadedRgbFile = input.files[0];
-          document.getElementById('rgb-file-name').innerText = uploadedRgbFile.name;
-          currentDemo = null;
-          document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
-          // Preview RGB
-          const reader = new FileReader();
-          reader.onload = e => { setViewImage('view-rgb', e.target.result); };
-          reader.readAsDataURL(uploadedRgbFile);
+        const file = droppedFile || (input.files.length > 0 ? input.files[0] : null);
+        if (!file) return;
+
+        // Basic format check
+        if (!file.name.match(/\.(jpe?g|png|webp|bmp)$/i)) {
+          showToast('Unsupported RGB format. Please upload JPG, PNG, or WEBP.', true);
+          return;
         }
-      } else {
+
+        uploadedRgbFile = file;
+        currentDemo = null;
+        document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
+        clearReconstructionPanels();
+
+        document.getElementById('rgb-file-name').innerText = file.name;
+        const reader = new FileReader();
+        reader.onload = e => {
+          const dataUrl = e.target.result;
+          setViewImage('view-rgb', dataUrl);
+          document.getElementById('rgb-thumb').src = dataUrl;
+          const img = new Image();
+          img.onload = () => {
+            document.getElementById('rgb-info-name').innerText = file.name;
+            document.getElementById('rgb-info-meta').innerText = `${img.naturalWidth} × ${img.naturalHeight} px • ${formatBytes(file.size)}`;
+            document.getElementById('rgb-info-card').style.display = 'flex';
+            document.getElementById('rgb-empty-view').style.display = 'none';
+            const badge = document.getElementById('rgb-status-badge');
+            badge.innerText = 'Ready (RGB)';
+            badge.className = 'file-status-badge status-ready';
+            document.getElementById('sample-dimensions').innerText = `${img.naturalWidth} × ${img.naturalHeight} px (Custom RGB)`;
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+        updateReconstructButtonState();
+
+      } else if (type === 'depth') {
         const input = document.getElementById('depth-file-input');
-        if (input.files.length > 0) {
-          uploadedDepthFile = input.files[0];
-          document.getElementById('depth-file-name').innerText = uploadedDepthFile.name;
-          currentDemo = null;
-          document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
-        }
+        const file = droppedFile || (input.files.length > 0 ? input.files[0] : null);
+        if (!file) return;
+
+        uploadedDepthFile = file;
+        currentDemo = null;
+        document.querySelectorAll('.btn-demo').forEach(b => b.classList.remove('active'));
+        clearReconstructionPanels();
+
+        previewDepthMap(file);
+        updateReconstructButtonState();
       }
+    }
+
+    async function previewDepthMap(file) {
+      const badge = document.getElementById('depth-status-badge');
+      badge.innerText = 'Validating...';
+      badge.className = 'file-status-badge status-loading';
+
+      const formData = new FormData();
+      formData.append('depth_file', file);
+      const scaleSelect = document.getElementById('depth-scale-select');
+      if (scaleSelect) {
+        formData.append('depth_scale', scaleSelect.value);
+      }
+
+      try {
+        const res = await fetch('/api/preview_depth', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Depth validation failed.');
+        }
+
+        // Successfully validated genuine depth map
+        document.getElementById('depth-thumb').src = data.preview_b64;
+        setViewImage('view-lr-depth', data.preview_b64);
+        setViewImage('view-valid-mask', data.valid_mask_b64);
+        document.getElementById('depth-info-name').innerText = file.name;
+        document.getElementById('depth-info-meta').innerText = `${data.width} × ${data.height} px • ${formatBytes(file.size)} • ${data.valid_percent}% Valid`;
+        document.getElementById('depth-info-card').style.display = 'flex';
+        document.getElementById('depth-empty-view').style.display = 'none';
+        badge.innerText = 'Ready (Depth)';
+        badge.className = 'file-status-badge status-ready';
+        document.getElementById('sample-dimensions').innerText = `${data.width} × ${data.height} px (Custom Depth Map)`;
+
+        if (data.warning) {
+          showToast(data.warning, false);
+        }
+      } catch (err) {
+        // Validation failed (e.g. RGB color photograph was supplied as depth)
+        uploadedDepthFile = null;
+        const input = document.getElementById('depth-file-input');
+        if (input) input.value = '';
+        document.getElementById('depth-file-name').innerText = 'Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)';
+        document.getElementById('depth-info-card').style.display = 'none';
+        document.getElementById('depth-empty-view').style.display = 'flex';
+        badge.innerText = 'Invalid Depth';
+        badge.className = 'file-status-badge status-error';
+
+        // Immediately clear low-res depth and valid mask so stale demo image never persists
+        setViewImage('view-lr-depth', null);
+        setViewImage('view-valid-mask', null);
+        clearReconstructionPanels();
+        showToast(err.message, true);
+      }
+      updateReconstructButtonState();
+    }
+
+    function removeSelectedFile(type, event) {
+      if (event) event.stopPropagation();
+      if (type === 'rgb') {
+        uploadedRgbFile = null;
+        const input = document.getElementById('rgb-file-input');
+        if (input) input.value = '';
+        document.getElementById('rgb-info-card').style.display = 'none';
+        document.getElementById('rgb-empty-view').style.display = 'flex';
+        document.getElementById('rgb-file-name').innerText = 'Click or drop RGB image (PNG/JPG)';
+        const badge = document.getElementById('rgb-status-badge');
+        badge.innerText = 'Awaiting File';
+        badge.className = 'file-status-badge';
+        setViewImage('view-rgb', null);
+        clearReconstructionPanels();
+      } else if (type === 'depth') {
+        uploadedDepthFile = null;
+        const input = document.getElementById('depth-file-input');
+        if (input) input.value = '';
+        document.getElementById('depth-info-card').style.display = 'none';
+        document.getElementById('depth-empty-view').style.display = 'flex';
+        document.getElementById('depth-file-name').innerText = 'Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)';
+        const badge = document.getElementById('depth-status-badge');
+        badge.innerText = 'Awaiting File';
+        badge.className = 'file-status-badge';
+        setViewImage('view-lr-depth', null);
+        setViewImage('view-valid-mask', null);
+        clearReconstructionPanels();
+      }
+      if (!uploadedRgbFile && !uploadedDepthFile) {
+        resetMetricsToPlaceholder();
+      }
+      updateReconstructButtonState();
+    }
+
+    function clearBothUploads() {
+      removeSelectedFile('rgb');
+      removeSelectedFile('depth');
+      resetMetricsToPlaceholder();
+      showToast('Custom uploaded files cleared.');
+    }
+
+    function handleDepthScaleChange() {
+      if (uploadedDepthFile) {
+        previewDepthMap(uploadedDepthFile);
+      }
+    }
+
+    function setupDragDrop() {
+      ['rgb', 'depth'].forEach(type => {
+        const zone = document.getElementById(`${type}-dropzone`);
+        if (!zone) return;
+        ['dragenter', 'dragover'].forEach(eventName => {
+          zone.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            zone.classList.add('dropzone-dragover');
+          }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+          zone.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            zone.classList.remove('dropzone-dragover');
+          }, false);
+        });
+        zone.addEventListener('drop', e => {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          if (files && files.length > 0) {
+            handleFileChange(type, files[0]);
+          }
+        }, false);
+      });
     }
 
     async function loadDemoSample(sampleId) {
@@ -1027,10 +1449,26 @@
 
       switchBenchmarkDataset(sampleId);
 
+      // Reset any custom upload UI state
       uploadedRgbFile = null;
       uploadedDepthFile = null;
-      document.getElementById('rgb-file-name').innerText = 'Choose or drop RGB image';
-      document.getElementById('depth-file-name').innerText = 'Choose or drop Depth Map';
+      const rgbIn = document.getElementById('rgb-file-input');
+      if (rgbIn) rgbIn.value = '';
+      const depthIn = document.getElementById('depth-file-input');
+      if (depthIn) depthIn.value = '';
+      document.getElementById('rgb-info-card').style.display = 'none';
+      document.getElementById('rgb-empty-view').style.display = 'flex';
+      document.getElementById('rgb-file-name').innerText = 'Click or drop RGB image (PNG/JPG)';
+      document.getElementById('rgb-status-badge').innerText = 'Awaiting File';
+      document.getElementById('rgb-status-badge').className = 'file-status-badge';
+
+      document.getElementById('depth-info-card').style.display = 'none';
+      document.getElementById('depth-empty-view').style.display = 'flex';
+      document.getElementById('depth-file-name').innerText = 'Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)';
+      document.getElementById('depth-status-badge').innerText = 'Awaiting File';
+      document.getElementById('depth-status-badge').className = 'file-status-badge';
+
+      clearReconstructionPanels();
 
       try {
         const res = await fetch(`/api/demo/${sampleId}`);
@@ -1044,18 +1482,27 @@
           setViewImage('view-valid-mask', data.valid_mask_b64);
           document.getElementById('sample-dimensions').innerText = `${data.dimensions} (${data.dataset_name})`;
           showToast(`Loaded ${data.dataset_name} sample.`);
-          // Automatically trigger reconstruction on demo select
           executeReconstruction();
         }
       } catch (err) {
         showToast('Error loading demo: ' + err.message, true);
       }
+      updateReconstructButtonState();
     }
 
     async function executeReconstruction() {
       const btn = document.getElementById('btn-run');
       const spinner = document.getElementById('spinner');
       const btnText = document.getElementById('btn-text');
+
+      if (!currentDemo && (!uploadedRgbFile || !uploadedDepthFile)) {
+        if (!uploadedRgbFile) {
+          showToast('Please upload an RGB Guidance Image before executing.', true);
+        } else {
+          showToast('Please upload a valid Depth Map (.npy or 16-bit PNG) before executing.', true);
+        }
+        return;
+      }
 
       btn.disabled = true;
       spinner.style.display = 'block';
@@ -1073,15 +1520,12 @@
       if (currentDemo) {
         formData.append('demo_sample_id', currentDemo);
       } else {
-        if (!uploadedRgbFile || !uploadedDepthFile) {
-          showToast('Please upload both RGB and Depth files or select a Demo.', true);
-          btn.disabled = false;
-          spinner.style.display = 'none';
-          btnText.innerText = 'Execute Depth Reconstruction';
-          return;
-        }
         formData.append('rgb_file', uploadedRgbFile);
         formData.append('depth_file', uploadedDepthFile);
+        const scaleSelect = document.getElementById('depth-scale-select');
+        if (scaleSelect) {
+          formData.append('depth_scale', scaleSelect.value);
+        }
       }
 
       try {
@@ -1096,6 +1540,12 @@
         }
 
         // Update visuals with safe helper (no broken icons)
+        if (data.input_depth_b64) {
+          setViewImage('view-lr-depth', data.input_depth_b64);
+        }
+        if (data.valid_mask_b64) {
+          setViewImage('view-valid-mask', data.valid_mask_b64);
+        }
         setViewImage('view-reconstructed', data.reconstructed_b64);
         setViewImage('view-hybrid-comp', data.reconstructed_b64);
         setViewImage('view-classical', data.classical_b64);
@@ -1110,34 +1560,64 @@
 
         // Update metrics
         if (data.has_gt && data.metrics) {
+          document.getElementById('lbl-m1').innerText = 'RMSE';
           document.getElementById('val-rmse').innerHTML = `${data.metrics.rmse.toFixed(3)}<span class="metric-unit">m</span>`;
+
+          document.getElementById('lbl-m2').innerText = 'MAE';
           document.getElementById('val-mae').innerHTML = `${data.metrics.mae.toFixed(3)}<span class="metric-unit">m</span>`;
+
+          document.getElementById('lbl-m3').innerText = 'PSNR';
           document.getElementById('val-psnr').innerHTML = `${data.metrics.psnr.toFixed(2)}<span class="metric-unit">dB</span>`;
+
+          document.getElementById('lbl-m4').innerText = 'SSIM';
           document.getElementById('val-ssim').innerText = data.metrics.ssim.toFixed(4);
+
+          document.getElementById('lbl-m5').innerText = 'BOUNDARY F1';
           document.getElementById('val-f1').innerText = data.metrics.boundary_f1.toFixed(3);
+
+          document.getElementById('lbl-m6').innerText = 'LATENCY';
+          document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
+
           renderBenchmarkTable(currentDemo || 'nyu', { ...data.metrics, latency_ms: data.latency_ms }, method);
         } else {
-          document.getElementById('val-rmse').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A (No GT)</span>`;
-          document.getElementById('val-mae').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A</span>`;
-          document.getElementById('val-psnr').innerHTML = `<span style="font-size:13px; color:#94a3b8;">N/A</span>`;
-          document.getElementById('val-ssim').innerText = `N/A`;
-          document.getElementById('val-f1').innerText = `N/A`;
+          // Custom Upload: Display Input Sensor Statistics
+          const stats = data.input_stats || {};
+          document.getElementById('lbl-m1').innerText = 'INPUT COVERAGE';
+          document.getElementById('val-rmse').innerHTML = `${stats.valid_percent !== undefined ? stats.valid_percent : '100'}<span class="metric-unit">%</span>`;
+
+          document.getElementById('lbl-m2').innerText = 'RANGE (MIN-MAX)';
+          document.getElementById('val-mae').innerHTML = `${stats.min !== undefined ? stats.min + '-' + stats.max : '0.5-6.0'}<span class="metric-unit">m</span>`;
+
+          document.getElementById('lbl-m3').innerText = 'MEAN DEPTH';
+          document.getElementById('val-psnr').innerHTML = `${stats.mean !== undefined ? stats.mean : '2.5'}<span class="metric-unit">m</span>`;
+
+          document.getElementById('lbl-m4').innerText = 'INPUT RES';
+          document.getElementById('val-ssim').innerText = stats.width ? `${stats.width}×${stats.height}` : 'Custom';
+
+          document.getElementById('lbl-m5').innerText = 'ALGORITHM';
+          document.getElementById('val-f1').innerText = (method || 'HYBRID').toUpperCase();
+
+          document.getElementById('lbl-m6').innerText = 'LATENCY';
+          document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
+
           renderBenchmarkTable(currentDemo || 'nyu', null, null);
         }
-        document.getElementById('val-latency').innerHTML = `${data.latency_ms}<span class="metric-unit">ms</span>`;
 
         showToast(`Reconstruction complete via ${method.toUpperCase()} (${data.latency_ms} ms)`);
       } catch (err) {
+        clearReconstructionPanels();
         showToast(err.message, true);
       } finally {
         btn.disabled = false;
         spinner.style.display = 'none';
         btnText.innerText = 'Execute Depth Reconstruction';
+        updateReconstructButtonState();
       }
     }
 
     // Initialize with NYU Demo on load
     window.addEventListener('DOMContentLoaded', () => {
+      setupDragDrop();
       renderBenchmarkTable('nyu');
       loadDemoSample('nyu');
     });
