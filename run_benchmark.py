@@ -41,7 +41,7 @@ def main():
 
     # Print NYU Table
     print("\nNYU Depth V2 Benchmark Results:")
-    nyu_md = format_evaluation_table_markdown(nyu_results, team_usns="1MS22CS001, 1MS22CS002, 1MS22CS003")
+    nyu_md = format_evaluation_table_markdown(nyu_results, team_usns="1RUA24CSE0243, 1RUA24CSE0263, 1RUA24CSE0270, 1RUA24CSE0308")
     print(nyu_md)
 
     # 2. Run Evaluation on KITTI Depth Completion Sample
@@ -73,7 +73,7 @@ def main():
             k_results.append(m)
 
         print("\nKITTI Outdoor Benchmark Results:")
-        kitti_md = format_evaluation_table_markdown(k_results, team_usns="1MS22CS001, 1MS22CS002, 1MS22CS003")
+        kitti_md = format_evaluation_table_markdown(k_results, team_usns="1RUA24CSE0243, 1RUA24CSE0263, 1RUA24CSE0270, 1RUA24CSE0308")
         print(kitti_md)
 
     # 3. Run Evaluation on Middlebury Stereo 2021 Sample (Unseen Generalization)
@@ -108,7 +108,7 @@ def main():
             mb_results.append(m)
 
         print("\nMiddlebury Stereo 2021 Benchmark Results:")
-        mb_md = format_evaluation_table_markdown(mb_results, team_usns="1MS22CS001, 1MS22CS002, 1MS22CS003")
+        mb_md = format_evaluation_table_markdown(mb_results, team_usns="1RUA24CSE0243, 1RUA24CSE0263, 1RUA24CSE0270, 1RUA24CSE0308")
         print(mb_md)
 
     # 4. Save official evaluation document eval_P4_T01.md

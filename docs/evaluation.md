@@ -1,4 +1,4 @@
-1MS22CS001, 1MS22CS002, 1MS22CS003
+1RUA24CSE0243, 1RUA24CSE0263, 1RUA24CSE0270, 1RUA24CSE0308
 # EdgeFuse-DCR: Comprehensive Comparative Evaluation
 
 | Pipeline Stage / Method | RMSE (m) | MAE (m) | PSNR (dB) | SSIM | Boundary F1 | Grad MAE | Latency (ms) | Peak RAM (MB) |

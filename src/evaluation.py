@@ -179,7 +179,7 @@ def run_comparative_benchmark(rgb_image, gt_depth, factor=4, model=None, device=
     return results
 
 
-def format_evaluation_table_markdown(benchmark_results, team_usns="1MS22CS001, 1MS22CS002, 1MS22CS003"):
+def format_evaluation_table_markdown(benchmark_results, team_usns="1RUA24CSE0243, 1RUA24CSE0263, 1RUA24CSE0270, 1RUA24CSE0308"):
     """
     Formats the benchmark results into the official Markdown table format.
     First line contains team USNs.

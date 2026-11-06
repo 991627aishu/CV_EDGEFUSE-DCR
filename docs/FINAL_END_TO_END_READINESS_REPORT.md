@@ -313,3 +313,4 @@ EdgeFuse-DCR has completed end-to-end verification. All 38 functional and resear
 - **Live URL:** [https://cv-edgefuse-dcr.onrender.com](https://cv-edgefuse-dcr.onrender.com)
 - **Repository:** [https://github.com/991627aishu/CV_EDGEFUSE-DCR](https://github.com/991627aishu/CV_EDGEFUSE-DCR)
 - **Status:** READY FOR HACKATHON JURY EVALUATION
+
