@@ -26,7 +26,7 @@ from src.depth_engine import reconstruct_depth, detect_rgb_edges, detect_depth_d
 from src.model import load_model
 from src.evaluation import compute_depth_metrics
 
-from typing import Optional
+from typing import Optional, Dict, Any
 
 app = FastAPI(title="EdgeFuse-DCR", description="Intelligent Edge-Preserving Depth Reconstruction")
 
@@ -164,13 +164,34 @@ def colorize_depth(depth_map, valid_mask=None, colormap=cv2.COLORMAP_TURBO, vmin
     return colored
 
 
-def encode_image_base64(img_rgb):
-    """Encodes numpy RGB image to Base64 PNG data URI."""
+def encode_image_base64(img_rgb, format: str = "auto", quality: int = 88):
+    """
+    Encodes numpy image to Base64 data URI.
+    Automatically selects JPEG for 3-channel color images (quality=88) for 5-8x compression
+    and ~10x faster encoding, and PNG for binary masks and grayscale maps.
+    """
+    if img_rgb.dtype != np.uint8:
+        img_rgb = np.clip(img_rgb, 0, 255).astype(np.uint8)
     pil_img = Image.fromarray(img_rgb)
     buf = io.BytesIO()
-    pil_img.save(buf, format="PNG")
+
+    if format == "auto":
+        is_color = (pil_img.mode in ("RGB", "RGBA") and pil_img.size[0] > 64 and pil_img.size[1] > 64)
+        target_fmt = "JPEG" if is_color else "PNG"
+    else:
+        target_fmt = format.upper()
+
+    if target_fmt in ("JPEG", "JPG"):
+        if pil_img.mode != "RGB":
+            pil_img = pil_img.convert("RGB")
+        pil_img.save(buf, format="JPEG", quality=quality, optimize=True)
+        mime = "image/jpeg"
+    else:
+        pil_img.save(buf, format="PNG", optimize=True)
+        mime = "image/png"
+
     b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-    return f"data:image/png;base64,{b64}"
+    return f"data:{mime};base64,{b64}"
 
 
 def parse_depth_bytes(file_bytes: bytes, filename: str = "", depth_scale: str = "auto"):
@@ -576,9 +597,15 @@ def get_scene_benchmark(sample_id: str):
     }
 
 
+_DEMO_SAMPLE_CACHE: Dict[str, dict] = {}
+_RECONSTRUCT_DEMO_CACHE: Dict[str, dict] = {}
+
 @app.get("/api/demo/{sample_id}")
 def get_demo_sample(sample_id: str):
     """Loads a verified dataset benchmark sample with complete scientific metadata."""
+    if sample_id in _DEMO_SAMPLE_CACHE:
+        return _DEMO_SAMPLE_CACHE[sample_id]
+
     info = resolve_demo_sample(sample_id)
     if not info:
         raise HTTPException(status_code=404, detail=f"Demo sample '{sample_id}' not found.")
@@ -614,7 +641,7 @@ def get_demo_sample(sample_id: str):
         gt_colored = colorize_depth(gt_depth, valid_mask=gt_vmask, vmax=info["max_eval_depth"])
         gt_b64 = encode_image_base64(gt_colored)
 
-    return {
+    res = {
         "success": True,
         "sample_id": sample_id,
         "dataset_key": info["dataset_key"],
@@ -642,6 +669,8 @@ def get_demo_sample(sample_id: str):
         "max_depth": info["max_eval_depth"],
         "benchmark_rows": info.get("benchmark_rows", [])
     }
+    _DEMO_SAMPLE_CACHE[sample_id] = res
+    return res
 
 
 @app.post("/api/preview_depth")
@@ -702,6 +731,16 @@ async def run_reconstruction(
     Handles custom uploaded RGB+Depth (with optional Ground Truth) or built-in demo samples.
     """
     t_start = time.perf_counter()
+
+    # Check cache for demo reconstructions
+    cache_key = None
+    if demo_sample_id and not (rgb_file and rgb_file.filename) and not (depth_file and depth_file.filename):
+        cache_key = f"{demo_sample_id}_{method}_{upsample_factor}_{apply_texture_suppression}"
+        if cache_key in _RECONSTRUCT_DEMO_CACHE:
+            cached_data = _RECONSTRUCT_DEMO_CACHE[cache_key]
+            if "_saved_last_rec" in cached_data:
+                app.state.last_rec = cached_data["_saved_last_rec"]
+            return {k: v for k, v in cached_data.items() if k != "_saved_last_rec"}
 
     # 1. Load Inputs
     gt_depth = None
@@ -866,7 +905,7 @@ async def run_reconstruction(
         "algorithm_comparison": algo_comparison
     }
 
-    return {
+    response_data = {
         "success": True,
         "sample_name": sample_title,
         "method": method,
@@ -893,6 +932,13 @@ async def run_reconstruction(
             "unit": depth_unit
         }
     }
+
+    if cache_key:
+        cached_entry = response_data.copy()
+        cached_entry["_saved_last_rec"] = app.state.last_rec
+        _RECONSTRUCT_DEMO_CACHE[cache_key] = cached_entry
+
+    return response_data
 
 
 @app.get("/api/download/npy")
