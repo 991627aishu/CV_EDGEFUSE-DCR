@@ -66,9 +66,9 @@ if not os.path.exists(DEMO_DIR):
 # Helpers for Array & Visualization Encoding
 # ---------------------------------------------------------------------------
 def colorize_depth(depth_map, valid_mask=None, colormap=cv2.COLORMAP_TURBO, vmin=None, vmax=None):
-    """Colorizes float32 metric depth map for web visualization."""
+    """Colorizes float32 depth map for web visualization."""
     if valid_mask is None:
-        valid_mask = (depth_map > 0.05) & np.isfinite(depth_map)
+        valid_mask = (depth_map > 0.001) & np.isfinite(depth_map)
 
     d_valid = depth_map[valid_mask]
     if len(d_valid) == 0:
@@ -86,7 +86,7 @@ def colorize_depth(depth_map, valid_mask=None, colormap=cv2.COLORMAP_TURBO, vmin
     colored = cv2.applyColorMap(d_uint8, colormap)
     colored = cv2.cvtColor(colored, cv2.COLOR_BGR2RGB)
 
-    # Invalidate invalid pixels as dark navy/black
+    # Mark invalid pixels as dark navy/black
     colored[~valid_mask] = [15, 23, 42]
     return colored
 
@@ -102,19 +102,24 @@ def encode_image_base64(img_rgb):
 
 def parse_depth_bytes(file_bytes: bytes, filename: str = "", depth_scale: str = "auto"):
     """
-    Parses and strictly validates uploaded depth map bytes.
+    Parses and strictly validates uploaded depth map bytes with scientific integrity.
     Supports:
-      - .npy: 2D float32/float64/integer metric depth array (supports NaN/Inf sanitization)
+      - .npy: 2D float32/float64/integer depth array (supports NaN/Inf sanitization)
       - 16-bit PNG: physical metric depth (configurable scale: mm, cm, KITTI, or raw)
-      - 8-bit PNG: single-channel grayscale with configurable scale (norm_8bit, mm, cm, raw)
+      - 8-bit PNG: single-channel grayscale with explicit relative vs metric scaling
     Rejects:
       - Ordinary 3-channel color photographs (RGB)
+      - Colormap-encoded RGB heatmaps without calibrated lookup tables
       - Non-planar / 3D non-squeezeable shapes
       - Corrupt or non-depth files
       - Arrays with zero positive measurements
+    Returns:
+      (depth_array_float32, depth_type, depth_unit, warning_message)
     """
     fname_lower = filename.lower()
     warning_msg = None
+    depth_type = "metric"
+    depth_unit = "m"
 
     if fname_lower.endswith(".npy"):
         try:
@@ -138,20 +143,48 @@ def parse_depth_bytes(file_bytes: bytes, filename: str = "", depth_scale: str = 
         depth = np.nan_to_num(depth, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
         depth[depth < 0.0] = 0.0
 
-        if depth_scale in ["mm", "mm_to_m"]:
+        if depth_scale == "relative":
+            max_val = float(depth.max())
+            min_val = float(depth[depth > 0.0].min()) if np.any(depth > 0.0) else 0.0
+            depth = (depth - min_val) / max(1e-6, max_val - min_val)
+            depth_type = "relative"
+            depth_unit = "rel"
+            warning_msg = "Note: Scaled .npy array to normalized relative depth [0.0 - 1.0 rel]."
+        elif depth_scale in ["mm", "mm_to_m"]:
             depth = depth / 1000.0
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Scaled .npy depth from millimeters to meters (/ 1000.0)."
         elif depth_scale in ["cm", "cm_to_m"]:
             depth = depth / 100.0
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Scaled .npy depth from centimeters to meters (/ 100.0)."
         elif depth_scale == "kitti":
             depth = depth / 256.0
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Scaled .npy depth using KITTI LiDAR standard (/ 256.0)."
+        elif depth_scale == "norm_metric":
+            depth = (depth / (depth.max() + 1e-6)) * 5.5 + 0.5
+            depth_type = "metric"
+            depth_unit = "m"
+            warning_msg = "Note: Calibrated .npy depth linearly across standard indoor range [0.5m - 6.0m]."
+        else:  # auto
+            if depth.max() > 100.0:
+                depth = depth / 1000.0  # mm to meters
+                depth_type = "metric"
+                depth_unit = "m"
+                warning_msg = "Note: Auto-detected millimeter scale (/ 1000.0) based on max measurement > 100."
+            else:
+                depth_type = "metric"
+                depth_unit = "m"
+                warning_msg = "Note: Treated .npy as floating-point metric depth in meters."
 
         if depth.size == 0 or np.all(depth <= 0.001):
             raise ValueError("Validation Error: The uploaded .npy depth map contains zero positive measurements. All pixels are zero, negative, or invalid.")
 
-        return depth, warning_msg
+        return depth, depth_type, depth_unit, warning_msg
 
     # Image file parsing (PNG, JPG, TIFF, etc.)
     try:
@@ -161,17 +194,16 @@ def parse_depth_bytes(file_bytes: bytes, filename: str = "", depth_scale: str = 
 
     arr = np.array(pil_img)
 
-    # Check for ordinary color photographs (3 or 4 channels)
+    # Check for ordinary color photographs or uncalibrated colormaps (3 or 4 channels)
     if arr.ndim == 3:
         if arr.shape[2] >= 3:
-            # Compare R, G, B channels to detect color photos
             diff_rg = float(np.abs(arr[:, :, 0].astype(np.float32) - arr[:, :, 1].astype(np.float32)).mean())
             diff_gb = float(np.abs(arr[:, :, 1].astype(np.float32) - arr[:, :, 2].astype(np.float32)).mean())
             if diff_rg > 2.0 or diff_gb > 2.0:
                 raise ValueError(
                     "Validation Error: The uploaded depth file appears to be an ordinary RGB color photograph! "
-                    "Ordinary color photographs cannot be interpreted as geometric depth. "
-                    "Please upload a true single-channel depth map (.npy array or 16-bit/8-bit grayscale depth PNG)."
+                    "Ordinary color photographs and colormap-encoded visualizations cannot be interpreted as geometric depth without calibrated inversion tables. "
+                    "Please upload a true single-channel depth map (.npy array, 16-bit PNG, or 8-bit grayscale PNG)."
                 )
             # Channels are identical (grayscale stored in RGB container)
             arr = arr[:, :, 0]
@@ -189,60 +221,145 @@ def parse_depth_bytes(file_bytes: bytes, filename: str = "", depth_scale: str = 
 
     if arr.dtype == np.uint16:
         # 16-bit physical sensor depth
-        if depth_scale == "mm_to_m":
+        if depth_scale == "relative":
+            depth = arr_float / 65535.0
+            depth_type = "relative"
+            depth_unit = "rel"
+            warning_msg = "Note: Normalized 16-bit depth to relative scale [0.0 - 1.0 rel]."
+        elif depth_scale == "mm_to_m":
             depth = arr_float / 1000.0
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Scaled 16-bit depth from millimeters to meters (/ 1000.0)."
         elif depth_scale == "cm_to_m":
             depth = arr_float / 100.0
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Scaled 16-bit depth from centimeters to meters (/ 100.0)."
         elif depth_scale == "kitti":
             depth = arr_float / 256.0
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Scaled 16-bit depth using KITTI LiDAR standard (/ 256.0)."
         elif depth_scale == "raw_meters":
             depth = arr_float
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Treated 16-bit depth as raw metric units (Scale = 1.0)."
-        elif depth_scale == "norm_8bit":
+        elif depth_scale in ("norm_metric", "norm_8bit"):
             depth = (arr_float / 65535.0) * 5.5 + 0.5
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Normalized 16-bit depth to standard range [0.5m - 6.0m]."
         else:  # auto
             if arr_float.max() > 10000.0:
                 depth = arr_float / 1000.0  # mm to meters
+                depth_type = "metric"
+                depth_unit = "m"
                 warning_msg = "Note: Auto-detected millimeter depth scale (/ 1000.0) based on max measurement > 10,000."
             else:
                 depth = arr_float / 256.0   # KITTI standard
+                depth_type = "metric"
+                depth_unit = "m"
                 warning_msg = "Note: Auto-detected KITTI scale (/ 256.0)."
 
     elif arr.dtype == np.uint8:
-        # 8-bit normalized or raw depth
-        if depth_scale == "raw_meters":
+        # 8-bit depth: Distinguish relative vs calibrated metric
+        if depth_scale == "relative":
+            depth = arr_float / 255.0
+            depth_type = "relative"
+            depth_unit = "rel"
+            warning_msg = "Note: 8-bit depth interpreted as Uncalibrated Relative Depth [0.0 - 1.0 rel]."
+        elif depth_scale in ("norm_metric", "norm_8bit"):
+            depth = (arr_float / 255.0) * 5.5 + 0.5
+            depth_type = "metric"
+            depth_unit = "m"
+            warning_msg = "Note: Linearly calibrated 8-bit depth to standard metric range [0.5m - 6.0m]."
+        elif depth_scale == "raw_meters":
             depth = arr_float
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Treated 8-bit depth as raw integer meters."
         elif depth_scale == "cm_to_m":
             depth = arr_float / 100.0
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Scaled 8-bit depth from centimeters to meters (/ 100.0)."
         elif depth_scale == "mm_to_m":
-            depth = arr_float / 1000.0
+            depth = arr_float / 100.0
+            depth_type = "metric"
+            depth_unit = "m"
             warning_msg = "Note: Scaled 8-bit depth from millimeters to meters (/ 1000.0)."
-        else:  # auto or norm_8bit
-            depth = (arr_float / 255.0) * 5.5 + 0.5
+        else:  # auto: default 8-bit to relative depth to ensure scientific honesty
+            depth = arr_float / 255.0
+            depth_type = "relative"
+            depth_unit = "rel"
             warning_msg = (
-                "Note: 8-bit depth input detected (256 discrete levels). "
-                "Normalized to metric range [0.5m - 6.0m]. For millimeter precision, use 16-bit PNG or .npy."
+                "Note: 8-bit single-channel depth detected. Interpreted as Uncalibrated Relative Depth [0.0 - 1.0 rel]. "
+                "For physical distance in meters, select an explicit calibrated scale."
             )
     else:
-        if depth_scale in ["mm", "mm_to_m"]:
+        if depth_scale == "relative":
+            depth = (arr_float - arr_float.min()) / max(1e-6, arr_float.max() - arr_float.min())
+            depth_type = "relative"
+            depth_unit = "rel"
+        elif depth_scale in ["mm", "mm_to_m"]:
             depth = arr_float / 1000.0
+            depth_type = "metric"
+            depth_unit = "m"
         elif depth_scale in ["cm", "cm_to_m"]:
             depth = arr_float / 100.0
+            depth_type = "metric"
+            depth_unit = "m"
         elif depth_scale == "kitti":
             depth = arr_float / 256.0
+            depth_type = "metric"
+            depth_unit = "m"
         else:
             depth = arr_float
+            depth_type = "metric"
+            depth_unit = "m"
 
     if depth.size == 0 or np.all(depth <= 0.001):
         raise ValueError("Validation Error: The uploaded depth map contains zero valid positive measurements.")
 
-    return depth.astype(np.float32), warning_msg
+    return depth.astype(np.float32), depth_type, depth_unit, warning_msg
+
+
+def compute_validity_mask_and_stats(depth: np.ndarray, depth_type: str = "metric", depth_unit: str = "m"):
+    """
+    Computes rigorous sensor depth validity mask and complete numerical statistics.
+    A completely white mask will only appear if invalid_pixels == 0.
+    """
+    if depth_type == "relative":
+        valid_mask = (depth > 0.001) & (depth <= 1.0) & np.isfinite(depth)
+    else:
+        valid_mask = (depth > 0.05) & (depth <= 85.0) & np.isfinite(depth)
+
+    total_pixels = int(depth.size)
+    valid_pixels = int(np.sum(valid_mask))
+    invalid_pixels = int(total_pixels - valid_pixels)
+    valid_pct = round(float(valid_pixels / max(1, total_pixels) * 100.0), 2)
+    valid_vals = depth[valid_mask]
+
+    min_val = round(float(valid_vals.min()), 3) if len(valid_vals) > 0 else 0.0
+    max_val = round(float(valid_vals.max()), 3) if len(valid_vals) > 0 else 0.0
+    mean_val = round(float(valid_vals.mean()), 3) if len(valid_vals) > 0 else 0.0
+
+    stats = {
+        "width": int(depth.shape[1]),
+        "height": int(depth.shape[0]),
+        "total_pixels": total_pixels,
+        "valid_pixels": valid_pixels,
+        "invalid_pixels": invalid_pixels,
+        "valid_percent": valid_pct,
+        "depth_type": depth_type,
+        "depth_unit": depth_unit,
+        "min": min_val,
+        "max": max_val,
+        "mean": mean_val
+    }
+    return valid_mask, stats
 
 
 def parse_rgb_bytes(file_bytes: bytes, filename: str = "") -> np.ndarray:
@@ -274,59 +391,65 @@ def parse_rgb_bytes(file_bytes: bytes, filename: str = "") -> np.ndarray:
 def align_rgb_and_depth(rgb_image: np.ndarray, depth_input: np.ndarray, factor: int = 4):
     """
     Verifies spatial alignment and aspect ratios between RGB guidance and Depth map.
-    Applies depth-aware resizing with nearest-neighbor interpolation to preserve zero-masks.
+    Preserves aspect ratios and geometric alignment without independent non-uniform stretching.
+    Scales full-resolution depth inputs to the factor-downscaled low-resolution sensor grid
+    to execute the true upsampling reconstruction task.
     Enforces 512MB RAM memory ceiling (capping max dimension at 960px).
     """
-    h_rgb, w_rgb = rgb_image.shape[:2]
-    h_d, w_d = depth_input.shape[:2]
+    h_rgb_orig, w_rgb_orig = rgb_image.shape[:2]
+    h_d_orig, w_d_orig = depth_input.shape[:2]
 
-    # Aspect ratio check
-    ar_rgb = w_rgb / max(1.0, float(h_rgb))
-    ar_d = w_d / max(1.0, float(h_d))
+    # Aspect ratio verification (within 8% tolerance)
+    ar_rgb = w_rgb_orig / max(1.0, float(h_rgb_orig))
+    ar_d = w_d_orig / max(1.0, float(h_d_orig))
     rel_diff = abs(ar_rgb - ar_d) / max(ar_rgb, ar_d)
 
     if rel_diff > 0.08:
         raise HTTPException(
             status_code=400,
-            detail=f"Dimension Mismatch Error: RGB aspect ratio ({w_rgb}:{h_rgb} = {ar_rgb:.2f}) does not match "
-                   f"Depth map aspect ratio ({w_d}:{h_d} = {ar_d:.2f}). "
+            detail=f"Dimension Mismatch Error: RGB aspect ratio ({w_rgb_orig}:{h_rgb_orig} = {ar_rgb:.2f}) does not match "
+                   f"Depth map aspect ratio ({w_d_orig}:{h_d_orig} = {ar_d:.2f}). "
                    f"Depth coordinates cannot be reliably aligned with RGB geometry. "
                    f"Please upload spatially aligned RGB and Depth maps from the same viewpoint."
         )
 
-    # Dimensional Alignment
-    if h_d == h_rgb and w_d == w_rgb:
-        # Full dense depth aligned with full RGB
-        aligned_depth = depth_input
-    elif h_d == max(1, h_rgb // factor) and w_d == max(1, w_rgb // factor):
-        # Exact factor-downscaled low-res sensor depth
-        aligned_depth = depth_input
-    else:
-        # Depth has matching aspect ratio but intermediate resolution
-        if max(h_d, w_d) < max(h_rgb, w_rgb):
-            target_w = max(1, w_rgb // factor)
-            target_h = max(1, h_rgb // factor)
-            aligned_depth = cv2.resize(depth_input, (target_w, target_h), interpolation=cv2.INTER_NEAREST)
-        else:
-            aligned_depth = cv2.resize(depth_input, (w_rgb, h_rgb), interpolation=cv2.INTER_NEAREST)
-
-    # Cloud free-tier memory safeguard (512MB RAM): cap max dimension to 960px
+    # Cloud free-tier memory safeguard (512MB RAM): uniform scale capping max dimension to 960px
     max_dim = 960
-    if max(h_rgb, w_rgb) > max_dim:
-        scale = max_dim / float(max(h_rgb, w_rgb))
-        new_w = int(w_rgb * scale)
-        new_h = int(h_rgb * scale)
-        rgb_image = cv2.resize(rgb_image, (new_w, new_h), interpolation=cv2.INTER_AREA)
+    if max(h_rgb_orig, w_rgb_orig) > max_dim:
+        scale = max_dim / float(max(h_rgb_orig, w_rgb_orig))
+        target_w = int(w_rgb_orig * scale)
+        target_h = int(h_rgb_orig * scale)
+    else:
+        target_w = w_rgb_orig
+        target_h = h_rgb_orig
 
-        adh, adw = aligned_depth.shape[:2]
-        if adh == h_rgb and adw == w_rgb:
-            aligned_depth = cv2.resize(aligned_depth, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
-        else:
-            new_dw = max(1, new_w // factor)
-            new_dh = max(1, new_h // factor)
-            aligned_depth = cv2.resize(aligned_depth, (new_dw, new_dh), interpolation=cv2.INTER_NEAREST)
+    # Resize RGB uniformly
+    proc_rgb = cv2.resize(rgb_image, (target_w, target_h), interpolation=cv2.INTER_AREA)
 
-    return rgb_image, aligned_depth
+    # Dimensional Alignment for Depth
+    is_already_low_res = (h_d_orig == max(1, h_rgb_orig // factor) and w_d_orig == max(1, w_rgb_orig // factor))
+    is_sparse = np.mean(depth_input > 0.05) < 0.35  # e.g. LiDAR sparse seeds
+
+    if is_sparse:
+        # Sparse depth maps are kept on target grid with sparse seeds
+        proc_depth = cv2.resize(depth_input, (target_w, target_h), interpolation=cv2.INTER_NEAREST)
+    else:
+        # Low-res sensor grid for factor upsampling (e.g. factor 4x)
+        target_dw = max(1, target_w // factor)
+        target_dh = max(1, target_h // factor)
+        proc_depth = cv2.resize(depth_input, (target_dw, target_dh), interpolation=cv2.INTER_NEAREST)
+
+    alignment_info = {
+        "rgb_orig": f"{w_rgb_orig} × {h_rgb_orig}",
+        "depth_orig": f"{w_d_orig} × {h_d_orig}",
+        "processed_rgb": f"{target_w} × {target_h}",
+        "processed_depth": f"{proc_depth.shape[1]} × {proc_depth.shape[0]}",
+        "upsample_factor": factor,
+        "aspect_ratio_diff_pct": round(rel_diff * 100.0, 2),
+        "is_stretched": False
+    }
+
+    return proc_rgb, proc_depth, alignment_info
 
 
 # ---------------------------------------------------------------------------
@@ -343,72 +466,53 @@ def health():
     }
 
 
-@app.get("/favicon.ico", include_in_schema=False)
+@app.get("/favicon.ico")
 def favicon():
-    """Returns empty 204 No Content for browser favicon requests to avoid 404 logs."""
-    return Response(content=b"", status_code=204)
-
-
-@app.get("/api/test_cnn")
-def test_cnn():
-    if MODEL is None:
-        return {"error": "MODEL is None"}
-    try:
-        import torch
-        torch.set_num_threads(1)
-        r = torch.zeros(1, 3, 32, 32)
-        d = torch.zeros(1, 1, 32, 32)
-        m = torch.zeros(1, 1, 32, 32)
-        with torch.no_grad():
-            out_d, out_c = MODEL(r, d, m)
-        return {"status": "ok", "d_shape": list(out_d.shape), "c_shape": list(out_c.shape)}
-    except Exception as e:
-        return {"error": str(e)}
+    return Response(status_code=204)
 
 
 @app.get("/", response_class=HTMLResponse)
-def index():
-    template_path = "EDGEFUSE_DCR/templates/index.html"
-    if not os.path.exists(template_path):
-        template_path = "templates/index.html"
-    with open(template_path, "r", encoding="utf-8") as f:
+def get_index():
+    tpl_p = "EDGEFUSE_DCR/templates/index.html"
+    if not os.path.exists(tpl_p):
+        tpl_p = "templates/index.html"
+    with open(tpl_p, "r", encoding="utf-8") as f:
         return f.read()
 
 
 @app.get("/api/demo/{sample_id}")
-def load_demo(sample_id: str):
-    """Loads built-in verified demo pairs (nyu or kitti)."""
+def get_demo_sample(sample_id: str):
+    """Loads a verified dataset benchmark sample."""
     if sample_id == "nyu":
+        dataset_name = "NYU Depth V2 (Indoor)"
         rgb_p = os.path.join(DEMO_DIR, "nyu_rgb.png")
         depth_p = os.path.join(DEMO_DIR, "nyu_depth_lr.npy")
         gt_p = os.path.join(DEMO_DIR, "nyu_depth_gt.npy")
-        dataset_name = "NYU Depth V2 (Indoor - 4x Low-Res)"
         max_depth = 10.0
     elif sample_id == "kitti":
+        dataset_name = "KITTI LiDAR Benchmark (Outdoor)"
         rgb_p = os.path.join(DEMO_DIR, "kitti_rgb.png")
         depth_p = os.path.join(DEMO_DIR, "kitti_depth_sparse.npy")
         gt_p = os.path.join(DEMO_DIR, "kitti_depth_gt.npy")
-        dataset_name = "KITTI (Outdoor - Sparse LiDAR)"
         max_depth = 80.0
     elif sample_id == "middlebury":
+        dataset_name = "Middlebury Stereo 2021 (Artroom1)"
         rgb_p = os.path.join(DEMO_DIR, "middlebury_rgb.png")
         depth_p = os.path.join(DEMO_DIR, "middlebury_depth_lr.npy")
         gt_p = os.path.join(DEMO_DIR, "middlebury_depth_gt.npy")
-        dataset_name = "Middlebury 2021 (Stereo Metric Depth - Artroom1)"
         max_depth = 25.0
     else:
-        raise HTTPException(status_code=404, detail=f"Demo sample '{sample_id}' not found.")
+        raise HTTPException(status_code=404, detail="Demo sample not found.")
 
     if not (os.path.exists(rgb_p) and os.path.exists(depth_p)):
-        raise HTTPException(status_code=500, detail="Demo files not found on server.")
+        raise HTTPException(status_code=500, detail="Demo files not found on disk.")
 
     rgb = np.array(Image.open(rgb_p))
     lr_depth = np.load(depth_p)
     gt_depth = np.load(gt_p) if os.path.exists(gt_p) else None
 
-    # Base64 encodings
     rgb_b64 = encode_image_base64(rgb)
-    lr_colored = colorize_depth(lr_depth)
+    lr_colored = colorize_depth(lr_depth, vmax=max_depth)
     lr_b64 = encode_image_base64(lr_colored)
     mask_b64 = encode_image_base64(((lr_depth > 0.05).astype(np.uint8) * 255))
 
@@ -434,32 +538,32 @@ async def preview_depth(
     """
     try:
         content = await depth_file.read()
-        depth, warning_msg = parse_depth_bytes(content, filename=depth_file.filename, depth_scale=depth_scale)
-        h, w = depth.shape[:2]
-        valid_mask = depth > 0.05
-        valid_count = int(np.sum(valid_mask))
-        valid_pct = round(float(valid_count / max(1, depth.size) * 100.0), 2)
-        valid_vals = depth[valid_mask]
-        min_d = round(float(valid_vals.min()), 2) if len(valid_vals) > 0 else 0.0
-        max_d = round(float(valid_vals.max()), 2) if len(valid_vals) > 0 else 0.0
-        mean_d = round(float(valid_vals.mean()), 2) if len(valid_vals) > 0 else 0.0
+        depth, depth_type, depth_unit, warning_msg = parse_depth_bytes(
+            content, filename=depth_file.filename, depth_scale=depth_scale
+        )
+        valid_mask, stats = compute_validity_mask_and_stats(depth, depth_type=depth_type, depth_unit=depth_unit)
 
-        colored = colorize_depth(depth)
+        colored = colorize_depth(depth, valid_mask=valid_mask)
         preview_b64 = encode_image_base64(colored)
+        mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
         return {
             "success": True,
             "filename": depth_file.filename,
-            "width": w,
-            "height": h,
+            "width": stats["width"],
+            "height": stats["height"],
             "size_bytes": len(content),
-            "valid_percent": valid_pct,
-            "valid_pixels": valid_count,
-            "total_pixels": int(depth.size),
-            "min_depth": min_d,
-            "max_depth": max_d,
-            "mean_depth": mean_d,
+            "total_pixels": stats["total_pixels"],
+            "valid_pixels": stats["valid_pixels"],
+            "invalid_pixels": stats["invalid_pixels"],
+            "valid_percent": stats["valid_percent"],
+            "depth_type": stats["depth_type"],
+            "depth_unit": stats["depth_unit"],
+            "min_depth": stats["min"],
+            "max_depth": stats["max"],
+            "mean_depth": stats["mean"],
             "preview_b64": preview_b64,
+            "valid_mask_b64": mask_b64,
             "warning": warning_msg
         }
     except Exception as e:
@@ -470,6 +574,7 @@ async def preview_depth(
 async def run_reconstruction(
     rgb_file: Optional[UploadFile] = None,
     depth_file: Optional[UploadFile] = None,
+    gt_file: Optional[UploadFile] = None,
     demo_sample_id: Optional[str] = Form(None),
     method: str = Form("hybrid"),
     upsample_factor: int = Form(4),
@@ -478,7 +583,7 @@ async def run_reconstruction(
 ):
     """
     Core Reconstruction Endpoint.
-    Handles custom uploaded RGB+Depth or built-in demo samples.
+    Handles custom uploaded RGB+Depth (with optional Ground Truth) or built-in demo samples.
     """
     t_start = time.perf_counter()
 
@@ -486,6 +591,9 @@ async def run_reconstruction(
     gt_depth = None
     max_eval_depth = 10.0
     depth_warning = None
+    depth_type = "metric"
+    depth_unit = "m"
+    alignment_info = None
 
     if demo_sample_id:
         if demo_sample_id == "nyu":
@@ -524,32 +632,31 @@ async def run_reconstruction(
             raise HTTPException(status_code=400, detail=str(e))
 
         try:
-            depth_input, depth_warning = parse_depth_bytes(depth_bytes, filename=depth_file.filename, depth_scale=depth_scale)
+            depth_input, depth_type, depth_unit, depth_warning = parse_depth_bytes(
+                depth_bytes, filename=depth_file.filename, depth_scale=depth_scale
+            )
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
         # Spatial alignment & aspect ratio verification
-        rgb_image, depth_input = align_rgb_and_depth(rgb_image, depth_input, factor=upsample_factor)
+        rgb_image, depth_input, alignment_info = align_rgb_and_depth(rgb_image, depth_input, factor=upsample_factor)
+
+        # Optional Ground Truth ingestion
+        if gt_file and gt_file.filename:
+            gt_bytes = await gt_file.read()
+            try:
+                gt_raw, _, _, _ = parse_depth_bytes(gt_bytes, filename=gt_file.filename, depth_scale=depth_scale)
+                h_tgt, w_tgt = rgb_image.shape[:2]
+                gt_depth = cv2.resize(gt_raw, (w_tgt, h_tgt), interpolation=cv2.INTER_NEAREST)
+            except Exception as e:
+                depth_warning = f"Warning: Could not decode optional Ground Truth ({e}). Proceeding without GT."
 
     # Compute Input Depth Statistics
-    valid_mask = depth_input > 0.05
-    valid_count = int(np.sum(valid_mask))
-    valid_pct = round(float(valid_count / max(1, depth_input.size) * 100.0), 2)
-    valid_vals = depth_input[valid_mask]
-    input_stats = {
-        "width": int(depth_input.shape[1]),
-        "height": int(depth_input.shape[0]),
-        "valid_percent": valid_pct,
-        "valid_pixels": valid_count,
-        "total_pixels": int(depth_input.size),
-        "min": round(float(valid_vals.min()), 2) if len(valid_vals) > 0 else 0.0,
-        "max": round(float(valid_vals.max()), 2) if len(valid_vals) > 0 else 0.0,
-        "mean": round(float(valid_vals.mean()), 2) if len(valid_vals) > 0 else 0.0,
-    }
-    input_depth_b64 = encode_image_base64(colorize_depth(depth_input))
+    valid_mask, input_stats = compute_validity_mask_and_stats(depth_input, depth_type=depth_type, depth_unit=depth_unit)
+    input_depth_b64 = encode_image_base64(colorize_depth(depth_input, valid_mask=valid_mask))
     valid_mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
-    # 3. Execute Reconstruction in worker threadpool to keep asyncio event loop responsive
+    # 3. Execute Reconstruction in worker threadpool
     res = await run_in_threadpool(
         reconstruct_depth,
         rgb_image=rgb_image,
@@ -566,7 +673,7 @@ async def run_reconstruction(
     depth_edges = res["depth_edges"]
     texture_gate = res["texture_gate"]
 
-    # 4. Generate Visualizations (Single-pass baselines to optimize 512MB RAM & cut latency)
+    # 4. Generate Visualizations
     rec_colored = colorize_depth(rec_depth)
     rec_b64 = encode_image_base64(rec_colored)
 
@@ -589,14 +696,44 @@ async def run_reconstruction(
     overlay[depth_edges > 0.5] = [6, 182, 212]     # Cyan Depth edges
     boundary_b64 = encode_image_base64(overlay)
 
-    # 5. Error Map & Metrics if Ground Truth is available
+    # 5. Pairwise Algorithm Differentiation Analysis (A0 vs A2 vs A5)
+    diff_0_5 = float(np.mean(np.abs(classical_depth - rec_depth)))
+    diff_2_5 = float(np.mean(np.abs(cnn_depth - rec_depth)))
+    diff_0_2 = float(np.mean(np.abs(classical_depth - cnn_depth)))
+
+    algo_comparison = {
+        "diff_a0_a5_mae": round(diff_0_5, 4),
+        "diff_a2_a5_mae": round(diff_2_5, 4),
+        "diff_a0_a2_mae": round(diff_0_2, 4),
+        "unit": depth_unit,
+        "a0_stats": {
+            "min": round(float(classical_depth.min()), 3),
+            "max": round(float(classical_depth.max()), 3),
+            "std": round(float(classical_depth.std()), 3),
+        },
+        "a2_stats": {
+            "min": round(float(cnn_depth.min()), 3),
+            "max": round(float(cnn_depth.max()), 3),
+            "std": round(float(cnn_depth.std()), 3),
+        },
+        "a5_stats": {
+            "min": round(float(rec_depth.min()), 3),
+            "max": round(float(rec_depth.max()), 3),
+            "std": round(float(rec_depth.std()), 3),
+        }
+    }
+
+    # 6. Error Map & Metrics if Ground Truth is verified
     metrics = None
     error_b64 = None
-    if gt_depth is not None:
+    has_gt = (gt_depth is not None)
+
+    if has_gt:
+        eval_mask = (gt_depth > 0.05) & np.isfinite(gt_depth) & (rec_depth > 0.05) & np.isfinite(rec_depth)
         metrics = compute_depth_metrics(rec_depth, gt_depth, max_depth=max_eval_depth)
         abs_err = np.abs(rec_depth - gt_depth)
         err_colored = cv2.applyColorMap(np.clip((abs_err / 0.5) * 255.0, 0, 255).astype(np.uint8), cv2.COLORMAP_JET)
-        err_colored[gt_depth <= 0.05] = [15, 23, 42]
+        err_colored[~eval_mask] = [15, 23, 42]
         error_b64 = encode_image_base64(cv2.cvtColor(err_colored, cv2.COLOR_BGR2RGB))
 
     total_latency = (time.perf_counter() - t_start) * 1000.0
@@ -609,19 +746,22 @@ async def run_reconstruction(
         "metrics": metrics,
         "method": method,
         "is_custom": demo_sample_id is None,
+        "has_gt": has_gt,
         "timestamp": time.time()
     }
 
     return {
         "success": True,
         "method": method,
-        "has_gt": gt_depth is not None,
+        "has_gt": has_gt,
         "warning": depth_warning,
         "latency_ms": round(total_latency, 1),
         "peak_ram_mb": round(peak_mem / (1024 * 1024), 2),
         "input_depth_b64": input_depth_b64,
         "valid_mask_b64": valid_mask_b64,
         "input_stats": input_stats,
+        "alignment_info": alignment_info,
+        "algorithm_comparison": algo_comparison,
         "reconstructed_b64": rec_b64,
         "classical_b64": classical_b64,
         "cnn_b64": cnn_b64,
@@ -630,13 +770,12 @@ async def run_reconstruction(
         "error_b64": error_b64,
         "metrics": metrics,
         "depth_range": {
-            "min": round(float(rec_depth[rec_depth > 0.05].min()), 2) if np.any(rec_depth > 0.05) else 0.0,
-            "max": round(float(rec_depth[rec_depth > 0.05].max()), 2) if np.any(rec_depth > 0.05) else 0.0,
-            "mean": round(float(rec_depth[rec_depth > 0.05].mean()), 2) if np.any(rec_depth > 0.05) else 0.0,
+            "min": round(float(rec_depth[rec_depth > 0.001].min()), 2) if np.any(rec_depth > 0.001) else 0.0,
+            "max": round(float(rec_depth[rec_depth > 0.001].max()), 2) if np.any(rec_depth > 0.001) else 0.0,
+            "mean": round(float(rec_depth[rec_depth > 0.001].mean()), 2) if np.any(rec_depth > 0.001) else 0.0,
+            "unit": depth_unit
         }
     }
-
-
 
 
 @app.get("/api/download/npy")

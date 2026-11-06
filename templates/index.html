@@ -777,6 +777,44 @@
                 <span class="badge badge-success" style="font-size: 9px; padding: 1px 5px;">Ready</span>
               </div>
             </div>
+        <!-- 3. Ground-Truth Depth Map Upload (Optional Reference) -->
+        <div class="upload-group" style="margin-top: 14px;">
+          <div class="upload-header">
+            <label class="upload-label">
+              <span class="upload-badge gt-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">Ground Truth</span>
+              Reference Depth Map (Optional — .npy, PNG)
+            </label>
+            <span id="gt-status-badge" class="file-status-badge">Optional (None)</span>
+          </div>
+
+          <div class="file-dropzone" id="gt-dropzone" onclick="document.getElementById('gt-file-input').click()">
+            <input type="file" id="gt-file-input" accept=".npy,image/png,image/jpeg,image/*" onchange="handleFileChange('gt')">
+            <div id="gt-empty-view" class="dropzone-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 14 14"/>
+              </svg>
+              <span id="gt-file-name" style="font-size: 11px; font-weight: 500; color: #cbd5e1;">Click or drop Reference Ground Truth (.npy or PNG)</span>
+              <span style="font-size: 10px; color: #64748b;">Optional reference for calculating true RMSE/MAE error maps</span>
+            </div>
+          </div>
+
+          <!-- GT File Info Card -->
+          <div id="gt-info-card" class="file-info-card" style="display: none;">
+            <img id="gt-thumb" class="file-thumb" alt="GT Preview">
+            <div class="file-details">
+              <div class="file-name-row">
+                <span id="gt-info-name" class="file-name-text">ground_truth.npy</span>
+                <button type="button" class="btn-remove-file" onclick="removeSelectedFile('gt', event)" title="Remove Ground Truth file">✕</button>
+              </div>
+              <div class="file-meta-row">
+                <span id="gt-info-meta" class="file-meta-text">640 × 480 px • 100% Valid</span>
+                <span class="badge badge-success" style="font-size: 9px; padding: 1px 5px;">Reference Loaded</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
           </div>
 
           <!-- Depth Scale Configuration -->
@@ -786,12 +824,13 @@
               <span style="font-size: 10px; color: var(--primary);">Documented Units</span>
             </div>
             <select id="depth-scale-select" class="form-select" style="font-size: 11px; padding: 6px 10px;" onchange="handleDepthScaleChange()">
-              <option value="auto" selected>Auto-Detect Physical Scale (Recommended)</option>
-              <option value="mm_to_m">Millimeters to Meters (/ 1000.0 — Kinect, Intel RealSense)</option>
-              <option value="cm_to_m">Centimeters to Meters (/ 100.0)</option>
-              <option value="kitti">KITTI LiDAR Scale (/ 256.0)</option>
-              <option value="raw_meters">Raw Metric Meters (Scale = 1.0 — Middlebury / float32)</option>
-              <option value="norm_8bit">8-bit Normalized Mapping [0.5m - 6.0m]</option>
+              <option value="auto" selected>Auto-Detect Format & Physical Scale</option>
+              <option value="relative">Relative / Normalized Depth [0.0 - 1.0 rel] (Uncalibrated)</option>
+              <option value="mm_to_m">Calibrated Metric: Millimeters to Meters (/ 1000.0 — Kinect, RealSense)</option>
+              <option value="cm_to_m">Calibrated Metric: Centimeters to Meters (/ 100.0)</option>
+              <option value="kitti">Calibrated Metric: KITTI LiDAR Scale (/ 256.0)</option>
+              <option value="raw_meters">Calibrated Metric: Raw Float32 Metric Depth (Scale = 1.0)</option>
+              <option value="norm_metric">Calibrated Metric: Standard Indoor Range [0.5m - 6.0m]</option>
             </select>
           </div>
         </div>
@@ -974,7 +1013,32 @@
                 <img id="view-hybrid-comp" alt="Full Hybrid">
               </div>
             </div>
+          
+          <!-- Quantitative Ablation Differentiation Card -->
+          <div id="ablation-diff-card" style="margin-top: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 8px; padding: 12px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 12px; font-weight: 600; color: #93c5fd;">🔬 Scientific Ablation Differentiation (Exact Numerical Separation)</span>
+              <span id="ablation-scale-note" style="font-size: 11px; color: var(--text-muted);">Pairwise Mean Absolute Differences</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 11px;">
+              <div style="background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
+                <div style="color: #94a3b8; font-weight: 500;">|A5 (Hybrid) − A0 (Bilinear)|</div>
+                <div id="diff-a0-a5" style="font-family: monospace; font-size: 14px; font-weight: 700; color: #38bdf8; margin-top: 2px;">--</div>
+                <div style="color: #64748b; font-size: 10px;">Classical Edge Blur Correction</div>
+              </div>
+              <div style="background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
+                <div style="color: #94a3b8; font-weight: 500;">|A5 (Hybrid) − A2 (CNN Alone)|</div>
+                <div id="diff-a2-a5" style="font-family: monospace; font-size: 14px; font-weight: 700; color: #34d399; margin-top: 2px;">--</div>
+                <div style="color: #64748b; font-size: 10px;">Texture Gate & Boundary Refinement</div>
+              </div>
+              <div style="background: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b;">
+                <div style="color: #94a3b8; font-weight: 500;">|A2 (CNN) − A0 (Bilinear)|</div>
+                <div id="diff-a0-a2" style="font-family: monospace; font-size: 14px; font-weight: 700; color: #f59e0b; margin-top: 2px;">--</div>
+                <div style="color: #64748b; font-size: 10px;">Deep Geometric Prior Delta</div>
+              </div>
+            </div>
           </div>
+</div>
         </div>
 
         <!-- Tab 3: Edge & Discontinuity Alignment -->
@@ -1074,13 +1138,14 @@
     let currentDemo = 'nyu';
     let uploadedRgbFile = null;
     let uploadedDepthFile = null;
+    let uploadedGtFile = null;
 
     function showToast(msg, isError = false) {
       const toast = document.getElementById('toast');
       toast.innerText = msg;
       toast.style.borderColor = isError ? '#f43f5e' : '#3b82f6';
       toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 4000);
+      setTimeout(() => { toast.style.display = 'none'; }, 4500);
     }
 
     let currentBenchmarkDataset = 'nyu';
@@ -1201,6 +1266,9 @@
       setViewImage('view-confidence', null);
       setViewImage('view-boundary', null);
       setViewImage('view-error', null);
+      document.getElementById('diff-a0-a5').innerText = '--';
+      document.getElementById('diff-a2-a5').innerText = '--';
+      document.getElementById('diff-a0-a2').innerText = '--';
     }
 
     function resetMetricsToPlaceholder() {
@@ -1227,7 +1295,7 @@
         btnText.innerText = 'Execute Depth Reconstruction';
       } else if (uploadedRgbFile && uploadedDepthFile) {
         btn.disabled = false;
-        btnText.innerText = 'Execute Depth Reconstruction';
+        btnText.innerText = uploadedGtFile ? 'Execute Reconstruction & Ground Truth Audit' : 'Execute Depth Reconstruction';
       } else if (uploadedRgbFile && !uploadedDepthFile) {
         btn.disabled = false;
         btnText.innerText = 'Upload Depth Map to Run';
@@ -1261,7 +1329,6 @@
         const file = droppedFile || (input.files.length > 0 ? input.files[0] : null);
         if (!file) return;
 
-        // Basic format check
         if (!file.name.match(/\.(jpe?g|png|webp|bmp)$/i)) {
           showToast('Unsupported RGB format. Please upload JPG, PNG, or WEBP.', true);
           return;
@@ -1287,7 +1354,7 @@
             const badge = document.getElementById('rgb-status-badge');
             badge.innerText = 'Ready (RGB)';
             badge.className = 'file-status-badge status-ready';
-            document.getElementById('sample-dimensions').innerText = `${img.naturalWidth} × ${img.naturalHeight} px (Custom RGB)`;
+            document.getElementById('sample-dimensions').innerText = `RGB [${img.naturalWidth}×${img.naturalHeight} px] (Custom RGB)`;
           };
           img.src = dataUrl;
         };
@@ -1305,6 +1372,15 @@
         clearReconstructionPanels();
 
         previewDepthMap(file);
+        updateReconstructButtonState();
+
+      } else if (type === 'gt') {
+        const input = document.getElementById('gt-file-input');
+        const file = droppedFile || (input.files.length > 0 ? input.files[0] : null);
+        if (!file) return;
+
+        uploadedGtFile = file;
+        previewGtDepthMap(file);
         updateReconstructButtonState();
       }
     }
@@ -1331,23 +1407,20 @@
           throw new Error(data.detail || 'Depth validation failed.');
         }
 
-        // Successfully validated genuine depth map
         document.getElementById('depth-thumb').src = data.preview_b64;
         setViewImage('view-lr-depth', data.preview_b64);
         setViewImage('view-valid-mask', data.valid_mask_b64);
         document.getElementById('depth-info-name').innerText = file.name;
-        document.getElementById('depth-info-meta').innerText = `${data.width} × ${data.height} px • ${formatBytes(file.size)} • ${data.valid_percent}% Valid`;
+        document.getElementById('depth-info-meta').innerText = `${data.width} × ${data.height} px • Valid: ${data.valid_percent}% (${data.valid_pixels} px / ${data.invalid_pixels} void) • [${data.min_depth} - ${data.max_depth} ${data.depth_unit}]`;
         document.getElementById('depth-info-card').style.display = 'flex';
         document.getElementById('depth-empty-view').style.display = 'none';
-        badge.innerText = 'Ready (Depth)';
+        badge.innerText = `Ready (${data.depth_type.toUpperCase()})`;
         badge.className = 'file-status-badge status-ready';
-        document.getElementById('sample-dimensions').innerText = `${data.width} × ${data.height} px (Custom Depth Map)`;
 
         if (data.warning) {
           showToast(data.warning, false);
         }
       } catch (err) {
-        // Validation failed (e.g. RGB color photograph was supplied as depth)
         uploadedDepthFile = null;
         const input = document.getElementById('depth-file-input');
         if (input) input.value = '';
@@ -1357,10 +1430,52 @@
         badge.innerText = 'Invalid Depth';
         badge.className = 'file-status-badge status-error';
 
-        // Immediately clear low-res depth and valid mask so stale demo image never persists
         setViewImage('view-lr-depth', null);
         setViewImage('view-valid-mask', null);
         clearReconstructionPanels();
+        showToast(err.message, true);
+      }
+      updateReconstructButtonState();
+    }
+
+    async function previewGtDepthMap(file) {
+      const badge = document.getElementById('gt-status-badge');
+      badge.innerText = 'Validating GT...';
+      badge.className = 'file-status-badge status-loading';
+
+      const formData = new FormData();
+      formData.append('depth_file', file);
+      const scaleSelect = document.getElementById('depth-scale-select');
+      if (scaleSelect) {
+        formData.append('depth_scale', scaleSelect.value);
+      }
+
+      try {
+        const res = await fetch('/api/preview_depth', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Ground Truth validation failed.');
+        }
+
+        document.getElementById('gt-thumb').src = data.preview_b64;
+        document.getElementById('gt-info-name').innerText = file.name;
+        document.getElementById('gt-info-meta').innerText = `${data.width} × ${data.height} px • ${data.valid_percent}% Valid • Reference Ready`;
+        document.getElementById('gt-info-card').style.display = 'flex';
+        document.getElementById('gt-empty-view').style.display = 'none';
+        badge.innerText = 'Reference Ready';
+        badge.className = 'file-status-badge status-ready';
+        showToast('Ground Truth reference loaded. Error map will be generated upon execution.');
+      } catch (err) {
+        uploadedGtFile = null;
+        const input = document.getElementById('gt-file-input');
+        if (input) input.value = '';
+        document.getElementById('gt-info-card').style.display = 'none';
+        document.getElementById('gt-empty-view').style.display = 'flex';
+        badge.innerText = 'Invalid GT';
+        badge.className = 'file-status-badge status-error';
         showToast(err.message, true);
       }
       updateReconstructButtonState();
@@ -1393,6 +1508,17 @@
         setViewImage('view-lr-depth', null);
         setViewImage('view-valid-mask', null);
         clearReconstructionPanels();
+      } else if (type === 'gt') {
+        uploadedGtFile = null;
+        const input = document.getElementById('gt-file-input');
+        if (input) input.value = '';
+        document.getElementById('gt-info-card').style.display = 'none';
+        document.getElementById('gt-empty-view').style.display = 'flex';
+        document.getElementById('gt-file-name').innerText = 'Click or drop Reference Ground Truth (.npy or PNG)';
+        const badge = document.getElementById('gt-status-badge');
+        badge.innerText = 'Optional (None)';
+        badge.className = 'file-status-badge';
+        setViewImage('view-error', null);
       }
       if (!uploadedRgbFile && !uploadedDepthFile) {
         resetMetricsToPlaceholder();
@@ -1403,6 +1529,7 @@
     function clearBothUploads() {
       removeSelectedFile('rgb');
       removeSelectedFile('depth');
+      removeSelectedFile('gt');
       resetMetricsToPlaceholder();
       showToast('Custom uploaded files cleared.');
     }
@@ -1411,10 +1538,13 @@
       if (uploadedDepthFile) {
         previewDepthMap(uploadedDepthFile);
       }
+      if (uploadedGtFile) {
+        previewGtDepthMap(uploadedGtFile);
+      }
     }
 
     function setupDragDrop() {
-      ['rgb', 'depth'].forEach(type => {
+      ['rgb', 'depth', 'gt'].forEach(type => {
         const zone = document.getElementById(`${type}-dropzone`);
         if (!zone) return;
         ['dragenter', 'dragover'].forEach(eventName => {
@@ -1452,10 +1582,15 @@
       // Reset any custom upload UI state
       uploadedRgbFile = null;
       uploadedDepthFile = null;
+      uploadedGtFile = null;
+
       const rgbIn = document.getElementById('rgb-file-input');
       if (rgbIn) rgbIn.value = '';
       const depthIn = document.getElementById('depth-file-input');
       if (depthIn) depthIn.value = '';
+      const gtIn = document.getElementById('gt-file-input');
+      if (gtIn) gtIn.value = '';
+
       document.getElementById('rgb-info-card').style.display = 'none';
       document.getElementById('rgb-empty-view').style.display = 'flex';
       document.getElementById('rgb-file-name').innerText = 'Click or drop RGB image (PNG/JPG)';
@@ -1467,6 +1602,12 @@
       document.getElementById('depth-file-name').innerText = 'Click or drop Depth Map (.npy, 16-bit PNG, 8-bit)';
       document.getElementById('depth-status-badge').innerText = 'Awaiting File';
       document.getElementById('depth-status-badge').className = 'file-status-badge';
+
+      document.getElementById('gt-info-card').style.display = 'none';
+      document.getElementById('gt-empty-view').style.display = 'flex';
+      document.getElementById('gt-file-name').innerText = 'Click or drop Reference Ground Truth (.npy or PNG)';
+      document.getElementById('gt-status-badge').innerText = 'Optional (None)';
+      document.getElementById('gt-status-badge').className = 'file-status-badge';
 
       clearReconstructionPanels();
 
@@ -1522,6 +1663,9 @@
       } else {
         formData.append('rgb_file', uploadedRgbFile);
         formData.append('depth_file', uploadedDepthFile);
+        if (uploadedGtFile) {
+          formData.append('gt_file', uploadedGtFile);
+        }
         const scaleSelect = document.getElementById('depth-scale-select');
         if (scaleSelect) {
           formData.append('depth_scale', scaleSelect.value);
@@ -1554,6 +1698,20 @@
         setViewImage('view-boundary', data.boundary_b64);
         setViewImage('view-error', data.error_b64);
 
+        // Update dimension indicator
+        if (data.alignment_info) {
+          const a = data.alignment_info;
+          document.getElementById('sample-dimensions').innerText = `RGB [${a.rgb_orig}] • Depth [${a.depth_orig}] → Target [${a.processed_rgb}] (${a.upsample_factor}× Factor)`;
+        }
+
+        // Update ablation pairwise differentiation card
+        if (data.algorithm_comparison) {
+          const comp = data.algorithm_comparison;
+          document.getElementById('diff-a0-a5').innerText = `${comp.diff_a0_a5_mae} ${comp.unit}`;
+          document.getElementById('diff-a2-a5').innerText = `${comp.diff_a2_a5_mae} ${comp.unit}`;
+          document.getElementById('diff-a0-a2').innerText = `${comp.diff_a0_a2_mae} ${comp.unit}`;
+        }
+
         if (data.warning) {
           showToast(data.warning, false);
         }
@@ -1561,10 +1719,10 @@
         // Update metrics
         if (data.has_gt && data.metrics) {
           document.getElementById('lbl-m1').innerText = 'RMSE';
-          document.getElementById('val-rmse').innerHTML = `${data.metrics.rmse.toFixed(3)}<span class="metric-unit">m</span>`;
+          document.getElementById('val-rmse').innerHTML = `${data.metrics.rmse.toFixed(4)}<span class="metric-unit">m</span>`;
 
           document.getElementById('lbl-m2').innerText = 'MAE';
-          document.getElementById('val-mae').innerHTML = `${data.metrics.mae.toFixed(3)}<span class="metric-unit">m</span>`;
+          document.getElementById('val-mae').innerHTML = `${data.metrics.mae.toFixed(4)}<span class="metric-unit">m</span>`;
 
           document.getElementById('lbl-m3').innerText = 'PSNR';
           document.getElementById('val-psnr').innerHTML = `${data.metrics.psnr.toFixed(2)}<span class="metric-unit">dB</span>`;
@@ -1582,14 +1740,15 @@
         } else {
           // Custom Upload: Display Input Sensor Statistics
           const stats = data.input_stats || {};
+          const unit = stats.depth_unit || 'm';
           document.getElementById('lbl-m1').innerText = 'INPUT COVERAGE';
           document.getElementById('val-rmse').innerHTML = `${stats.valid_percent !== undefined ? stats.valid_percent : '100'}<span class="metric-unit">%</span>`;
 
           document.getElementById('lbl-m2').innerText = 'RANGE (MIN-MAX)';
-          document.getElementById('val-mae').innerHTML = `${stats.min !== undefined ? stats.min + '-' + stats.max : '0.5-6.0'}<span class="metric-unit">m</span>`;
+          document.getElementById('val-mae').innerHTML = `${stats.min !== undefined ? stats.min + ' - ' + stats.max : '0.5 - 6.0'}<span class="metric-unit">${unit}</span>`;
 
           document.getElementById('lbl-m3').innerText = 'MEAN DEPTH';
-          document.getElementById('val-psnr').innerHTML = `${stats.mean !== undefined ? stats.mean : '2.5'}<span class="metric-unit">m</span>`;
+          document.getElementById('val-psnr').innerHTML = `${stats.mean !== undefined ? stats.mean : '2.5'}<span class="metric-unit">${unit}</span>`;
 
           document.getElementById('lbl-m4').innerText = 'INPUT RES';
           document.getElementById('val-ssim').innerText = stats.width ? `${stats.width}×${stats.height}` : 'Custom';
@@ -1624,4 +1783,3 @@
   </script>
 </body>
 </html>
-

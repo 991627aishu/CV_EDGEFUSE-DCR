@@ -386,7 +386,54 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
 
     valid_mask = (depth_input > 0.05) & np.isfinite(depth_input)
 
-    # Classical baselines
+    # Standard A0 Classical Baseline (Bilinear Validity-Normalized)
+    base_up = upsample_bilinear_validity(depth_input, target_shape, valid_mask)
+    base_up = inpaint_depth_holes(base_up, base_up > 0.05)
+
+    # Compute CNN prediction when model is provided (A2 Baseline)
+    cnn_depth = None
+    cnn_conf_np = None
+    if cnn_model is not None:
+        try:
+            import torch
+            torch.set_num_threads(1)
+
+            h_c, w_c = base_up.shape[:2]
+            cnn_scale = 1.0
+            if max(h_c, w_c) > 360:
+                cnn_scale = 320.0 / float(max(h_c, w_c))
+                c_w = int(w_c * cnn_scale)
+                c_h = int(h_c * cnn_scale)
+                rgb_in = cv2.resize(rgb_image, (c_w, c_h), interpolation=cv2.INTER_AREA)
+                depth_in = cv2.resize(base_up, (c_w, c_h), interpolation=cv2.INTER_NEAREST)
+            else:
+                rgb_in = rgb_image
+                depth_in = base_up
+
+            rgb_t = torch.from_numpy(rgb_in.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0).to(device)
+            d_t = torch.from_numpy(depth_in.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+            v_t = torch.from_numpy((depth_in > 0.05).astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+
+            cnn_model.eval()
+            with torch.no_grad():
+                pred_d, pred_conf = cnn_model(rgb_t, d_t, v_t)
+                cnn_depth_raw = pred_d.squeeze().cpu().numpy()
+                cnn_conf_raw = pred_conf.squeeze().cpu().numpy()
+
+            if cnn_scale != 1.0:
+                cnn_depth = cv2.resize(cnn_depth_raw, (w_c, h_c), interpolation=cv2.INTER_LINEAR)
+                cnn_conf_np = cv2.resize(cnn_conf_raw, (w_c, h_c), interpolation=cv2.INTER_LINEAR)
+            else:
+                cnn_depth = cnn_depth_raw
+                cnn_conf_np = cnn_conf_raw
+
+        except Exception as e:
+            print(f"Warning: CNN forward pass error ({e}), falling back to edge-guided baseline.")
+            cnn_depth = fast_guided_filter(rgb_image, base_up, radius=4, eps=0.005)
+    else:
+        cnn_depth = fast_guided_filter(rgb_image, base_up, radius=4, eps=0.005)
+
+    # Method Selection
     if method == "nearest":
         rec = upsample_nearest(depth_input, target_shape)
         rec = inpaint_depth_holes(rec, rec > 0.05)
@@ -394,8 +441,7 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
         gate = np.ones(target_shape, dtype=np.float32)
 
     elif method == "bilinear":
-        rec = upsample_bilinear_validity(depth_input, target_shape, valid_mask)
-        rec = inpaint_depth_holes(rec, rec > 0.05)
+        rec = base_up
         conf = (rec > 0.05).astype(np.float32)
         gate = np.ones(target_shape, dtype=np.float32)
 
@@ -406,89 +452,36 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
         gate = np.ones(target_shape, dtype=np.float32)
 
     elif method == "joint_bilateral":
-        base = upsample_bilinear_validity(depth_input, target_shape, valid_mask)
-        base = inpaint_depth_holes(base, base > 0.05)
-        rec = joint_bilateral_filter_fast(rgb_image, base)
+        rec = joint_bilateral_filter_fast(rgb_image, base_up)
         conf = estimate_confidence_map(rec, rec > 0.05)
         gate = np.ones(target_shape, dtype=np.float32)
 
     elif method == "guided":
-        base = upsample_bilinear_validity(depth_input, target_shape, valid_mask)
-        base = inpaint_depth_holes(base, base > 0.05)
-        rec = fast_guided_filter(rgb_image, base, radius=5, eps=0.01)
+        rec = fast_guided_filter(rgb_image, base_up, radius=5, eps=0.01)
         conf = estimate_confidence_map(rec, rec > 0.05)
         gate = np.ones(target_shape, dtype=np.float32)
 
-    elif method in ["cnn", "cnn_confidence", "cnn_boundary", "hybrid"]:
-        # Prepare input for CNN
-        base_up = upsample_bilinear_validity(depth_input, target_shape, valid_mask)
-        base_up = inpaint_depth_holes(base_up, base_up > 0.05)
+    elif method == "cnn":
+        rec = cnn_depth
+        conf = estimate_confidence_map(rec, rec > 0.05, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
+        gate = np.ones(target_shape, dtype=np.float32)
 
-        cnn_conf_np = None
-        if cnn_model is not None:
-            try:
-                import torch
-                torch.set_num_threads(1)
+    elif method == "cnn_confidence":
+        conf = estimate_confidence_map(cnn_depth, valid_mask, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
+        rec = conf * cnn_depth + (1.0 - conf) * base_up
+        gate = np.ones(target_shape, dtype=np.float32)
 
-                # For real-time inference on cloud CPU (e.g. Render free tier),
-                # evaluate CNN on 320px scale if larger, then upsample prediction
-                h_c, w_c = base_up.shape[:2]
-                cnn_scale = 1.0
-                if max(h_c, w_c) > 360:
-                    cnn_scale = 320.0 / float(max(h_c, w_c))
-                    c_w = int(w_c * cnn_scale)
-                    c_h = int(h_c * cnn_scale)
-                    rgb_in = cv2.resize(rgb_image, (c_w, c_h), interpolation=cv2.INTER_AREA)
-                    depth_in = cv2.resize(base_up, (c_w, c_h), interpolation=cv2.INTER_NEAREST)
-                else:
-                    rgb_in = rgb_image
-                    depth_in = base_up
+    elif method == "cnn_boundary":
+        res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=False, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
+        rec = res["final_depth"]
+        conf = res["confidence_map"]
+        gate = res["texture_gate"]
 
-                rgb_t = torch.from_numpy(rgb_in.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0).to(device)
-                d_t = torch.from_numpy(depth_in.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
-                v_t = torch.from_numpy((depth_in > 0.05).astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
-
-                cnn_model.eval()
-                with torch.no_grad():
-                    pred_d, pred_conf = cnn_model(rgb_t, d_t, v_t)
-                    cnn_depth_raw = pred_d.squeeze().cpu().numpy()
-                    cnn_conf_raw = pred_conf.squeeze().cpu().numpy()
-
-                if cnn_scale != 1.0:
-                    cnn_depth = cv2.resize(cnn_depth_raw, (w_c, h_c), interpolation=cv2.INTER_LINEAR)
-                    cnn_conf_np = cv2.resize(cnn_conf_raw, (w_c, h_c), interpolation=cv2.INTER_LINEAR)
-                else:
-                    cnn_depth = cnn_depth_raw
-                    cnn_conf_np = cnn_conf_raw
-
-            except Exception as e:
-                print(f"Warning: CNN forward pass error ({e}), falling back to edge-guided baseline.")
-                cnn_depth = fast_guided_filter(rgb_image, base_up, radius=4, eps=0.005)
-        else:
-            # Fallback to guided filter if model checkpoint not yet loaded
-            cnn_depth = fast_guided_filter(rgb_image, base_up, radius=4, eps=0.005)
-
-        if method == "cnn":
-            rec = cnn_depth
-            conf = estimate_confidence_map(rec, rec > 0.05, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
-            gate = np.ones(target_shape, dtype=np.float32)
-
-        elif method == "cnn_confidence":
-            conf = estimate_confidence_map(cnn_depth, valid_mask, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
-            rec = conf * cnn_depth + (1.0 - conf) * base_up
-            gate = np.ones(target_shape, dtype=np.float32)
-
-        elif method == "cnn_boundary":
-            res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=False, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
-            rec = res["final_depth"]
-            conf = res["confidence_map"]
-            gate = res["texture_gate"]
-
-        else:  # Full hybrid EdgeFuse-DCR
-            res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=True, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
-            rec = res["final_depth"]
-            conf = res["confidence_map"]
-            gate = res["texture_gate"]
+    elif method == "hybrid":  # Full hybrid EdgeFuse-DCR
+        res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=True, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
+        rec = res["final_depth"]
+        conf = res["confidence_map"]
+        gate = res["texture_gate"]
 
     else:
         raise ValueError(f"Unknown reconstruction method: {method}")
