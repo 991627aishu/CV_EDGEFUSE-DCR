@@ -70,10 +70,12 @@ def upsample_bicubic(depth_lr, target_shape):
 # 2. Filtering Methods (Joint Bilateral & Guided Filter)
 # ===========================================================================
 
-def fast_guided_filter(guide_rgb, depth_in, radius=5, eps=0.01):
+def fast_guided_filter(guide_rgb, depth_in, radius=5, eps=0.01, adaptive_eps_map=None):
     """
     RGB-guided filter for depth map upsampling and edge preservation.
     O(N) time complexity via integral box filters.
+    Supports spatially-varying adaptive regularization (adaptive_eps_map)
+    to suppress texture-copying artifacts without modifying guide luminance.
     """
     if guide_rgb.dtype == np.uint8:
         guide = guide_rgb.astype(np.float32) / 255.0
@@ -97,7 +99,12 @@ def fast_guided_filter(guide_rgb, depth_in, radius=5, eps=0.01):
     mean_II = cv2.boxFilter(I * I, cv2.CV_32F, ksize)
     var_I = mean_II - mean_I * mean_I
 
-    a = cov_Ip / (var_I + eps)
+    if adaptive_eps_map is not None:
+        eff_eps = adaptive_eps_map.astype(np.float32)
+    else:
+        eff_eps = eps
+
+    a = cov_Ip / (var_I + eff_eps)
     b = mean_p - a * mean_I
 
     mean_a = cv2.boxFilter(a, cv2.CV_32F, ksize)
@@ -227,26 +234,33 @@ def remove_depth_noise(depth_map, valid_mask=None, ksize=5):
 # 5. NOVEL EDGEFUSE-DCR HYBRID CONTRIBUTIONS
 # ===========================================================================
 
-def estimate_confidence_map(depth_map, valid_mask, window_size=5):
+def estimate_confidence_map(depth_map, valid_mask, window_size=5, factor=1, is_low_res=False, cnn_conf=None):
     """
     Mechanism A: Confidence-Aware Depth Estimation.
     Calculates confidence C in [0, 1] based on:
-      1. Original validity (valid seed measurements = higher confidence)
-      2. Spatial proximity to valid seeds (exponential decay with distance)
-      3. Local depth consistency (normalized variance in local window)
+      1. Physical sensor anchor proximity (exponential decay with distance from genuine measurements)
+      2. Local geometric consistency (normalized variance in local window)
+      3. Deep neural confidence head prediction (when available)
     """
     h, w = depth_map.shape
-    if valid_mask.shape[:2] != (h, w):
-        v_mask = cv2.resize(valid_mask.astype(np.float32), (w, h), interpolation=cv2.INTER_NEAREST)
+    if is_low_res and factor > 1:
+        # True physical sensor measurements exist only on the sub-sampled grid
+        anchor_mask = np.zeros((h, w), dtype=np.float32)
+        anchor_mask[::factor, ::factor] = 1.0
+        dist = distance_transform_edt(1.0 - anchor_mask)
+        decay = max(1.5 * factor, 2.0)
+        spatial_conf = np.exp(-dist / decay).astype(np.float32)
     else:
-        v_mask = valid_mask.astype(np.float32)
+        if valid_mask.shape[:2] != (h, w):
+            v_mask = cv2.resize(valid_mask.astype(np.float32), (w, h), interpolation=cv2.INTER_NEAREST)
+        else:
+            v_mask = valid_mask.astype(np.float32)
 
-    # 1. Distance transform from nearest valid pixel
-    if v_mask.max() > 0:
-        dist = distance_transform_edt(1.0 - v_mask)
-        spatial_conf = np.exp(-dist / 8.0)
-    else:
-        spatial_conf = np.ones((h, w), dtype=np.float32) * 0.1
+        if v_mask.max() > 0:
+            dist = distance_transform_edt(1.0 - v_mask)
+            spatial_conf = np.exp(-dist / 8.0).astype(np.float32)
+        else:
+            spatial_conf = np.ones((h, w), dtype=np.float32) * 0.1
 
     # 2. Local geometric consistency: normalized standard deviation
     local_mean = uniform_filter(depth_map.astype(np.float32), size=window_size)
@@ -256,43 +270,52 @@ def estimate_confidence_map(depth_map, valid_mask, window_size=5):
 
     # Normalized consistency: low variance relative to mean depth = high confidence
     rel_std = local_std / (local_mean + 1e-4)
-    consistency_conf = np.clip(1.0 - rel_std * 4.0, 0.1, 1.0)
+    consistency_conf = np.clip(1.0 - rel_std * 4.0, 0.1, 1.0).astype(np.float32)
 
-    # Combined confidence
-    conf = np.clip(spatial_conf * 0.6 + consistency_conf * 0.4, 0.0, 1.0)
-    # Original valid seeds retain minimum 0.85 confidence
-    conf = np.where(v_mask > 0.5, np.maximum(conf, 0.85), conf)
+    # 3. Fuse confidence sources
+    if cnn_conf is not None:
+        if cnn_conf.shape[:2] != (h, w):
+            c_pred = cv2.resize(cnn_conf.astype(np.float32), (w, h), interpolation=cv2.INTER_LINEAR)
+        else:
+            c_pred = cnn_conf.astype(np.float32)
+        conf = np.clip(0.4 * spatial_conf + 0.3 * consistency_conf + 0.3 * c_pred, 0.0, 1.0)
+    else:
+        conf = np.clip(spatial_conf * 0.6 + consistency_conf * 0.4, 0.0, 1.0)
+
     return conf.astype(np.float32)
 
 
-def compute_texture_suppression_gate(rgb_grad, depth_grad, threshold=0.25):
+def compute_texture_suppression_gate(rgb_grad, depth_grad, threshold=0.20):
     """
     Mechanism C: Texture-Copying Suppression Gate.
-    Identifies RGB texture edges that do NOT correspond to genuine depth boundaries.
-    Guidance weight G:
-      - Where RGB and Depth gradients both agree -> G ~ 1.0 (allow RGB structural guidance)
-      - Where RGB edge is high but Depth gradient is near zero (e.g. wall wallpaper, fabric)
-        -> G ~ 0.0 (suppress RGB texture copying!)
+    Identifies RGB texture edges (e.g. wall wallpaper, fabric, text) that do NOT
+    correspond to physical geometric depth steps.
+    Returns:
+      guidance_gate: [0, 1] weight where 1.0 = allow RGB guidance, ~0.0 = suppress texture copy.
+      false_texture: [0, 1] penalty where RGB edge is high and depth gradient is near zero.
     """
-    # Normalize depth gradient
-    norm_d_grad = depth_grad / (np.percentile(depth_grad[depth_grad > 0], 95) + 1e-5) if np.any(depth_grad > 0) else depth_grad
+    if np.any(depth_grad > 0):
+        norm_d_grad = depth_grad / (np.percentile(depth_grad[depth_grad > 0], 95) + 1e-5)
+    else:
+        norm_d_grad = depth_grad
     norm_d_grad = np.clip(norm_d_grad, 0.0, 1.0)
 
-    # Ratio of depth evidence to RGB texture evidence
-    evidence_ratio = norm_d_grad / (rgb_grad + 1e-4)
+    # False texture: strong RGB color gradient coinciding with flat depth gradient
+    rgb_excess = np.clip((rgb_grad - threshold) / (1.0 - threshold + 1e-4), 0.0, 1.0)
+    depth_flat = np.clip(1.0 - norm_d_grad / 0.15, 0.0, 1.0)
+    false_texture = rgb_excess * depth_flat
 
-    # Gate: 1.0 if depth agrees, suppressed if RGB has high edge with zero depth change
-    is_false_texture = (rgb_grad > threshold) & (norm_d_grad < 0.15)
-    gate = np.where(is_false_texture, np.clip(evidence_ratio * 2.0, 0.05, 0.4), 1.0)
-    return gate.astype(np.float32)
+    # Guidance gate: 1.0 where depth edge exists or flat region, lower where false texture occurs
+    guidance_gate = np.clip(1.0 - false_texture, 0.05, 1.0)
+    return guidance_gate.astype(np.float32), false_texture.astype(np.float32)
 
 
-def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, apply_suppression=True):
+def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, apply_suppression=True, factor=4, is_low_res=False, cnn_conf=None):
     """
     Complete EdgeFuse-DCR Hybrid Refinement combining:
-      A. Confidence map
-      B. Boundary-aware adaptive filter
-      C. Texture-copying suppression gate
+      A. Multi-source confidence map (anchors + consistency + CNN)
+      B. Boundary-aware adaptive barrier
+      C. Spatially-regularized texture-copying suppression gate
     """
     h, w = raw_reconstruction.shape
     if initial_valid_mask is None:
@@ -305,33 +328,29 @@ def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, 
     depth_rel_grad, depth_discon = detect_depth_discontinuities(raw_reconstruction, initial_valid_mask)
 
     # Step 2: Estimate confidence
-    confidence = estimate_confidence_map(raw_reconstruction, initial_valid_mask)
+    confidence = estimate_confidence_map(raw_reconstruction, initial_valid_mask, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf)
+
+    # Scale-adaptive parameters
+    radius = max(2, min(int(factor), 5))
+    eps_base = max(0.002, 0.0012 * float(factor))
 
     # Step 3: Texture suppression gate
     if apply_suppression:
-        guidance_gate = compute_texture_suppression_gate(rgb_grad, depth_rel_grad)
+        guidance_gate, false_texture = compute_texture_suppression_gate(rgb_grad, depth_rel_grad)
+        # Adaptively increase epsilon on false texture surfaces to suppress texture transfer
+        eps_map = eps_base * (1.0 + 25.0 * false_texture)
     else:
         guidance_gate = np.ones((h, w), dtype=np.float32)
+        eps_map = np.full((h, w), eps_base, dtype=np.float32)
 
     # Step 4: Boundary-aware adaptive refinement
     # Near genuine depth discontinuities, reduce smoothing to prevent foreground-background bleeding
     boundary_barrier = np.clip(1.0 - depth_discon * 0.85, 0.15, 1.0)
 
-    # Adaptive guided filter using gated guide
-    if len(guide_rgb.shape) == 3:
-        guide_gray = cv2.cvtColor(guide_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
-    else:
-        guide_gray = guide_rgb.astype(np.float32) / 255.0
-
-    # Effective guide incorporates texture suppression gate
-    gated_guide = guide_gray * guidance_gate
-
-    # Edge-guided filtered depth
-    refined_depth = fast_guided_filter(gated_guide, raw_reconstruction, radius=4, eps=0.005)
+    # Edge-guided filtered depth with adaptive regularization
+    refined_depth = fast_guided_filter(guide_rgb, raw_reconstruction, radius=radius, eps=eps_base, adaptive_eps_map=eps_map)
 
     # Step 5: Confidence-guided blending
-    # In high-confidence valid regions, strongly preserve original measurement.
-    # In missing/low-confidence regions, accept full structural reconstruction.
     final_depth = (
         confidence * boundary_barrier * raw_reconstruction +
         (1.0 - confidence * boundary_barrier) * refined_depth
@@ -410,6 +429,7 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
         base_up = upsample_bilinear_validity(depth_input, target_shape, valid_mask)
         base_up = inpaint_depth_holes(base_up, base_up > 0.05)
 
+        cnn_conf_np = None
         if cnn_model is not None:
             import torch
             # Normalize inputs
@@ -421,28 +441,29 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
             with torch.no_grad():
                 pred_d, pred_conf = cnn_model(rgb_t, d_t, v_t)
                 cnn_depth = pred_d.squeeze().cpu().numpy()
+                cnn_conf_np = pred_conf.squeeze().cpu().numpy()
         else:
             # Fallback to guided filter if model checkpoint not yet loaded
             cnn_depth = fast_guided_filter(rgb_image, base_up, radius=4, eps=0.005)
 
         if method == "cnn":
             rec = cnn_depth
-            conf = estimate_confidence_map(rec, rec > 0.05)
+            conf = estimate_confidence_map(rec, rec > 0.05, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
             gate = np.ones(target_shape, dtype=np.float32)
 
         elif method == "cnn_confidence":
-            conf = estimate_confidence_map(base_up, valid_mask)
-            rec = conf * base_up + (1.0 - conf) * cnn_depth
+            conf = estimate_confidence_map(cnn_depth, valid_mask, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
+            rec = conf * cnn_depth + (1.0 - conf) * base_up
             gate = np.ones(target_shape, dtype=np.float32)
 
         elif method == "cnn_boundary":
-            res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=False)
+            res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=False, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
             rec = res["final_depth"]
             conf = res["confidence_map"]
             gate = res["texture_gate"]
 
         else:  # Full hybrid EdgeFuse-DCR
-            res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=True)
+            res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=True, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
             rec = res["final_depth"]
             conf = res["confidence_map"]
             gate = res["texture_gate"]

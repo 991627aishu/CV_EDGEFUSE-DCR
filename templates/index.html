@@ -146,7 +146,7 @@
     /* Controls Sidebar */
     .demo-buttons {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 8px;
       margin-bottom: 16px;
     }
@@ -538,7 +538,11 @@
           </button>
           <button class="btn-demo" id="demo-kitti" onclick="loadDemoSample('kitti')">
             KITTI Benchmark
-            <span>Outdoor LiDAR (Sparse)</span>
+            <span>Outdoor LiDAR (Sparse 4%)</span>
+          </button>
+          <button class="btn-demo" id="demo-middlebury" onclick="loadDemoSample('middlebury')">
+            Middlebury 2021
+            <span>Stereo Metric Depth (Artroom1)</span>
           </button>
         </div>
       </div>

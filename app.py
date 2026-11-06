@@ -164,6 +164,12 @@ def load_demo(sample_id: str):
         gt_p = os.path.join(DEMO_DIR, "kitti_depth_gt.npy")
         dataset_name = "KITTI (Outdoor - Sparse LiDAR)"
         max_depth = 80.0
+    elif sample_id == "middlebury":
+        rgb_p = os.path.join(DEMO_DIR, "middlebury_rgb.png")
+        depth_p = os.path.join(DEMO_DIR, "middlebury_depth_lr.npy")
+        gt_p = os.path.join(DEMO_DIR, "middlebury_depth_gt.npy")
+        dataset_name = "Middlebury 2021 (Stereo Metric Depth - Artroom1)"
+        max_depth = 25.0
     else:
         raise HTTPException(status_code=404, detail=f"Demo sample '{sample_id}' not found.")
 
@@ -223,6 +229,11 @@ async def run_reconstruction(
             depth_p = os.path.join(DEMO_DIR, "kitti_depth_sparse.npy")
             gt_p = os.path.join(DEMO_DIR, "kitti_depth_gt.npy")
             max_eval_depth = 80.0
+        elif demo_sample_id == "middlebury":
+            rgb_p = os.path.join(DEMO_DIR, "middlebury_rgb.png")
+            depth_p = os.path.join(DEMO_DIR, "middlebury_depth_lr.npy")
+            gt_p = os.path.join(DEMO_DIR, "middlebury_depth_gt.npy")
+            max_eval_depth = 25.0
         else:
             raise HTTPException(status_code=400, detail="Unknown demo sample ID.")
 
