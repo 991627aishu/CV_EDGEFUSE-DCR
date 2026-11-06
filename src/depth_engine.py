@@ -429,16 +429,38 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
             try:
                 import torch
                 torch.set_num_threads(1)
-                # Normalize inputs
-                rgb_t = torch.from_numpy(rgb_image.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0).to(device)
-                d_t = torch.from_numpy(base_up.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
-                v_t = torch.from_numpy((base_up > 0.05).astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+
+                # For real-time inference on cloud CPU (e.g. Render free tier),
+                # evaluate CNN on 320px scale if larger, then upsample prediction
+                h_c, w_c = base_up.shape[:2]
+                cnn_scale = 1.0
+                if max(h_c, w_c) > 360:
+                    cnn_scale = 320.0 / float(max(h_c, w_c))
+                    c_w = int(w_c * cnn_scale)
+                    c_h = int(h_c * cnn_scale)
+                    rgb_in = cv2.resize(rgb_image, (c_w, c_h), interpolation=cv2.INTER_AREA)
+                    depth_in = cv2.resize(base_up, (c_w, c_h), interpolation=cv2.INTER_NEAREST)
+                else:
+                    rgb_in = rgb_image
+                    depth_in = base_up
+
+                rgb_t = torch.from_numpy(rgb_in.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0).to(device)
+                d_t = torch.from_numpy(depth_in.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+                v_t = torch.from_numpy((depth_in > 0.05).astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
 
                 cnn_model.eval()
                 with torch.no_grad():
                     pred_d, pred_conf = cnn_model(rgb_t, d_t, v_t)
-                    cnn_depth = pred_d.squeeze().cpu().numpy()
-                    cnn_conf_np = pred_conf.squeeze().cpu().numpy()
+                    cnn_depth_raw = pred_d.squeeze().cpu().numpy()
+                    cnn_conf_raw = pred_conf.squeeze().cpu().numpy()
+
+                if cnn_scale != 1.0:
+                    cnn_depth = cv2.resize(cnn_depth_raw, (w_c, h_c), interpolation=cv2.INTER_LINEAR)
+                    cnn_conf_np = cv2.resize(cnn_conf_raw, (w_c, h_c), interpolation=cv2.INTER_LINEAR)
+                else:
+                    cnn_depth = cnn_depth_raw
+                    cnn_conf_np = cnn_conf_raw
+
             except Exception as e:
                 print(f"Warning: CNN forward pass error ({e}), falling back to edge-guided baseline.")
                 cnn_depth = fast_guided_filter(rgb_image, base_up, radius=4, eps=0.005)
