@@ -201,6 +201,23 @@ def health():
     }
 
 
+@app.get("/api/test_cnn")
+def test_cnn():
+    if MODEL is None:
+        return {"error": "MODEL is None"}
+    try:
+        import torch
+        torch.set_num_threads(1)
+        r = torch.zeros(1, 3, 32, 32)
+        d = torch.zeros(1, 1, 32, 32)
+        m = torch.zeros(1, 1, 32, 32)
+        with torch.no_grad():
+            out_d, out_c = MODEL(r, d, m)
+        return {"status": "ok", "d_shape": list(out_d.shape), "c_shape": list(out_c.shape)}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
     template_path = "EDGEFUSE_DCR/templates/index.html"
