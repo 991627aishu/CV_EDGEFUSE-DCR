@@ -21,6 +21,7 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from src.depth_engine import reconstruct_depth, detect_rgb_edges, detect_depth_discontinuities
 from src.model import load_model
@@ -353,8 +354,9 @@ async def run_reconstruction(
         if gt_depth is not None:
             gt_depth = cv2.resize(gt_depth, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
 
-    # 3. Execute Reconstruction
-    res = reconstruct_depth(
+    # 3. Execute Reconstruction in worker threadpool to keep asyncio event loop responsive
+    res = await run_in_threadpool(
+        reconstruct_depth,
         rgb_image=rgb_image,
         depth_input=depth_input,
         factor=upsample_factor,
