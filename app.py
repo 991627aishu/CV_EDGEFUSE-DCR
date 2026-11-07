@@ -36,6 +36,7 @@ from src.model import load_model
 from src.evaluation import compute_depth_metrics
 from src.dataset_discovery import CATALOG
 from src.ai_depth import DepthAnythingV2Manager, calibrate_relative_to_metric, trim_process_memory
+from src.ai_depth_rag import analyze_scene_deep_learning_features, CV_RAG
 
 from typing import Optional, Dict, Any
 
@@ -1153,6 +1154,13 @@ def predict_ai_depth(
                 "filename": rgb_fname,
                 "timestamp": now
             }
+            try:
+                rag_features = analyze_scene_deep_learning_features(raw_rgb, depth_rel)
+                rag_initial = CV_RAG.answer_query(f"Explain depth characteristics for {rag_features['scene_type']}", rag_features)
+            except Exception:
+                rag_features = None
+                rag_initial = None
+
             return {
                 "success": True,
                 "prediction_id": prediction_id,
@@ -1163,7 +1171,11 @@ def predict_ai_depth(
                 "dimensions": f"{w_orig} × {h_orig}",
                 "inference_time_ms": meta["inference_time_ms"],
                 "model_name": meta["model_name"],
-                "depth_type": meta["depth_type"]
+                "depth_type": meta["depth_type"],
+                "rag_insights": {
+                    "features": rag_features,
+                    "initial_answer": rag_initial
+                } if rag_features else None
             }
 
     # 3. Active Custom Session RGB
@@ -1217,6 +1229,13 @@ def predict_ai_depth(
     }
     trim_process_memory()
 
+    try:
+        rag_features = analyze_scene_deep_learning_features(raw_rgb, depth_rel)
+        rag_initial = CV_RAG.answer_query(f"Explain depth characteristics for {rag_features['scene_type']}", rag_features)
+    except Exception:
+        rag_features = None
+        rag_initial = None
+
     return {
         "success": True,
         "prediction_id": prediction_id,
@@ -1238,7 +1257,53 @@ def predict_ai_depth(
         "min_val": meta["min_val"],
         "max_val": meta["max_val"],
         "mean_val": meta["mean_val"],
-        "scientific_caveat": meta["scientific_caveat"]
+        "scientific_caveat": meta["scientific_caveat"],
+        "rag_insights": {
+            "features": rag_features,
+            "initial_answer": rag_initial
+        } if rag_features else None
+    }
+
+
+@app.post("/api/ai_depth/rag_insights")
+def get_ai_depth_rag_insights(prediction_id: str = Form(...)):
+    """
+    Computes deep learning geometric features and retrieves peer-reviewed
+    computer vision literature insights for an active monocular prediction.
+    """
+    if prediction_id not in AI_PREDICTIONS:
+        raise HTTPException(status_code=404, detail="AI prediction expired or not found.")
+    record = AI_PREDICTIONS[prediction_id]
+    features = analyze_scene_deep_learning_features(record["rgb"], record["depth"])
+    initial_insight = CV_RAG.answer_query(f"Explain depth characteristics and refinement for {features['scene_type']}", features)
+    return {
+        "success": True,
+        "features": features,
+        "initial_insight": initial_insight
+    }
+
+
+@app.post("/api/ai_depth/rag_query")
+def query_ai_depth_rag(
+    query: str = Form(...),
+    prediction_id: Optional[str] = Form(None)
+):
+    """
+    Retrieves answers to user questions from the peer-reviewed computer vision literature
+    knowledge base (Depth Anything V2, DPT, MiDaS, EdgeFuse-DCR) tailored to the active scene.
+    """
+    features = None
+    if prediction_id and prediction_id in AI_PREDICTIONS:
+        record = AI_PREDICTIONS[prediction_id]
+        features = analyze_scene_deep_learning_features(record["rgb"], record["depth"])
+    res = CV_RAG.answer_query(query, features)
+    return {
+        "success": True,
+        "query": query,
+        "answer": res["answer"],
+        "primary_source": res["primary_source"],
+        "citation": res["citation"],
+        "retrieved_docs": res["retrieved_docs"]
     }
 
 

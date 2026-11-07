@@ -25,6 +25,8 @@ from app import (
     use_ai_depth_as_input,
     run_reconstruction,
     get_dataset_scenes,
+    get_ai_depth_rag_insights,
+    query_ai_depth_rag,
     AI_DEPTH_MGR,
     AI_PREDICTIONS
 )
@@ -208,9 +210,26 @@ def run_tests():
     assert len(gallery_data["scenes"]) == 9
     print(f"PASSED: Catalog has {gallery_data['total']} paired scenes, pagination returned exactly 9 items.")
 
+    # Test 11: Deep Learning Scene Analysis & CV RAG Literature Engine
+    print("\n[TEST 11] Testing Deep Learning Feature Analysis & CV RAG Literature Engine...")
+    rag_insights_res = get_ai_depth_rag_insights(prediction_id=indoor_id)
+    assert rag_insights_res["success"] is True
+    feat = rag_insights_res["features"]
+    assert "scene_type" in feat
+    assert "edge_alignment_fidelity" in feat
+    assert "texture_copy_risk_index" in feat
+    print(f"Scene Features PASSED: Category='{feat['scene_type']}', Edge Alignment={feat['edge_alignment_fidelity']:.3f}, Texture Risk={feat['texture_copy_risk_index']:.3f}")
+
+    rag_query_res = query_ai_depth_rag(query="Why is monocular depth uncalibrated without physical metric sensors?", prediction_id=indoor_id)
+    assert rag_query_res["success"] is True
+    assert "citation" in rag_query_res
+    assert len(rag_query_res["answer"]) > 50
+    print(f"RAG Query PASSED: Citation='{rag_query_res['citation']}', Answer Length={len(rag_query_res['answer'])} chars")
+
     print("\n" + "=" * 75)
-    print("ALL 10 VERIFICATION TESTS COMPLETED AND PASSED!")
+    print("ALL 11 VERIFICATION TESTS COMPLETED AND PASSED!")
     print("Depth Anything V2 monocular depth estimation, caching, downloads,")
+    print("Deep Learning Geometric Feature Extraction, CV RAG Knowledge Base,")
     print("EdgeFuse-DCR reconstruction pipeline, and scientific guards are verified.")
     print("=" * 75)
 

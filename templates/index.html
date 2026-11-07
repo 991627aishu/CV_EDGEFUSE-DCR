@@ -1124,8 +1124,21 @@
                         </span>
                         <button type="button" onclick="openImageViewer('ai-view-depth', 'AI-Predicted Depth (Depth Anything V2)')" class="text-[10px] text-pink-600 dark:text-pink-400 hover:text-pink-800 dark:hover:text-white font-mono font-bold">🔍 Fullscreen</button>
                       </div>
-                      <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 border border-pink-500/30 flex items-center justify-center">
+                      <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 border border-pink-500/30 flex items-center justify-center">
                         <img id="ai-view-depth" src="" class="w-full h-full object-contain" alt="AI-Predicted Depth Map">
+                        <!-- Dynamic State / Awaiting Skeleton Placeholder -->
+                        <div id="ai-depth-placeholder" class="hidden absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center space-y-3 z-10">
+                          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center text-pink-500 shadow-inner">
+                            <svg id="ai-ph-icon" class="w-6 h-6 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                          </div>
+                          <div class="space-y-1 max-w-xs">
+                            <h5 id="ai-ph-title" class="text-xs font-bold text-white font-mono">Awaiting AI Depth Estimation</h5>
+                            <p id="ai-ph-desc" class="text-[10px] text-slate-400">Click &ldquo;Generate AI Depth&rdquo; to infer dense geometry.</p>
+                          </div>
+                          <div id="ai-ph-timer" class="hidden text-[10px] font-mono px-2.5 py-1 rounded bg-slate-900 border border-pink-500/30 text-pink-400">
+                            Elapsed: 0.0s
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -1201,6 +1214,117 @@
                       <span>🚀 Use as Reconstruction Input</span>
                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
+                  </div>
+
+                  <!-- ================================================================= -->
+                  <!-- DEEP LEARNING GEOMETRIC FEATURE ANALYSIS & SCIENTIFIC CV RAG CARD -->
+                  <!-- ================================================================= -->
+                  <div id="ai-rag-container" class="hidden mt-4 pt-4 border-t border-ivory-200 dark:border-slate-800 space-y-3">
+                    
+                    <!-- Section Header -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-transparent p-3 rounded-xl border border-pink-500/20">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-pink-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                        </div>
+                        <div>
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-bold text-charcoal-900 dark:text-white uppercase tracking-wider font-mono">Deep Learning Geometric Analysis &amp; CV RAG</span>
+                            <span id="rag-scene-badge" class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-pink-100 dark:bg-pink-950/80 text-pink-700 dark:text-pink-300 border border-pink-500/30">Detected: Analyzing...</span>
+                          </div>
+                          <span class="text-[10px] text-charcoal-500 dark:text-slate-400">Automated scene feature extraction + peer-reviewed CV literature retrieval</span>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-1.5 self-start sm:self-auto">
+                        <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-ivory-200 dark:border-slate-800 text-charcoal-600 dark:text-slate-400">CVPR / ICCV Grounding</span>
+                      </div>
+                    </div>
+
+                    <!-- Deep Learning Geometric Diagnostic Metric Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div class="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800 space-y-1">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[9px] font-mono text-charcoal-400 dark:text-slate-500 uppercase">Edge Alignment (r)</span>
+                          <span id="rag-metric-align-badge" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        </div>
+                        <div id="rag-metric-align" class="text-xs font-bold font-mono text-charcoal-900 dark:text-white">--</div>
+                        <p class="text-[9px] text-charcoal-500 dark:text-slate-400 leading-tight">RGB contour correlation</p>
+                      </div>
+
+                      <div class="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800 space-y-1">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[9px] font-mono text-charcoal-400 dark:text-slate-500 uppercase">Disparity Span (Δd)</span>
+                          <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        </div>
+                        <div id="rag-metric-span" class="text-xs font-bold font-mono text-charcoal-900 dark:text-white">--</div>
+                        <p class="text-[9px] text-charcoal-500 dark:text-slate-400 leading-tight">Relative dynamic range</p>
+                      </div>
+
+                      <div class="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800 space-y-1">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[9px] font-mono text-charcoal-400 dark:text-slate-500 uppercase">Gradient Energy (E∇)</span>
+                          <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                        </div>
+                        <div id="rag-metric-gradient" class="text-xs font-bold font-mono text-charcoal-900 dark:text-white">--</div>
+                        <p class="text-[9px] text-charcoal-500 dark:text-slate-400 leading-tight">High-frequency structure</p>
+                      </div>
+
+                      <div class="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800 space-y-1">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[9px] font-mono text-charcoal-400 dark:text-slate-500 uppercase">Texture-Copy Risk</span>
+                          <span id="rag-metric-texture-badge" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        </div>
+                        <div id="rag-metric-texture" class="text-xs font-bold font-mono text-charcoal-900 dark:text-white">--</div>
+                        <p class="text-[9px] text-charcoal-500 dark:text-slate-400 leading-tight">Color artifact vulnerability</p>
+                      </div>
+                    </div>
+
+                    <!-- RAG Synthesis & Peer-Reviewed Literature Answer -->
+                    <div class="p-3.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800 space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                          <svg class="w-3.5 h-3.5 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                          <span class="text-[11px] font-bold text-charcoal-900 dark:text-white font-mono uppercase">Computer Vision Literature Synthesis</span>
+                        </div>
+                        <span id="rag-source-citation" class="text-[9px] font-mono text-pink-600 dark:text-pink-400 truncate max-w-xs">Yang et al. (2024)</span>
+                      </div>
+                      
+                      <div id="rag-answer-body" class="text-xs text-charcoal-700 dark:text-slate-300 leading-relaxed font-sans bg-ivory-50 dark:bg-slate-900/60 p-3 rounded-lg border border-ivory-200 dark:border-slate-800/80">
+                        Analyzing scene characteristics and retrieving peer-reviewed grounding...
+                      </div>
+
+                      <!-- 1-Click Semantic Question Chips -->
+                      <div class="pt-1 space-y-1.5">
+                        <span class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400">Ask Literature Knowledge Base (1-Click Semantic Queries):</span>
+                        <div class="flex flex-wrap gap-1.5">
+                          <button type="button" onclick="handleRagChipClick(this)" class="px-2.5 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 hover:bg-pink-50 dark:hover:bg-pink-950/60 border border-ivory-300 dark:border-slate-800 text-[10px] text-charcoal-700 dark:text-slate-300 transition-colors">
+                            🔍 Why is this prediction scale-ambiguous without sensor depth?
+                          </button>
+                          <button type="button" onclick="handleRagChipClick(this)" class="px-2.5 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 hover:bg-pink-50 dark:hover:bg-pink-950/60 border border-ivory-300 dark:border-slate-800 text-[10px] text-charcoal-700 dark:text-slate-300 transition-colors">
+                            ⚡ How does Depth Anything V2 preserve fine boundaries?
+                          </button>
+                          <button type="button" onclick="handleRagChipClick(this)" class="px-2.5 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 hover:bg-pink-50 dark:hover:bg-pink-950/60 border border-ivory-300 dark:border-slate-800 text-[10px] text-charcoal-700 dark:text-slate-300 transition-colors">
+                            🛡️ How does EdgeFuse-DCR suppress texture-copy artifacts?
+                          </button>
+                          <button type="button" onclick="handleRagChipClick(this)" class="px-2.5 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 hover:bg-pink-50 dark:hover:bg-pink-950/60 border border-ivory-300 dark:border-slate-800 text-[10px] text-charcoal-700 dark:text-slate-300 transition-colors">
+                            📐 How can this disparity be metric-calibrated with sparse LiDAR?
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Custom RAG Query Input -->
+                      <div class="flex items-center gap-2 pt-1">
+                        <div class="relative flex-1">
+                          <input type="text" id="rag-custom-query" placeholder="Ask any CV question (e.g. 'Explain ViT attention in monocular depth' or 'How does DPT decode features?')" class="w-full px-3 py-1.5 text-xs rounded-xl bg-ivory-50 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-900 dark:text-white placeholder-charcoal-400 dark:placeholder-slate-500 focus:outline-none focus:border-pink-500 font-sans" onkeydown="if(event.key==='Enter') executeRagCustomQuery();">
+                        </div>
+                        <button type="button" id="btn-rag-submit" onclick="executeRagCustomQuery()" class="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs transition-colors shrink-0 flex items-center gap-1.5 shadow-sm">
+                          <span>Ask RAG</span>
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                      </div>
+
+                    </div>
+
                   </div>
 
                 </div>
@@ -3770,6 +3894,41 @@
     let activeAiPresetKey = null;
     let aiViewMode = 'sidebyside';
     let aiSliderDragging = false;
+    let aiTimerInterval = null;
+
+    function setAiDepthAwaitingState(label) {
+      // Immediately reveal display container with current RGB
+      const emptyState = document.getElementById('ai-empty-state');
+      const resultDisplay = document.getElementById('ai-result-display');
+      if (emptyState) emptyState.classList.add('hidden');
+      if (resultDisplay) resultDisplay.classList.remove('hidden');
+
+      // Clear previous depth map so user never sees stale results
+      const viewDepth = document.getElementById('ai-view-depth');
+      const sliderDepth = document.getElementById('ai-slider-depth');
+      if (viewDepth) viewDepth.src = '';
+      if (sliderDepth) sliderDepth.src = '';
+
+      // Show placeholder overlay on depth view
+      const ph = document.getElementById('ai-depth-placeholder');
+      const phTitle = document.getElementById('ai-ph-title');
+      const phDesc = document.getElementById('ai-ph-desc');
+      const phTimer = document.getElementById('ai-ph-timer');
+      if (ph) ph.classList.remove('hidden');
+      if (phTitle) phTitle.innerText = 'Photograph Ready for Inference';
+      if (phDesc) phDesc.innerText = `Click "Generate AI Depth" to run Depth Anything V2 on ${label || 'selected photo'}.`;
+      if (phTimer) phTimer.classList.add('hidden');
+
+      // Reset meta badges to awaiting state
+      const latencyEl = document.getElementById('ai-meta-latency');
+      const resEl = document.getElementById('ai-meta-res');
+      if (latencyEl) latencyEl.innerText = '-- ms';
+      if (resEl) resEl.innerText = 'Ready';
+
+      // Hide RAG container until inference produces prediction
+      const ragContainer = document.getElementById('ai-rag-container');
+      if (ragContainer) ragContainer.classList.add('hidden');
+    }
 
     async function loadAiPresetSample(key) {
       activeAiPresetKey = key;
@@ -3790,6 +3949,14 @@
       }
       if (prompt) prompt.classList.add('hidden');
       if (label) label.innerText = titles[key] || `${key}.jpg`;
+
+      // Instantly update main comparison views with RGB
+      const viewRgb = document.getElementById('ai-view-rgb');
+      const sliderRgb = document.getElementById('ai-slider-rgb');
+      if (viewRgb) viewRgb.src = rgbUrl;
+      if (sliderRgb) sliderRgb.src = rgbUrl;
+
+      setAiDepthAwaitingState(titles[key] || key);
 
       try {
         const resp = await fetch(rgbUrl);
@@ -3815,6 +3982,16 @@
         }
         if (prompt) prompt.classList.add('hidden');
         document.getElementById('label-ai-rgb').innerText = aiUploadedRgbFile.name;
+
+        // Instantly update main comparison views with user-uploaded RGB photo
+        const viewRgb = document.getElementById('ai-view-rgb');
+        const sliderRgb = document.getElementById('ai-slider-rgb');
+        if (viewRgb) viewRgb.src = e.target.result;
+        if (sliderRgb) sliderRgb.src = e.target.result;
+
+        // Reset depth panel to awaiting state (clearing out any old depth image)
+        setAiDepthAwaitingState(aiUploadedRgbFile.name);
+
         showToast(`RGB selected: ${aiUploadedRgbFile.name}`);
       };
       reader.readAsDataURL(aiUploadedRgbFile);
@@ -3824,6 +4001,7 @@
       aiUploadedRgbFile = null;
       activeAiPresetKey = null;
       activeAiPredictionId = null;
+      if (aiTimerInterval) { clearInterval(aiTimerInterval); aiTimerInterval = null; }
       const f = document.getElementById('file-ai-rgb');
       if (f) f.value = '';
       const thumb = document.getElementById('preview-ai-rgb-thumb');
@@ -3834,6 +4012,8 @@
       document.getElementById('ai-empty-state').classList.remove('hidden');
       document.getElementById('ai-result-display').classList.add('hidden');
       document.getElementById('ai-status-indicator').classList.add('hidden');
+      const ragContainer = document.getElementById('ai-rag-container');
+      if (ragContainer) ragContainer.classList.add('hidden');
     }
 
     async function executeAiDepthPrediction() {
@@ -3853,6 +4033,26 @@
       btnText.innerText = 'Inferring Monocular Depth...';
       statusInd.classList.remove('hidden');
       statusText.innerHTML = '<span class="text-pink-500 font-bold animate-pulse">Running Depth Anything V2 (ViT-S, 24.8M parameters) on CPU...</span>';
+
+      // Activate real-time progress on placeholder
+      const ph = document.getElementById('ai-depth-placeholder');
+      const phTitle = document.getElementById('ai-ph-title');
+      const phDesc = document.getElementById('ai-ph-desc');
+      const phTimer = document.getElementById('ai-ph-timer');
+      if (ph) ph.classList.remove('hidden');
+      if (phTitle) phTitle.innerText = 'Inferring Monocular Geometry...';
+      if (phDesc) phDesc.innerText = 'Processing through ViT-S attention layers & DPT multi-scale neck on CPU...';
+      if (phTimer) {
+        phTimer.classList.remove('hidden');
+        phTimer.innerText = 'Elapsed: 0.0s (CPU)';
+      }
+
+      if (aiTimerInterval) clearInterval(aiTimerInterval);
+      const tStart = Date.now();
+      aiTimerInterval = setInterval(() => {
+        const sec = ((Date.now() - tStart) / 1000).toFixed(1);
+        if (phTimer) phTimer.innerText = `Elapsed: ${sec}s (Single-Thread CPU)`;
+      }, 200);
 
       const fd = new FormData();
       if (aiUploadedRgbFile) {
@@ -3877,6 +4077,9 @@
         const data = await res.json();
         activeAiPredictionId = data.prediction_id;
 
+        // Stop progress timer
+        if (aiTimerInterval) { clearInterval(aiTimerInterval); aiTimerInterval = null; }
+
         // Populate side-by-side view
         document.getElementById('ai-view-rgb').src = data.rgb_preview_b64;
         document.getElementById('ai-view-depth').src = data.preview_b64;
@@ -3884,6 +4087,9 @@
         // Populate split slider view
         document.getElementById('ai-slider-rgb').src = data.rgb_preview_b64;
         document.getElementById('ai-slider-depth').src = data.preview_b64;
+
+        // Hide placeholder overlay now that depth is ready
+        if (ph) ph.classList.add('hidden');
 
         // Populate technical specs
         document.getElementById('ai-meta-model').innerText = data.model_name;
@@ -3897,14 +4103,124 @@
 
         statusText.innerHTML = `<span class="text-emerald-500 font-bold">✅ Depth predicted in ${data.inference_time_ms} ms (${data.dimensions})</span>`;
         showToast(`AI Depth Generated: ${data.dimensions} in ${data.inference_time_ms} ms`);
+
+        // Render Deep Learning Scene Analysis & CV RAG Literature Insights
+        if (data.rag_insights) {
+          renderRagInsights(data.rag_insights);
+        }
       } catch (e) {
+        if (aiTimerInterval) { clearInterval(aiTimerInterval); aiTimerInterval = null; }
+        if (phTitle) phTitle.innerText = 'Prediction Error';
+        if (phDesc) phDesc.innerText = e.message;
         statusText.innerHTML = `<span class="text-rose-500 font-bold">❌ Error: ${e.message}</span>`;
         showToast(e.message, true);
       } finally {
+        if (aiTimerInterval) { clearInterval(aiTimerInterval); aiTimerInterval = null; }
         btn.disabled = false;
         spinner.classList.add('hidden');
         btnText.innerText = '✨ Generate AI Depth (Depth Anything V2)';
       }
+    }
+
+    // -------------------------------------------------------------------------
+    // RAG & DEEP LEARNING GEOMETRIC FEATURE HELPERS
+    // -------------------------------------------------------------------------
+    function renderRagInsights(rag) {
+      if (!rag) return;
+      const ragContainer = document.getElementById('ai-rag-container');
+      if (!ragContainer) return;
+
+      const feat = rag.features;
+      const ans = rag.initial_answer;
+
+      if (feat) {
+        const badge = document.getElementById('rag-scene-badge');
+        if (badge) badge.innerText = `Scene: ${feat.scene_type} (${(feat.classification_confidence * 100).toFixed(0)}% conf)`;
+
+        const alignEl = document.getElementById('rag-metric-align');
+        if (alignEl) alignEl.innerText = `${feat.edge_alignment_fidelity.toFixed(3)} (${feat.edge_alignment_fidelity > 0.4 ? 'High' : 'Moderate'})`;
+
+        const spanEl = document.getElementById('rag-metric-span');
+        if (spanEl) spanEl.innerText = `${feat.depth_dynamic_span.toFixed(2)} [${feat.depth_min.toFixed(2)} - ${feat.depth_max.toFixed(2)}]`;
+
+        const gradEl = document.getElementById('rag-metric-gradient');
+        if (gradEl) gradEl.innerText = `${feat.depth_gradient_energy.toFixed(3)} (${feat.depth_gradient_energy > 0.05 ? 'Crisp' : 'Smooth'})`;
+
+        const texEl = document.getElementById('rag-metric-texture');
+        if (texEl) {
+          const risk = feat.texture_copy_risk_index;
+          const label = risk < 0.25 ? 'Low (Clean)' : (risk < 0.5 ? 'Moderate' : 'High (Gated)');
+          texEl.innerText = `${risk.toFixed(3)} — ${label}`;
+        }
+      }
+
+      if (ans) {
+        const citationEl = document.getElementById('rag-source-citation');
+        if (citationEl) citationEl.innerText = ans.citation || ans.primary_source || 'Depth Anything V2 (2024)';
+
+        const bodyEl = document.getElementById('rag-answer-body');
+        if (bodyEl) bodyEl.innerHTML = `<p>${ans.answer}</p>`;
+      }
+
+      ragContainer.classList.remove('hidden');
+    }
+
+    async function executeRagQuery(queryText) {
+      if (!queryText) return;
+      const bodyEl = document.getElementById('rag-answer-body');
+      const citationEl = document.getElementById('rag-source-citation');
+      const submitBtn = document.getElementById('btn-rag-submit');
+
+      if (bodyEl) {
+        bodyEl.innerHTML = '<span class="text-pink-500 font-mono text-[11px] animate-pulse">Retrieving grounded literature citations and synthesizing geometric insight...</span>';
+      }
+      if (submitBtn) submitBtn.disabled = true;
+
+      try {
+        const fd = new FormData();
+        fd.append('query', queryText);
+        if (activeAiPredictionId) {
+          fd.append('prediction_id', activeAiPredictionId);
+        }
+
+        const res = await fetch('/api/ai_depth/rag_query', { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('RAG query failed');
+        const data = await res.json();
+
+        if (bodyEl) {
+          const safeQ = data.query.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          bodyEl.innerHTML = `<div class="space-y-2">
+            <p class="font-bold text-charcoal-900 dark:text-white">Q: "${safeQ}"</p>
+            <p class="text-charcoal-700 dark:text-slate-300 leading-relaxed">${data.answer}</p>
+          </div>`;
+        }
+        if (citationEl) {
+          citationEl.innerText = data.citation || data.primary_source;
+        }
+        const ragContainer = document.getElementById('ai-rag-container');
+        if (ragContainer) ragContainer.classList.remove('hidden');
+      } catch (e) {
+        if (bodyEl) bodyEl.innerHTML = `<span class="text-rose-500">Error retrieving literature insight: ${e.message}</span>`;
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
+
+    function handleRagChipClick(btn) {
+      if (!btn) return;
+      const text = btn.innerText.replace(/^[^\w]+/, '').trim();
+      const input = document.getElementById('rag-custom-query');
+      if (input) input.value = text;
+      executeRagQuery(text);
+    }
+
+    function executeRagCustomQuery() {
+      const input = document.getElementById('rag-custom-query');
+      if (!input || !input.value.trim()) {
+        showToast('Please type a question for the CV Literature RAG.', true);
+        return;
+      }
+      executeRagQuery(input.value.trim());
     }
 
     function setAiViewMode(mode) {
