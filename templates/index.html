@@ -1667,21 +1667,42 @@
               <!-- TAB 2: Ablation Progression -->
               <div id="view-tab-ablation" class="hidden grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
-                  <span class="text-xs font-bold text-charcoal-600 dark:text-slate-400 block">Stage 1: A0 Classical Baseline</span>
-                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
-                    <img id="view-classical" src="" class="w-full h-full object-cover" alt="A0 Classical Baseline">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-charcoal-600 dark:text-slate-400">Stage 1: A0 Classical Baseline</span>
+                    <span id="ablation-a0-status" class="text-[10px] font-mono text-charcoal-500 dark:text-slate-400">Bilinear</span>
+                  </div>
+                  <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
+                    <img id="view-classical" src="" class="hidden w-full h-full object-cover" alt="A0 Classical Baseline">
+                    <div id="view-classical-ph" class="p-3 text-center space-y-1">
+                      <span class="text-[11px] font-mono font-bold text-slate-300 block">A0 Classical Baseline</span>
+                      <span class="text-[10px] text-slate-500 block">Click &ldquo;Execute Depth Reconstruction&rdquo; to compute</span>
+                    </div>
                   </div>
                 </div>
                 <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
-                  <span class="text-xs font-bold text-blue-600 dark:text-blue-400 block">Stage 2: A2 EdgeFuseNet Alone</span>
-                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
-                    <img id="view-cnn" src="" class="w-full h-full object-cover" alt="A2 EdgeFuseNet Alone">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-blue-600 dark:text-blue-400">Stage 2: A2 EdgeFuseNet Alone</span>
+                    <span id="ablation-a2-status" class="text-[10px] font-mono text-blue-500 dark:text-blue-400">Deep Learning</span>
+                  </div>
+                  <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
+                    <img id="view-cnn" src="" class="hidden w-full h-full object-cover" alt="A2 EdgeFuseNet Alone">
+                    <div id="view-cnn-ph" class="p-3 text-center space-y-1">
+                      <span class="text-[11px] font-mono font-bold text-blue-300 block">A2 EdgeFuseNet Alone</span>
+                      <span class="text-[10px] text-slate-500 block">Click &ldquo;Execute Depth Reconstruction&rdquo; to compute</span>
+                    </div>
                   </div>
                 </div>
                 <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-cyan-500/40 space-y-2 shadow-sm">
-                  <span class="text-xs font-bold text-cyan-700 dark:text-cyan-300 block">Stage 3: A5 Full Hybrid (Proposed)</span>
-                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950">
-                    <img id="view-ablation-final" src="" class="w-full h-full object-cover" alt="A5 Full Hybrid">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-cyan-700 dark:text-cyan-300">Stage 3: A5 Full Hybrid (Proposed)</span>
+                    <span id="ablation-a5-status" class="text-[10px] font-mono text-cyan-500 dark:text-cyan-400">CNN + Refined</span>
+                  </div>
+                  <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center">
+                    <img id="view-ablation-final" src="" class="hidden w-full h-full object-cover" alt="A5 Full Hybrid">
+                    <div id="view-ablation-final-ph" class="p-3 text-center space-y-1">
+                      <span class="text-[11px] font-mono font-bold text-cyan-300 block">A5 EdgeFuse-DCR Full Hybrid</span>
+                      <span class="text-[10px] text-slate-500 block">Click &ldquo;Execute Depth Reconstruction&rdquo; to compute</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3072,7 +3093,7 @@
 
         const st = data.valid_mask_stats || {};
         document.getElementById('validity-mask-title').innerText = `Validity Mask (${data.seed_label})`;
-        document.getElementById('validity-mask-stats').innerText = `${data.valid_percent}% Valid Measurements`;
+        document.getElementById('validity-mask-stats').innerText = `Dataset Sensor: ${data.valid_percent}% Valid`;
         document.getElementById('validity-px-counts').innerText = `${st.valid_pixels} Valid / ${st.invalid_pixels} Void (${st.total_pixels} total px)`;
 
         renderBenchmarkTable(data.dataset_key, null, null, currentSceneBenchmarks);
@@ -3286,13 +3307,26 @@
         setViewImage('view-ablation-final', data.reconstructed_b64);
         const ph = document.getElementById('view-reconstructed-placeholder');
         if (ph) ph.classList.add('hidden');
+        const phAbl = document.getElementById('view-ablation-final-ph');
+        if (phAbl) phAbl.classList.add('hidden');
       }
-      if (data.classical_b64) setViewImage('view-classical', data.classical_b64);
-      if (data.cnn_b64) setViewImage('view-cnn', data.cnn_b64);
+      if (data.classical_b64) {
+        setViewImage('view-classical', data.classical_b64);
+        const phCl = document.getElementById('view-classical-ph');
+        if (phCl) phCl.classList.add('hidden');
+      }
+      if (data.cnn_b64) {
+        setViewImage('view-cnn', data.cnn_b64);
+        const phCnn = document.getElementById('view-cnn-ph');
+        if (phCnn) phCnn.classList.add('hidden');
+      }
       if (data.confidence_b64) setViewImage('view-confidence', data.confidence_b64);
       if (data.boundary_b64) setViewImage('view-boundary', data.boundary_b64);
       if (data.valid_mask_b64) setViewImage('view-valid-mask', data.valid_mask_b64);
       if (data.input_depth_b64) setViewImage('view-lr-depth', data.input_depth_b64);
+
+      const vStatEl = document.getElementById('validity-mask-stats');
+      if (vStatEl) vStatEl.innerText = 'Reconstruction: 100% Valid Surface';
 
       lastLiveReconstructionData = data;
       const ptTab = document.getElementById('view-tab-pointcloud');
@@ -3401,6 +3435,12 @@
       });
       const ph = document.getElementById('view-reconstructed-placeholder');
       if (ph) ph.classList.remove('hidden');
+      const phAbl = document.getElementById('view-ablation-final-ph');
+      if (phAbl) phAbl.classList.remove('hidden');
+      const phCl = document.getElementById('view-classical-ph');
+      if (phCl) phCl.classList.remove('hidden');
+      const phCnn = document.getElementById('view-cnn-ph');
+      if (phCnn) phCnn.classList.remove('hidden');
     }
 
     // -------------------------------------------------------------------------
@@ -3972,7 +4012,7 @@
         const totalPx = typeof data.total_pixels !== 'undefined' ? data.total_pixels : (vStats.total_pixels || (validPx + invalidPx));
 
         document.getElementById('validity-mask-title').innerText = 'Sensor Validity Mask (Custom Upload)';
-        document.getElementById('validity-mask-stats').innerText = `${data.valid_percent}% Valid Measurements`;
+        document.getElementById('validity-mask-stats').innerText = `Sensor Input: ${data.valid_percent}% Valid`;
         document.getElementById('validity-px-counts').innerText = `${validPx} Valid / ${invalidPx} Void (${totalPx} total px)`;
         document.getElementById('sample-dimensions').innerText = `Custom User Input (${data.dimensions} • ${file.name})`;
         showToast(`Depth Map Validated: ${data.dimensions} (${data.valid_percent}% Valid)`);

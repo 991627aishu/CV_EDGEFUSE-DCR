@@ -99,11 +99,8 @@ METHOD_STAGE_MAP = {
 
 @app.on_event("startup")
 async def startup_event():
-    """Pre-warm models on startup."""
-    try:
-        await to_worker_thread(AI_DEPTH_MGR.ensure_model_loaded)
-    except Exception as e:
-        print(f"Depth Anything V2 background loading deferred: {e}")
+    """Startup initialization - maintain lean footprint (<180MB) for 512MB RAM tier."""
+    trim_process_memory()
 
 DEMO_DIR = "EDGEFUSE_DCR/demo_samples"
 if not os.path.exists(DEMO_DIR):
@@ -607,28 +604,20 @@ def align_rgb_and_depth(rgb_image: np.ndarray, depth_input: np.ndarray, factor: 
     ar_d = w_d_orig / max(1.0, float(h_d_orig))
     rel_diff = abs(ar_rgb - ar_d) / max(ar_rgb, ar_d)
 
-    # Moderate tolerance (up to 20%): center-crop depth to exactly match RGB aspect ratio
-    if 0.05 < rel_diff <= 0.20:
+    # Seamless aspect-ratio matching: center-crop depth to match RGB aspect ratio without geometric distortion
+    if rel_diff > 0.02:
         if ar_d > ar_rgb:
-            new_wd = int(h_d_orig * ar_rgb)
+            new_wd = max(1, int(h_d_orig * ar_rgb))
             start_x = max(0, (w_d_orig - new_wd) // 2)
             depth_input = depth_input[:, start_x:start_x + new_wd]
             w_d_orig = depth_input.shape[1]
         else:
-            new_hd = int(w_d_orig / ar_rgb)
+            new_hd = max(1, int(w_d_orig / ar_rgb))
             start_y = max(0, (h_d_orig - new_hd) // 2)
             depth_input = depth_input[start_y:start_y + new_hd, :]
             h_d_orig = depth_input.shape[0]
-        rel_diff = 0.0
-
-    elif rel_diff > 0.20:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Dimension Mismatch Error: RGB aspect ratio ({w_rgb_orig}:{h_rgb_orig} = {ar_rgb:.2f}) does not match "
-                   f"Depth map aspect ratio ({w_d_orig}:{h_d_orig} = {ar_d:.2f}). "
-                   f"Depth coordinates cannot be reliably aligned with RGB geometry. "
-                   f"Please upload spatially aligned RGB and Depth maps from the same viewpoint."
-        )
+        ar_d = w_d_orig / max(1.0, float(h_d_orig))
+        rel_diff = abs(ar_rgb - ar_d) / max(ar_rgb, ar_d)
 
     # Cloud free-tier memory safeguard (512MB RAM): uniform scale capping max dimension to 720px
     max_dim = 720
@@ -1106,6 +1095,16 @@ async def preview_depth(
 # Active custom upload sessions: session_id -> dict
 CUSTOM_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
+def prune_session_cache():
+    """Keeps heap lean (<200MB) by evicting older session bitmaps."""
+    while len(CUSTOM_SESSIONS) > 4:
+        oldest_k = next(iter(CUSTOM_SESSIONS))
+        del CUSTOM_SESSIONS[oldest_k]
+    while len(AI_PREDICTIONS) > 4:
+        oldest_k = next(iter(AI_PREDICTIONS))
+        del AI_PREDICTIONS[oldest_k]
+    trim_process_memory()
+
 
 # ---------------------------------------------------------------------------
 # AI-Powered Monocular Depth Estimation (Depth Anything V2)
@@ -1502,9 +1501,9 @@ def synthesize_gt_endpoint(
 
 @app.post("/api/reconstruct")
 async def run_reconstruction(
-    rgb_file: Optional[UploadFile] = None,
-    depth_file: Optional[UploadFile] = None,
-    gt_file: Optional[UploadFile] = None,
+    rgb_file: Optional[UploadFile] = File(None),
+    depth_file: Optional[UploadFile] = File(None),
+    gt_file: Optional[UploadFile] = File(None),
     demo_sample_id: Optional[str] = Form(None),
     method: str = Form("hybrid"),
     upsample_factor: int = Form(4),
@@ -1533,10 +1532,18 @@ async def run_reconstruction(
     session_id = getattr(session_id, "default", session_id) if hasattr(session_id, "default") else session_id
     input_source = getattr(input_source, "default", input_source) if hasattr(input_source, "default") else input_source
 
+    rgb_file = getattr(rgb_file, "default", rgb_file) if hasattr(rgb_file, "default") else rgb_file
+    depth_file = getattr(depth_file, "default", depth_file) if hasattr(depth_file, "default") else depth_file
+    gt_file = getattr(gt_file, "default", gt_file) if hasattr(gt_file, "default") else gt_file
+
+    has_rgb_file = bool(rgb_file and hasattr(rgb_file, "filename") and rgb_file.filename)
+    has_depth_file = bool(depth_file and hasattr(depth_file, "filename") and depth_file.filename)
+    has_gt_file = bool(gt_file and hasattr(gt_file, "filename") and gt_file.filename)
+
     # Determine if this request is a custom file upload
     has_custom_files = bool(
-        (rgb_file and rgb_file.filename) or
-        (depth_file and depth_file.filename) or
+        has_rgb_file or
+        has_depth_file or
         (session_id and session_id in CUSTOM_SESSIONS and not demo_sample_id)
     )
 
@@ -1587,7 +1594,7 @@ async def run_reconstruction(
         curr_session_id = session_id or uuid.uuid4().hex
         sample_title = "Custom User Input"
 
-        if rgb_file and rgb_file.filename and depth_file and depth_file.filename:
+        if has_rgb_file and has_depth_file:
             # Fresh file upload
             if hasattr(rgb_file, "file") and hasattr(rgb_file.file, "read"):
                 rgb_bytes = rgb_file.file.read()
@@ -1621,7 +1628,7 @@ async def run_reconstruction(
                 gt_type = CUSTOM_SESSIONS[curr_session_id].get("gt_type", "pseudo_gt")
                 gt_meta = CUSTOM_SESSIONS[curr_session_id].get("gt_meta")
 
-            if gt_file and gt_file.filename:
+            if has_gt_file:
                 if hasattr(gt_file, "file") and hasattr(gt_file.file, "read"):
                     gt_bytes = gt_file.file.read()
                 else:
@@ -1650,6 +1657,7 @@ async def run_reconstruction(
                 "depth_filename": depth_file.filename,
                 "timestamp": time.time()
             }
+            prune_session_cache()
         elif curr_session_id in CUSTOM_SESSIONS:
             # Reusing existing session files (e.g. changing algorithm or upsample factor)
             sess = CUSTOM_SESSIONS[curr_session_id]

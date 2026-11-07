@@ -158,6 +158,10 @@ class DepthAnythingV2Manager:
 
         t0 = time.perf_counter()
 
+        # CPU Cloud Safeguard: prevent OOM/timeouts on low-memory environments
+        if getattr(self.device, "type", str(self.device)) == "cpu":
+            input_size = min(int(input_size), 392)
+
         # Enforce memory safety: scale if image exceeds 640px while strictly preserving aspect ratio
         # Processing at max 640px ensures peak RAM stays safely below 460MB on Render's 512MB tier.
         max_dim = 640
