@@ -1743,9 +1743,12 @@ async def run_reconstruction(
     boundary_b64 = encode_image_base64(overlay)
 
     # 5. Pairwise Algorithm Differentiation Analysis (A0 vs A2 vs A5)
-    diff_0_5 = float(np.mean(np.abs(classical_depth - rec_depth)))
-    diff_2_5 = float(np.mean(np.abs(cnn_depth - rec_depth)))
-    diff_0_2 = float(np.mean(np.abs(classical_depth - cnn_depth)))
+    def _safe_f(v, d=0.0):
+        return d if (v is None or not np.isfinite(v)) else float(v)
+
+    diff_0_5 = _safe_f(np.mean(np.abs(classical_depth - rec_depth)))
+    diff_2_5 = _safe_f(np.mean(np.abs(cnn_depth - rec_depth)))
+    diff_0_2 = _safe_f(np.mean(np.abs(classical_depth - cnn_depth)))
 
     algo_comparison = {
         "diff_a0_a5_mae": round(diff_0_5, 4),
@@ -1753,19 +1756,19 @@ async def run_reconstruction(
         "diff_a0_a2_mae": round(diff_0_2, 4),
         "unit": depth_unit,
         "a0_stats": {
-            "min": round(float(classical_depth.min()), 3),
-            "max": round(float(classical_depth.max()), 3),
-            "std": round(float(classical_depth.std()), 3),
+            "min": round(_safe_f(classical_depth.min()), 3),
+            "max": round(_safe_f(classical_depth.max()), 3),
+            "std": round(_safe_f(classical_depth.std()), 3),
         },
         "a2_stats": {
-            "min": round(float(cnn_depth.min()), 3),
-            "max": round(float(cnn_depth.max()), 3),
-            "std": round(float(cnn_depth.std()), 3),
+            "min": round(_safe_f(cnn_depth.min()), 3),
+            "max": round(_safe_f(cnn_depth.max()), 3),
+            "std": round(_safe_f(cnn_depth.std()), 3),
         },
         "a5_stats": {
-            "min": round(float(rec_depth.min()), 3),
-            "max": round(float(rec_depth.max()), 3),
-            "std": round(float(rec_depth.std()), 3),
+            "min": round(_safe_f(rec_depth.min()), 3),
+            "max": round(_safe_f(rec_depth.max()), 3),
+            "std": round(_safe_f(rec_depth.std()), 3),
         }
     }
 
@@ -1859,9 +1862,9 @@ async def run_reconstruction(
         "error_b64": error_b64,
         "metrics": metrics,
         "depth_range": {
-            "min": round(float(rec_depth[rec_depth > 0.001].min()), 2) if np.any(rec_depth > 0.001) else 0.0,
-            "max": round(float(rec_depth[rec_depth > 0.001].max()), 2) if np.any(rec_depth > 0.001) else 0.0,
-            "mean": round(float(rec_depth[rec_depth > 0.001].mean()), 2) if np.any(rec_depth > 0.001) else 0.0,
+            "min": round(_safe_f(rec_depth[rec_depth > 0.001].min()), 2) if np.any(rec_depth > 0.001) else 0.0,
+            "max": round(_safe_f(rec_depth[rec_depth > 0.001].max()), 2) if np.any(rec_depth > 0.001) else 0.0,
+            "mean": round(_safe_f(rec_depth[rec_depth > 0.001].mean()), 2) if np.any(rec_depth > 0.001) else 0.0,
             "unit": depth_unit
         }
     }

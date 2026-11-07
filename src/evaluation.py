@@ -49,6 +49,10 @@ def compute_depth_metrics(pred_depth, gt_depth, valid_mask=None, max_depth=10.0)
     pred_v = pred_depth[mask]
     gt_v = gt_depth[mask]
 
+    # Clean non-finite values for spatial operations (Gaussian blur, Sobel)
+    pred_clean = np.nan_to_num(pred_depth, nan=0.0, posinf=max_depth, neginf=0.0)
+    gt_clean = np.nan_to_num(gt_depth, nan=0.0, posinf=max_depth, neginf=0.0)
+
     # 1. MAE & RMSE
     diff = pred_v - gt_v
     mae = float(np.mean(np.abs(diff)))
@@ -56,12 +60,12 @@ def compute_depth_metrics(pred_depth, gt_depth, valid_mask=None, max_depth=10.0)
 
     # 2. PSNR
     mse = float(np.mean(diff ** 2))
-    psnr = float(20.0 * np.log10(max_depth) - 10.0 * np.log10(mse + 1e-8))
+    psnr = float(20.0 * np.log10(max_depth) - 10.0 * np.log10(max(1e-8, mse)))
 
     # 3. SSIM (on cropped normalized valid box)
     # Fast SSIM calculation over valid region
-    norm_pred = np.clip(pred_depth / max_depth, 0.0, 1.0)
-    norm_gt = np.clip(gt_depth / max_depth, 0.0, 1.0)
+    norm_pred = np.clip(pred_clean / max_depth, 0.0, 1.0)
+    norm_gt = np.clip(gt_clean / max_depth, 0.0, 1.0)
 
     u_pred = cv2.GaussianBlur(norm_pred, (11, 11), 1.5)
     u_gt = cv2.GaussianBlur(norm_gt, (11, 11), 1.5)
@@ -77,26 +81,27 @@ def compute_depth_metrics(pred_depth, gt_depth, valid_mask=None, max_depth=10.0)
     c1 = (0.01 * 1.0) ** 2
     c2 = (0.03 * 1.0) ** 2
 
-    ssim_map = ((2 * u_pred_gt + c1) * (2 * sig_pred_gt + c2)) / (
-        (u_pred_sq + u_gt_sq + c1) * (sig_pred_sq + sig_gt_sq + c2)
-    )
-    ssim = float(np.mean(ssim_map[mask]))
+    denom = (u_pred_sq + u_gt_sq + c1) * (sig_pred_sq + sig_gt_sq + c2)
+    ssim_map = np.where(denom > 1e-9, ((2 * u_pred_gt + c1) * (2 * sig_pred_gt + c2)) / denom, 1.0)
+    ssim_valid = ssim_map[mask]
+    ssim = float(np.mean(ssim_valid)) if len(ssim_valid) > 0 else 0.0
 
     # 4. Depth-Gradient MAE (Sobel)
-    sobel_px = cv2.Sobel(pred_depth, cv2.CV_32F, 1, 0, ksize=3)
-    sobel_py = cv2.Sobel(pred_depth, cv2.CV_32F, 0, 1, ksize=3)
+    sobel_px = cv2.Sobel(pred_clean, cv2.CV_32F, 1, 0, ksize=3)
+    sobel_py = cv2.Sobel(pred_clean, cv2.CV_32F, 0, 1, ksize=3)
     grad_pred = np.sqrt(sobel_px ** 2 + sobel_py ** 2)
 
-    sobel_gx = cv2.Sobel(gt_depth, cv2.CV_32F, 1, 0, ksize=3)
-    sobel_gy = cv2.Sobel(gt_depth, cv2.CV_32F, 0, 1, ksize=3)
+    sobel_gx = cv2.Sobel(gt_clean, cv2.CV_32F, 1, 0, ksize=3)
+    sobel_gy = cv2.Sobel(gt_clean, cv2.CV_32F, 0, 1, ksize=3)
     grad_gt = np.sqrt(sobel_gx ** 2 + sobel_gy ** 2)
 
-    grad_mae = float(np.mean(np.abs(grad_pred[mask] - grad_gt[mask])))
+    grad_diff = np.abs(grad_pred[mask] - grad_gt[mask])
+    grad_mae = float(np.mean(grad_diff)) if len(grad_diff) > 0 else 0.0
 
     # 5. Boundary Precision, Recall, and F1
     # Threshold relative depth gradient to find boundaries
-    rel_gt_grad = np.where(mask, grad_gt / (gt_depth + 1e-3), 0.0)
-    rel_pred_grad = np.where(mask, grad_pred / (pred_depth + 1e-3), 0.0)
+    rel_gt_grad = np.where(mask, grad_gt / (gt_clean + 1e-3), 0.0)
+    rel_pred_grad = np.where(mask, grad_pred / (pred_clean + 1e-3), 0.0)
 
     gt_edges = (rel_gt_grad > 0.08) & mask
     pred_edges = (rel_pred_grad > 0.08) & mask
@@ -116,15 +121,18 @@ def compute_depth_metrics(pred_depth, gt_depth, valid_mask=None, max_depth=10.0)
 
     f1 = float(2.0 * precision * recall / (precision + recall + 1e-6))
 
+    def _safe(v, d=0.0):
+        return d if (v is None or not np.isfinite(v)) else float(v)
+
     return {
-        "rmse": rmse,
-        "mae": mae,
-        "psnr": psnr,
-        "ssim": ssim,
-        "boundary_p": precision,
-        "boundary_r": recall,
-        "boundary_f1": f1,
-        "grad_mae": grad_mae,
+        "rmse": _safe(rmse),
+        "mae": _safe(mae),
+        "psnr": _safe(psnr),
+        "ssim": _safe(ssim),
+        "boundary_p": _safe(precision),
+        "boundary_r": _safe(recall),
+        "boundary_f1": _safe(f1),
+        "grad_mae": _safe(grad_mae),
         "valid_pixels": int(np.sum(mask))
     }
 
