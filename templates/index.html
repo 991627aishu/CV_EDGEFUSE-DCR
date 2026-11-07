@@ -3855,12 +3855,10 @@
       statusText.innerHTML = '<span class="text-pink-500 font-bold animate-pulse">Running Depth Anything V2 (ViT-S, 24.8M parameters) on CPU...</span>';
 
       const fd = new FormData();
-      if (aiUploadedRgbFile && !activeAiPresetKey) {
+      if (aiUploadedRgbFile) {
         fd.append('rgb_file', aiUploadedRgbFile);
       } else if (activeAiPresetKey) {
         fd.append('preset_id', activeAiPresetKey);
-      } else if (aiUploadedRgbFile) {
-        fd.append('rgb_file', aiUploadedRgbFile);
       }
       fd.append('input_size', document.getElementById('ai-input-size').value || '392');
 

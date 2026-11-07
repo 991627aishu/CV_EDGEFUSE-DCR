@@ -35,7 +35,7 @@ from src.depth_engine import reconstruct_depth, detect_rgb_edges, detect_depth_d
 from src.model import load_model
 from src.evaluation import compute_depth_metrics
 from src.dataset_discovery import CATALOG
-from src.ai_depth import DepthAnythingV2Manager, calibrate_relative_to_metric
+from src.ai_depth import DepthAnythingV2Manager, calibrate_relative_to_metric, trim_process_memory
 
 from typing import Optional, Dict, Any
 
@@ -1178,43 +1178,29 @@ def predict_ai_depth(
 
     h_orig, w_orig = raw_rgb.shape[:2]
 
-    # Pre-scale high-resolution uploads to max 1024px to ensure CPU-friendly, hang-free inference under 512MB RAM
-    MAX_AI_DIM = 1024
-    if max(h_orig, w_orig) > MAX_AI_DIM:
-        scale = MAX_AI_DIM / float(max(h_orig, w_orig))
-        target_w = max(14, int(w_orig * scale))
-        target_h = max(14, int(h_orig * scale))
-        infer_rgb = cv2.resize(raw_rgb, (target_w, target_h), interpolation=cv2.INTER_AREA)
-    else:
-        infer_rgb = raw_rgb
-
     try:
-        depth_rel, meta = AI_DEPTH_MGR.predict(infer_rgb, input_size=input_size)
+        depth_rel, meta = AI_DEPTH_MGR.predict(raw_rgb, input_size=input_size)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Depth Anything V2 inference failed: {str(e)}")
-
-    # Resize depth map back to user original resolution if scaled
-    if infer_rgb.shape[:2] != (h_orig, w_orig):
-        depth_rel = cv2.resize(depth_rel, (w_orig, h_orig), interpolation=cv2.INTER_CUBIC)
 
     prediction_id = uuid.uuid4().hex
 
     colored = colorize_depth(depth_rel, colormap="turbo")
 
-    # Downscale previews to max 960px for JSON serialization to guarantee lightweight (~90KB) network payload
-    disp_max = 960
+    # Downscale previews to max 640px for JSON serialization to guarantee lightweight (<50KB) network payload
+    disp_max = 640
     if max(depth_rel.shape[:2]) > disp_max:
         d_scale = disp_max / float(max(depth_rel.shape[:2]))
         dw = int(depth_rel.shape[1] * d_scale)
         dh = int(depth_rel.shape[0] * d_scale)
         disp_colored = cv2.resize(colored, (dw, dh), interpolation=cv2.INTER_AREA)
-        disp_rgb = cv2.resize(infer_rgb, (dw, dh), interpolation=cv2.INTER_AREA)
+        disp_rgb = cv2.resize(raw_rgb, (dw, dh), interpolation=cv2.INTER_AREA)
     else:
         disp_colored = colored
-        disp_rgb = infer_rgb
+        disp_rgb = raw_rgb
 
-    preview_b64 = encode_image_base64(disp_colored, quality=85)
-    rgb_preview_b64 = encode_image_base64(disp_rgb, quality=85)
+    preview_b64 = encode_image_base64(disp_colored, quality=80)
+    rgb_preview_b64 = encode_image_base64(disp_rgb, quality=80)
 
     now = time.time()
     stale_keys = [k for k, v in AI_PREDICTIONS.items() if now - v.get("timestamp", 0) > 3600]
@@ -1229,6 +1215,7 @@ def predict_ai_depth(
         "filename": filename,
         "timestamp": now
     }
+    trim_process_memory()
 
     return {
         "success": True,

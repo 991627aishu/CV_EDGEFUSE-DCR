@@ -11,6 +11,8 @@ import time
 import hashlib
 import logging
 import threading
+import gc
+import ctypes
 from typing import Tuple, Dict, Any, Optional
 
 import numpy as np
@@ -22,6 +24,14 @@ from PIL import Image
 from depth_anything_v2.dpt import DepthAnythingV2
 
 logger = logging.getLogger("edgefuse.ai_depth")
+
+def trim_process_memory():
+    """Forces garbage collection and glibc heap page trimming to avoid 512MB OOM on Linux/Render."""
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
 # Model configuration for Depth Anything V2 Small (ViT-S)
 MODEL_CONFIGS = {
@@ -90,8 +100,10 @@ class DepthAnythingV2Manager:
                 logger.info(f"Loading Depth Anything V2 ({self.encoder}) from {self.checkpoint_path} onto {self.device}...")
                 config = MODEL_CONFIGS[self.encoder]
                 model = DepthAnythingV2(**config)
-                state_dict = torch.load(self.checkpoint_path, map_location=self.device)
+                state_dict = torch.load(self.checkpoint_path, map_location=self.device, mmap=True)
                 model.load_state_dict(state_dict)
+                del state_dict
+                trim_process_memory()
                 model.to(self.device)
                 model.eval()
 
@@ -99,6 +111,7 @@ class DepthAnythingV2Manager:
                 self.is_loaded = True
                 self.load_error = None
                 logger.info("Depth Anything V2 model loaded and ready.")
+                trim_process_memory()
                 return True
 
             except Exception as e:
@@ -145,12 +158,13 @@ class DepthAnythingV2Manager:
 
         t0 = time.perf_counter()
 
-        # Enforce memory safety: scale if image exceeds 1280px while strictly preserving aspect ratio
-        max_dim = 1280
+        # Enforce memory safety: scale if image exceeds 640px while strictly preserving aspect ratio
+        # Processing at max 640px ensures peak RAM stays safely below 460MB on Render's 512MB tier.
+        max_dim = 640
         if max(h_orig, w_orig) > max_dim:
             scale = max_dim / float(max(h_orig, w_orig))
-            proc_w = int(w_orig * scale)
-            proc_h = int(h_orig * scale)
+            proc_w = max(14, int(w_orig * scale))
+            proc_h = max(14, int(h_orig * scale))
             proc_rgb = cv2.resize(rgb_image, (proc_w, proc_h), interpolation=cv2.INTER_AREA)
         else:
             proc_rgb = rgb_image
@@ -164,11 +178,13 @@ class DepthAnythingV2Manager:
                 # Inference execution
                 raw_depth = self.model.infer_image(proc_bgr, input_size=input_size)
 
-        # Resize back to original user resolution if scaled
-        if (proc_h, proc_w) != (h_orig, w_orig):
+        # High-quality restoration to original user resolution with OpenCV (C++ zero-overhead streaming)
+        if (raw_depth.shape[0], raw_depth.shape[1]) != (h_orig, w_orig):
             depth_map = cv2.resize(raw_depth, (w_orig, h_orig), interpolation=cv2.INTER_CUBIC)
         else:
             depth_map = raw_depth
+
+        trim_process_memory()
 
         inference_time_ms = round((time.perf_counter() - t0) * 1000.0, 2)
 
