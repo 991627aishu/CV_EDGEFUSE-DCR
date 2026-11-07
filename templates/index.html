@@ -1487,18 +1487,18 @@
                 <div class="space-y-1.5">
                   <div class="flex items-center justify-between">
                     <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">Ground Truth & Quantitative Evaluation</label>
-                    <span id="gt-status-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Awaiting Reference</span>
+                    <span id="gt-status-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Optional (Required for Metrics)</span>
                   </div>
                   <div id="drop-gt" onclick="document.getElementById('file-gt').click()" class="border-2 border-dashed border-ivory-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-xl p-2.5 text-center cursor-pointer transition-colors bg-ivory-50 dark:bg-slate-900/40">
                     <input type="file" id="file-gt" accept=".npy,image/png" class="hidden" onchange="handleFileSelected(this, 'gt')">
                     <span id="label-gt" class="text-xs text-charcoal-500 dark:text-slate-400 block truncate">Drag & drop or browse sensor GT (.npy/16-bit PNG)...</span>
                   </div>
-                  <button type="button" id="btn-synthesize-gt" onclick="synthesizeReferenceGt()" class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2">
+                  <button type="button" id="btn-synthesize-gt" onclick="synthesizeReferenceGt()" class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-600 hover:to-cyan-600 text-white text-xs font-bold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    <span id="btn-synthesize-gt-text">✨ Synthesize Reference Ground Truth (RAG Verified)</span>
+                    <span id="btn-synthesize-gt-text">✨ Generate Estimated Reference Depth (Pseudo-GT)</span>
                   </button>
                   <p class="text-[10px] text-charcoal-500 dark:text-slate-400 leading-tight">
-                    No physical sensor GT? Generates a peer-reviewed RAG-calibrated metric reference map to activate all 5 KPI metrics (RMSE, MAE, PSNR, SSIM, F1) & Error Heatmap.
+                    Optional: Generates an uncalibrated synthetic reference for qualitative visual comparison. Genuine physical sensor GT is required for scientific accuracy validation.
                   </p>
                 </div>
 
@@ -3182,7 +3182,6 @@
       formData.append('suppression_strength', suppressionStrength);
       formData.append('colormap', colormap);
       formData.append('input_source', inputSource);
-      formData.append('auto_synthesize_gt', 'true');
 
       if (isCustomRun) {
         // Enforce custom upload reconstruction: session_id + uploaded files (DEMO IGNORED)
@@ -3195,6 +3194,14 @@
         formData.append('demo_sample_id', currentDemo);
       }
 
+      // Display active progress in placeholder
+      const ph = document.getElementById('view-reconstructed-placeholder');
+      const phTitle = document.getElementById('view-rec-ph-title');
+      const phDesc = document.getElementById('view-rec-ph-desc');
+      if (ph) ph.classList.remove('hidden');
+      if (phTitle) phTitle.innerText = 'Refining Depth Geometry...';
+      if (phDesc) phDesc.innerText = 'Executing PyTorch EdgeFuseNet CNN inference & bilateral refinement...';
+
       try {
         const res = await fetch('/api/reconstruct', { method: 'POST', body: formData });
         if (!res.ok) {
@@ -3206,6 +3213,8 @@
         showToast(`Reconstruction Complete: ${data.sample_name} (${data.latency_ms} ms)`);
       } catch (err) {
         showToast(err.message, true);
+        if (phTitle) phTitle.innerText = 'Reconstruction Not Completed';
+        if (phDesc) phDesc.innerText = err.message || 'Please check that RGB and Depth inputs are aligned.';
       } finally {
         btn.disabled = false;
         spinner.classList.add('hidden');
@@ -3217,6 +3226,7 @@
       document.getElementById('val-latency').innerHTML = `${Number(data.latency_ms).toFixed(1)}<span class="text-xs font-normal text-charcoal-500 dark:text-slate-400 ml-0.5">ms</span>`;
 
       if (data.has_gt && data.metrics && typeof data.metrics.rmse !== 'undefined') {
+        const isPseudo = Boolean(data.is_pseudo_gt || data.gt_type === 'pseudo_gt' || data.gt_type === 'rag_synthesized');
         document.getElementById('val-rmse').innerText = Number(data.metrics.rmse).toFixed(4);
         document.getElementById('val-mae').innerText = Number(data.metrics.mae).toFixed(4);
         document.getElementById('val-psnr').innerText = Number(data.metrics.psnr).toFixed(2);
@@ -3232,15 +3242,19 @@
         }
         const errBadge = document.getElementById('error-heatmap-status-badge');
         if (errBadge) {
-          const badgeText = data.gt_type === 'sensor' ? 'Sensor GT Verified' : (data.gt_type === 'rag_synthesized' ? 'RAG GT Reference' : 'Benchmark GT');
+          const badgeText = isPseudo ? 'Estimated Pseudo-GT (Qualitative)' : (data.gt_type === 'sensor' ? 'Sensor GT Verified' : 'Benchmark GT');
           errBadge.innerText = badgeText;
-          errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
+          errBadge.className = isPseudo
+            ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800'
+            : 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
         }
         const gtBadge = document.getElementById('gt-status-badge');
         if (gtBadge) {
-          const gtText = data.gt_type === 'sensor' ? '✓ Sensor GT Active' : (data.gt_type === 'rag_synthesized' ? '✓ RAG GT Active' : '✓ Benchmark GT');
+          const gtText = isPseudo ? '✓ Estimated Pseudo-GT' : (data.gt_type === 'sensor' ? '✓ Sensor GT Active' : '✓ Benchmark GT');
           gtBadge.innerText = gtText;
-          gtBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
+          gtBadge.className = isPseudo
+            ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800'
+            : 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
         }
       } else {
         // Scientifically honest: no GT reference provided -> show N/A
@@ -3259,6 +3273,11 @@
         if (errBadge) {
           errBadge.innerText = 'GT Required';
           errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800';
+        }
+        const gtBadge = document.getElementById('gt-status-badge');
+        if (gtBadge) {
+          gtBadge.innerText = 'Optional (Required for Metrics)';
+          gtBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
         }
       }
 
@@ -3870,7 +3889,7 @@
 
       document.getElementById('header-sample-pill').innerText = 'Custom Upload';
       const bLabel = document.getElementById('benchmark-active-sample-label');
-      if (bLabel) bLabel.innerText = `Scene: Custom User Upload (${uploadedGtFile ? 'GT Attached' : 'Auto RAG Reference'})`;
+      if (bLabel) bLabel.innerText = `Scene: Custom User Upload (${uploadedGtFile ? 'Sensor GT Attached' : 'Awaiting GT Reference'})`;
       showToast(`Selected ${file.name} for ${type.toUpperCase()}`);
     }
 
@@ -3886,7 +3905,7 @@
 
       const btnText = document.getElementById('btn-synthesize-gt-text');
       const oldText = btnText ? btnText.innerText : '';
-      if (btnText) btnText.innerText = 'Synthesizing Reference GT via RAG...';
+      if (btnText) btnText.innerText = 'Generating Estimated Reference Depth (Pseudo-GT)...';
 
       try {
         const fd = new FormData();
@@ -3896,33 +3915,33 @@
 
         const res = await fetch('/api/reconstruct/synthesize_gt', { method: 'POST', body: fd });
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ detail: 'Failed to synthesize reference GT' }));
+          const err = await res.json().catch(() => ({ detail: 'Failed to generate estimated reference' }));
           throw new Error(err.detail || 'Synthesis failed');
         }
         const data = await res.json();
         if (data.session_id) customSessionId = data.session_id;
 
         const labelGt = document.getElementById('label-gt');
-        if (labelGt) labelGt.innerText = `✓ Synthesized RAG Reference GT (${data.gt_meta ? data.gt_meta.min_depth + 'm - ' + data.gt_meta.max_depth + 'm' : 'RAG Calibrated'})`;
+        if (labelGt) labelGt.innerText = `✓ Estimated Reference Depth (Pseudo-GT: ${data.gt_meta ? data.gt_meta.min_depth + 'm - ' + data.gt_meta.max_depth + 'm' : 'Calibrated'})`;
 
         const gtBadge = document.getElementById('gt-status-badge');
         if (gtBadge) {
-          gtBadge.innerText = '✓ RAG GT Active';
-          gtBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
+          gtBadge.innerText = '✓ Estimated Pseudo-GT';
+          gtBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800';
         }
 
         const errBadge = document.getElementById('error-heatmap-status-badge');
         if (errBadge) {
-          errBadge.innerText = 'RAG GT Reference';
-          errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
+          errBadge.innerText = 'Estimated Pseudo-GT (Qualitative)';
+          errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800';
         }
 
-        showToast('✨ Synthesized RAG Reference Ground Truth! Executing reconstruction...');
+        showToast('✨ Generated Estimated Reference Depth (Pseudo-GT)! Executing reconstruction...');
         executeReconstruction();
       } catch (e) {
-        showToast('Ground Truth Synthesis Error: ' + e.message, true);
+        showToast('Estimated Reference Generation Error: ' + e.message, true);
       } finally {
-        if (btnText) btnText.innerText = oldText || '✨ Synthesize Reference Ground Truth (RAG Verified)';
+        if (btnText) btnText.innerText = oldText || '✨ Generate Estimated Reference Depth (Pseudo-GT)';
       }
     }
 
@@ -3982,7 +4001,7 @@
 
       const gtBadge = document.getElementById('gt-status-badge');
       if (gtBadge) {
-        gtBadge.innerText = 'Awaiting Reference';
+        gtBadge.innerText = 'Optional (Required for Metrics)';
         gtBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
       }
 

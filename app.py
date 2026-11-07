@@ -1451,7 +1451,10 @@ def synthesize_gt_endpoint(
     using Depth Anything V2 monocular foundation prior coupled with CV RAG
     peer-reviewed literature calibration parameters.
     """
-    curr_session_id = session_id or uuid.uuid4().hex
+    if session_id and not hasattr(session_id, "default"):
+        curr_session_id = str(session_id)
+    else:
+        curr_session_id = uuid.uuid4().hex
     raw_rgb = None
     sparse_depth = None
 
@@ -1479,7 +1482,7 @@ def synthesize_gt_endpoint(
 
     CUSTOM_SESSIONS[curr_session_id]["raw_gt"] = calibrated_gt
     CUSTOM_SESSIONS[curr_session_id]["gt_meta"] = gt_meta
-    CUSTOM_SESSIONS[curr_session_id]["gt_type"] = "rag_synthesized"
+    CUSTOM_SESSIONS[curr_session_id]["gt_type"] = "pseudo_gt"
     CUSTOM_SESSIONS[curr_session_id]["raw_rgb"] = raw_rgb
 
     valid_mask = (calibrated_gt > 0.05) & np.isfinite(calibrated_gt)
@@ -1491,7 +1494,9 @@ def synthesize_gt_endpoint(
         "session_id": curr_session_id,
         "gt_preview_b64": gt_b64,
         "gt_meta": gt_meta,
-        "message": f"Synthesized RAG Reference GT ({gt_meta['calib_mode']})"
+        "gt_type": "pseudo_gt",
+        "is_pseudo_gt": True,
+        "message": f"Generated Estimated Reference Depth ({gt_meta['calib_mode']}) - Synthetic Pseudo-GT (Qualitative)"
     }
 
 
@@ -1508,8 +1513,7 @@ async def run_reconstruction(
     colormap: str = Form("turbo"),
     depth_scale: str = Form("auto"),
     session_id: Optional[str] = Form(None),
-    input_source: str = Form("sensor"),
-    auto_synthesize_gt: bool = Form(False)
+    input_source: str = Form("sensor")
 ):
     """
     Core Reconstruction Endpoint.
@@ -1528,7 +1532,6 @@ async def run_reconstruction(
     depth_scale = getattr(depth_scale, "default", depth_scale) if hasattr(depth_scale, "default") else depth_scale
     session_id = getattr(session_id, "default", session_id) if hasattr(session_id, "default") else session_id
     input_source = getattr(input_source, "default", input_source) if hasattr(input_source, "default") else input_source
-    auto_synthesize_gt = getattr(auto_synthesize_gt, "default", auto_synthesize_gt) if hasattr(auto_synthesize_gt, "default") else bool(auto_synthesize_gt)
 
     # Determine if this request is a custom file upload
     has_custom_files = bool(
@@ -1612,6 +1615,12 @@ async def run_reconstruction(
             gt_type = "sensor"
             gt_meta = None
 
+            # Preserve previously synthesized pseudo-GT or session GT if present
+            if curr_session_id in CUSTOM_SESSIONS and CUSTOM_SESSIONS[curr_session_id].get("raw_gt") is not None:
+                raw_gt = CUSTOM_SESSIONS[curr_session_id].get("raw_gt")
+                gt_type = CUSTOM_SESSIONS[curr_session_id].get("gt_type", "pseudo_gt")
+                gt_meta = CUSTOM_SESSIONS[curr_session_id].get("gt_meta")
+
             if gt_file and gt_file.filename:
                 if hasattr(gt_file, "file") and hasattr(gt_file.file, "read"):
                     gt_bytes = gt_file.file.read()
@@ -1622,16 +1631,10 @@ async def run_reconstruction(
                     raw_gt = gt_parsed
                     gt_type = "sensor"
                 except Exception as e:
-                    depth_warning = f"Warning: Could not decode uploaded Ground Truth ({e}). Proceeding with RAG reference."
+                    depth_warning = f"Warning: Could not decode uploaded Ground Truth ({e}). Proceeding without GT metrics."
 
-            # Auto-synthesize RAG reference Ground Truth if no GT file provided for sensor/custom inputs
-            is_ai_pred_source = (input_source == "ai_predicted")
-            if raw_gt is None and auto_synthesize_gt and not is_ai_pred_source:
-                try:
-                    raw_gt, gt_meta = synthesize_rag_reference_depth(raw_rgb, sparse_or_input_depth=raw_depth, depth_scale=depth_scale)
-                    gt_type = "rag_synthesized"
-                except Exception as e:
-                    print(f"RAG reference GT synthesis skipped: {e}")
+            # Ground truth is strictly optional; never fabricate or auto-synthesize
+            # to preserve research integrity and prevent cloud container OOM memory exhaustion.
 
             # Store in session cache
             CUSTOM_SESSIONS[curr_session_id] = {
@@ -1662,18 +1665,6 @@ async def run_reconstruction(
                 depth_type = "relative"
                 depth_unit = "relative (unitless)"
                 sample_title = "AI-Predicted Monocular Depth"
-
-            # Auto-synthesize RAG reference Ground Truth if no GT exists in session for sensor/custom inputs
-            is_ai_pred_source = (sess.get("input_source") == "ai_predicted" or input_source == "ai_predicted")
-            if raw_gt is None and auto_synthesize_gt and not is_ai_pred_source:
-                try:
-                    raw_gt, gt_meta = synthesize_rag_reference_depth(raw_rgb, sparse_or_input_depth=raw_depth, depth_scale=depth_scale)
-                    gt_type = "rag_synthesized"
-                    sess["raw_gt"] = raw_gt
-                    sess["gt_type"] = gt_type
-                    sess["gt_meta"] = gt_meta
-                except Exception as e:
-                    print(f"RAG reference GT synthesis skipped: {e}")
         else:
             raise HTTPException(status_code=400, detail="Both RGB Guidance Image and Depth Map are required for custom reconstruction.")
 
@@ -1834,6 +1825,7 @@ async def run_reconstruction(
         "input_source": (CUSTOM_SESSIONS[curr_session_id].get("input_source", input_source) if has_custom_files and curr_session_id in CUSTOM_SESSIONS else ("ai_predicted" if input_source == "ai_predicted" else ("custom_sensor" if has_custom_files else "dataset"))),
         "depth_type": depth_type,
         "has_gt": has_gt,
+        "is_pseudo_gt": (CUSTOM_SESSIONS[curr_session_id].get("gt_type") == "pseudo_gt" if has_custom_files and curr_session_id in CUSTOM_SESSIONS else False),
         "gt_type": (CUSTOM_SESSIONS[curr_session_id].get("gt_type", "sensor") if has_custom_files and curr_session_id in CUSTOM_SESSIONS else ("dataset" if not has_custom_files else "sensor")),
         "gt_meta": (CUSTOM_SESSIONS[curr_session_id].get("gt_meta") if has_custom_files and curr_session_id in CUSTOM_SESSIONS else None),
         "warning": depth_warning,
