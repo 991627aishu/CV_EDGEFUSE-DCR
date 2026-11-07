@@ -7,6 +7,8 @@ comparative evaluation dashboard, and numeric depth download.
 import os
 import io
 import time
+import uuid
+import asyncio
 import base64
 import json
 import numpy as np
@@ -16,7 +18,7 @@ from PIL import Image, ImageOps
 import torch
 import torch.nn.functional as F
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +28,7 @@ from src.depth_engine import reconstruct_depth, detect_rgb_edges, detect_depth_d
 from src.model import load_model
 from src.evaluation import compute_depth_metrics
 from src.dataset_discovery import CATALOG
+from src.ai_depth import DepthAnythingV2Manager, calibrate_relative_to_metric
 
 from typing import Optional, Dict, Any
 
@@ -51,10 +54,9 @@ if os.path.exists(demo_path):
     app.mount("/demo_samples", StaticFiles(directory=demo_path), name="demo_samples")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-# Strict single-thread limit for low-memory (512MB RAM) Linux hosting
-torch.set_num_threads(1)
+# Strict thread limit for memory safety
 try:
-    torch.set_num_interop_threads(1)
+    torch.set_num_threads(2)
 except Exception:
     pass
 MODEL_PATH = "EDGEFUSE_DCR/models/edgefuse_dcr_compact.pth"
@@ -67,6 +69,18 @@ if os.path.exists(MODEL_PATH):
     print(f"Loaded EdgeFuseNet checkpoint from {MODEL_PATH} on {DEVICE}")
 else:
     print(f"Warning: Model checkpoint {MODEL_PATH} not found; falling back to algorithmic mode.")
+
+# Depth Anything V2 Monocular Depth Manager
+AI_DEPTH_MGR = DepthAnythingV2Manager.get_instance()
+AI_PREDICTIONS: Dict[str, Dict[str, Any]] = {}
+
+@app.on_event("startup")
+def startup_event():
+    """Pre-warm models on startup."""
+    try:
+        AI_DEPTH_MGR.ensure_model_loaded()
+    except Exception as e:
+        print(f"Depth Anything V2 background loading deferred: {e}")
 
 DEMO_DIR = "EDGEFUSE_DCR/demo_samples"
 if not os.path.exists(DEMO_DIR):
@@ -576,7 +590,7 @@ def align_rgb_and_depth(rgb_image: np.ndarray, depth_input: np.ndarray, factor: 
 
 
 @app.post("/api/benchmark/custom")
-async def benchmark_custom_upload(
+def benchmark_custom_upload(
     session_id: str = Form(...),
     max_depth: float = Form(10.0)
 ):
@@ -587,7 +601,10 @@ async def benchmark_custom_upload(
         raise HTTPException(status_code=404, detail="Custom session not found.")
     sess = CUSTOM_SESSIONS[session_id]
     if sess.get("raw_gt") is None:
-        raise HTTPException(status_code=400, detail="Cannot compute benchmark metrics without reference Ground Truth.")
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot compute benchmark metrics without reference Ground Truth. An AI-predicted depth map cannot be compared against itself to prevent self-referential bias."
+        )
 
     raw_rgb = sess["raw_rgb"]
     raw_depth = sess["raw_depth"]
@@ -612,8 +629,7 @@ async def benchmark_custom_upload(
     rows = []
     for label, m_key in methods:
         t0 = time.perf_counter()
-        res = await run_in_threadpool(
-            reconstruct_depth,
+        res = reconstruct_depth(
             rgb_image=proc_rgb,
             depth_input=proc_depth,
             factor=4,
@@ -654,7 +670,9 @@ def health():
         "service": "EdgeFuse-DCR",
         "version": "1.0.0",
         "device": DEVICE,
-        "checkpoint_loaded": MODEL is not None
+        "checkpoint_loaded": MODEL is not None,
+        "ai_depth_available": AI_DEPTH_MGR.is_loaded,
+        "ai_depth_model": "Depth Anything V2 (ViT-S)"
     }
 
 
@@ -936,8 +954,185 @@ async def preview_depth(
 CUSTOM_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
 
+# ---------------------------------------------------------------------------
+# AI-Powered Monocular Depth Estimation (Depth Anything V2)
+# ---------------------------------------------------------------------------
+@app.post("/api/ai_depth/predict")
+def predict_ai_depth(
+    rgb_file: Optional[UploadFile] = File(None),
+    session_id: Optional[str] = Form(None),
+    input_size: int = Form(518)
+):
+    """
+    AI-Powered Monocular Depth Estimation using Depth Anything V2 (ViT-S).
+    Accepts uploaded RGB image file or active custom session RGB.
+    FastAPI automatically executes sync endpoint in its worker threadpool.
+    Returns colorized preview, metadata, and unique prediction_id for downloads.
+    """
+    raw_rgb = None
+    filename = "rgb_input.jpg"
+
+    if rgb_file and rgb_file.filename:
+        filename = rgb_file.filename
+        try:
+            if hasattr(rgb_file, "file"):
+                content = rgb_file.file.read()
+            elif hasattr(rgb_file, "read"):
+                content = rgb_file.read()
+            else:
+                content = bytes(rgb_file)
+        except Exception:
+            content = rgb_file.file.read() if hasattr(rgb_file, "file") else b""
+        try:
+            raw_rgb = parse_rgb_bytes(content, filename=filename)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    elif session_id and session_id in CUSTOM_SESSIONS:
+        sess = CUSTOM_SESSIONS[session_id]
+        raw_rgb = sess.get("raw_rgb")
+        filename = sess.get("rgb_filename", "session_rgb.jpg")
+        if raw_rgb is None:
+            raise HTTPException(status_code=400, detail="No RGB image found in active custom session.")
+    else:
+        raise HTTPException(status_code=400, detail="Please upload an RGB photograph to predict monocular depth.")
+
+    h_orig, w_orig = raw_rgb.shape[:2]
+
+    try:
+        depth_rel, meta = AI_DEPTH_MGR.predict(raw_rgb, input_size=input_size)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Depth Anything V2 inference failed: {str(e)}")
+
+    prediction_id = uuid.uuid4().hex
+
+    colored = colorize_depth(depth_rel)
+    preview_b64 = encode_image_base64(colored)
+    rgb_preview_b64 = encode_image_base64(raw_rgb)
+
+    now = time.time()
+    stale_keys = [k for k, v in AI_PREDICTIONS.items() if now - v.get("timestamp", 0) > 3600]
+    for k in stale_keys:
+        AI_PREDICTIONS.pop(k, None)
+
+    AI_PREDICTIONS[prediction_id] = {
+        "depth": depth_rel,
+        "rgb": raw_rgb,
+        "colored": colored,
+        "meta": meta,
+        "filename": filename,
+        "timestamp": now
+    }
+
+    return {
+        "success": True,
+        "prediction_id": prediction_id,
+        "preview_b64": preview_b64,
+        "rgb_preview_b64": rgb_preview_b64,
+        "width": w_orig,
+        "height": h_orig,
+        "dimensions": f"{w_orig} × {h_orig}",
+        "inference_time_ms": meta["inference_time_ms"],
+        "model_name": meta["model_name"],
+        "encoder": meta["encoder"],
+        "architecture": meta["architecture"],
+        "parameters": meta["parameters"],
+        "license": meta["license"],
+        "source": meta["source"],
+        "depth_type": meta["depth_type"],
+        "is_metric": False,
+        "scale_unit": meta["scale_unit"],
+        "min_val": meta["min_val"],
+        "max_val": meta["max_val"],
+        "mean_val": meta["mean_val"],
+        "scientific_caveat": meta["scientific_caveat"]
+    }
+
+
+@app.get("/api/ai_depth/download/{prediction_id}")
+def download_ai_depth(
+    prediction_id: str,
+    format: str = Query("npy", pattern="^(npy|png)$")
+):
+    """
+    Downloads genuine AI predicted depth as .npy array or colorized .png.
+    """
+    if prediction_id not in AI_PREDICTIONS:
+        raise HTTPException(status_code=404, detail="Prediction expired or not found. Please re-generate.")
+
+    record = AI_PREDICTIONS[prediction_id]
+    depth = record["depth"]
+
+    buf = io.BytesIO()
+    short_id = prediction_id[:8]
+
+    if format == "npy":
+        np.save(buf, depth.astype(np.float32))
+        buf.seek(0)
+        return Response(
+            content=buf.getvalue(),
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="ai_predicted_depth_{short_id}.npy"'}
+        )
+    else:
+        colored = record["colored"]
+        pil_img = Image.fromarray(colored)
+        pil_img.save(buf, format="PNG")
+        buf.seek(0)
+        return Response(
+            content=buf.getvalue(),
+            media_type="image/png",
+            headers={"Content-Disposition": f'attachment; filename="ai_predicted_depth_{short_id}.png"'}
+        )
+
+
+@app.post("/api/ai_depth/use_as_input")
+def use_ai_depth_as_input(
+    prediction_id: str = Form(...),
+    session_id: Optional[str] = Form(None),
+    confirmed: bool = Form(False)
+):
+    """
+    Transfers AI-predicted depth into the custom reconstruction workspace
+    ONLY after explicit user confirmation.
+    """
+    is_confirmed = bool(confirmed) if not hasattr(confirmed, "default") else bool(confirmed.default)
+    if not is_confirmed:
+        raise HTTPException(
+            status_code=400,
+            detail="Explicit user confirmation required. Monocular AI depth is uncalibrated relative depth."
+        )
+
+    if prediction_id not in AI_PREDICTIONS:
+        raise HTTPException(status_code=404, detail="AI prediction expired or not found.")
+
+    pred = AI_PREDICTIONS[prediction_id]
+    curr_session_id = session_id if (isinstance(session_id, str) and session_id) else uuid.uuid4().hex
+
+    CUSTOM_SESSIONS[curr_session_id] = {
+        "raw_rgb": pred["rgb"],
+        "raw_depth": pred["depth"],
+        "raw_gt": None,  # Strictly None! No ground truth for AI monocular depth
+        "depth_type": "relative",
+        "depth_unit": "relative (unitless)",
+        "depth_warning": "Input Source: AI-Predicted Monocular Depth (Depth Anything V2). Uncalibrated relative scale.",
+        "input_source": "ai_predicted",
+        "rgb_filename": pred["filename"],
+        "depth_filename": f"ai_predicted_{prediction_id[:8]}.npy",
+        "prediction_id": prediction_id,
+        "timestamp": time.time()
+    }
+
+    return {
+        "success": True,
+        "session_id": curr_session_id,
+        "input_source": "ai_predicted",
+        "depth_type": "relative",
+        "message": "AI-predicted depth transferred as reconstruction input with explicit confirmation."
+    }
+
+
 @app.post("/api/reconstruct")
-async def run_reconstruction(
+def run_reconstruction(
     rgb_file: Optional[UploadFile] = None,
     depth_file: Optional[UploadFile] = None,
     gt_file: Optional[UploadFile] = None,
@@ -946,13 +1141,22 @@ async def run_reconstruction(
     upsample_factor: int = Form(4),
     apply_texture_suppression: bool = Form(True),
     depth_scale: str = Form("auto"),
-    session_id: Optional[str] = Form(None)
+    session_id: Optional[str] = Form(None),
+    input_source: str = Form("sensor")
 ):
     """
     Core Reconstruction Endpoint.
     Handles custom uploaded RGB+Depth (with optional Ground Truth) or built-in demo samples.
     """
     t_start = time.perf_counter()
+
+    # Normalize parameters if invoked directly in tests
+    demo_sample_id = demo_sample_id if isinstance(demo_sample_id, str) else (getattr(demo_sample_id, "default", None) if isinstance(getattr(demo_sample_id, "default", None), str) else None)
+    method = method if isinstance(method, str) else (getattr(method, "default", "hybrid") or "hybrid")
+    upsample_factor = int(upsample_factor) if isinstance(upsample_factor, (int, float)) else (getattr(upsample_factor, "default", 4) or 4)
+    apply_texture_suppression = bool(apply_texture_suppression) if isinstance(apply_texture_suppression, bool) else bool(getattr(apply_texture_suppression, "default", True))
+    session_id = session_id if isinstance(session_id, str) else (getattr(session_id, "default", None) if isinstance(getattr(session_id, "default", None), str) else None)
+    input_source = input_source if isinstance(input_source, str) else (getattr(input_source, "default", "sensor") or "sensor")
 
     # Determine if this request is a custom file upload
     has_custom_files = bool(
@@ -1010,8 +1214,19 @@ async def run_reconstruction(
 
         if rgb_file and rgb_file.filename and depth_file and depth_file.filename:
             # Fresh file upload
-            rgb_bytes = await rgb_file.read()
-            depth_bytes = await depth_file.read()
+            if hasattr(rgb_file, "file") and hasattr(rgb_file.file, "read"):
+                rgb_bytes = rgb_file.file.read()
+            elif hasattr(rgb_file, "read"):
+                rgb_bytes = rgb_file.read()
+            else:
+                rgb_bytes = bytes(rgb_file)
+
+            if hasattr(depth_file, "file") and hasattr(depth_file.file, "read"):
+                depth_bytes = depth_file.file.read()
+            elif hasattr(depth_file, "read"):
+                depth_bytes = depth_file.read()
+            else:
+                depth_bytes = bytes(depth_file)
 
             try:
                 raw_rgb = parse_rgb_bytes(rgb_bytes, filename=rgb_file.filename)
@@ -1027,7 +1242,12 @@ async def run_reconstruction(
 
             raw_gt = None
             if gt_file and gt_file.filename:
-                gt_bytes = await gt_file.read()
+                if hasattr(gt_file, "file") and hasattr(gt_file.file, "read"):
+                    gt_bytes = gt_file.file.read()
+                elif hasattr(gt_file, "read"):
+                    gt_bytes = gt_file.read()
+                else:
+                    gt_bytes = bytes(gt_file)
                 try:
                     gt_parsed, _, _, _ = parse_depth_bytes(gt_bytes, filename=gt_file.filename, depth_scale=depth_scale)
                     raw_gt = gt_parsed
@@ -1055,6 +1275,11 @@ async def run_reconstruction(
             depth_type = sess.get("depth_type", "metric")
             depth_unit = sess.get("depth_unit", "m")
             depth_warning = sess.get("depth_warning")
+            if sess.get("input_source") == "ai_predicted" or input_source == "ai_predicted":
+                depth_type = "relative"
+                depth_unit = "relative (unitless)"
+                depth_warning = "Input Source: AI-Predicted Monocular Depth (Depth Anything V2). Uncalibrated relative scale — GT evaluation disabled."
+                sample_title = "AI-Predicted Monocular Depth"
         else:
             raise HTTPException(status_code=400, detail="Both RGB Guidance Image and Depth Map are required for custom reconstruction.")
 
@@ -1072,8 +1297,7 @@ async def run_reconstruction(
     valid_mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
     # 3. Execute Reconstruction in worker threadpool
-    res = await run_in_threadpool(
-        reconstruct_depth,
+    res = reconstruct_depth(
         rgb_image=rgb_image,
         depth_input=depth_input,
         factor=upsample_factor,
@@ -1179,6 +1403,8 @@ async def run_reconstruction(
         "sample_name": sample_title,
         "method": method,
         "is_custom": has_custom_files,
+        "input_source": (CUSTOM_SESSIONS[curr_session_id].get("input_source", input_source) if has_custom_files and curr_session_id in CUSTOM_SESSIONS else ("ai_predicted" if input_source == "ai_predicted" else ("custom_sensor" if has_custom_files else "dataset"))),
+        "depth_type": depth_type,
         "has_gt": has_gt,
         "warning": depth_warning,
         "latency_ms": round(total_latency, 1),

@@ -250,6 +250,14 @@
           <span class="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono font-bold">9</span>
         </a>
 
+        <a href="#section-ai-depth" onclick="closeMobileSidebar()" class="flex items-center justify-between px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <div class="flex items-center gap-2.5">
+            <svg class="w-4 h-4 text-pink-600 dark:text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+            AI-Predicted Depth
+          </div>
+          <span class="text-[9px] px-1.5 py-0.5 rounded bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300 font-mono font-bold">V2</span>
+        </a>
+
         <a href="#section-reconstruction" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
           <svg class="w-4 h-4 text-cyan-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
           Reconstruction Lab
@@ -905,6 +913,269 @@
       </section>
 
       <!-- ======================================================================= -->
+      <!-- 2.45 AI-PREDICTED DEPTH (DEPTH ANYTHING V2 FOUNDATION MODEL)            -->
+      <!-- ======================================================================= -->
+      <section id="section-ai-depth" class="py-16 sm:py-20 px-4 sm:px-8 lg:px-12 bg-white dark:bg-lab-card border-b border-ivory-300 dark:border-slate-800 transition-colors">
+        <div class="max-w-6xl mx-auto space-y-8">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ivory-300 dark:border-slate-800 pb-5">
+            <div>
+              <div class="flex items-center gap-3">
+                <span class="px-2.5 py-1 rounded-lg bg-pink-500/10 border border-pink-500/30 text-pink-600 dark:text-pink-400 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span>
+                  Depth Anything V2
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-charcoal-950 dark:text-white tracking-tight">AI-Predicted Depth</h2>
+              </div>
+              <p class="text-xs sm:text-sm text-charcoal-600 dark:text-slate-400 mt-1">
+                Zero-shot monocular depth estimation using the official Depth Anything V2 Small (ViT-S, 24.8M parameters) foundation model.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-mono px-3 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-600 dark:text-slate-400">
+                CPU-Optimized • Relative Disparity
+              </span>
+            </div>
+          </div>
+
+          <!-- Main Grid: Upload & Controls on Left, Side-by-Side Comparison on Right -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Column: RGB Upload & Predict Controls -->
+            <div class="lg:col-span-4 space-y-4">
+              
+              <div class="p-5 rounded-2xl bg-ivory-50 dark:bg-slate-900/60 border border-ivory-300 dark:border-slate-800 space-y-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-charcoal-950 dark:text-white uppercase tracking-wider font-mono">1. Upload RGB Photograph</span>
+                  <button type="button" onclick="clearAiDepthUpload()" class="text-[11px] text-charcoal-500 dark:text-slate-400 hover:text-rose-500 transition-colors">Clear</button>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">Select Image (Indoor / Outdoor / Any Resolution)</label>
+                  <div id="drop-ai-rgb" onclick="document.getElementById('file-ai-rgb').click()" class="border-2 border-dashed border-ivory-300 dark:border-slate-700 hover:border-pink-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-white dark:bg-slate-950">
+                    <input type="file" id="file-ai-rgb" accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden" onchange="handleAiDepthFileSelected(this)">
+                    <div id="ai-rgb-prompt" class="space-y-1">
+                      <svg class="w-8 h-8 mx-auto text-charcoal-400 dark:text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                      <span id="label-ai-rgb" class="text-xs text-charcoal-600 dark:text-slate-400 block font-medium">Click or drag & drop photograph...</span>
+                      <span class="text-[10px] text-charcoal-400 dark:text-slate-500 block">PNG, JPG, WEBP (EXIF auto-transposed)</span>
+                    </div>
+                    <img id="preview-ai-rgb-thumb" class="hidden max-h-36 mx-auto rounded-lg shadow-sm border border-ivory-300 dark:border-slate-700 object-contain" alt="RGB Preview">
+                  </div>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">ViT Processing Size (Aspect Preserved)</label>
+                  <select id="ai-input-size" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-ivory-300 dark:border-slate-700 text-xs text-charcoal-900 dark:text-white focus:outline-none focus:border-pink-500 font-mono">
+                    <option value="518" selected>518 px (Standard ViT-S Resolution)</option>
+                    <option value="392">392 px (Faster CPU Inference)</option>
+                  </select>
+                </div>
+
+                <button type="button" id="btn-ai-predict" onclick="executeAiDepthPrediction()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2">
+                  <svg id="ai-spinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span id="btn-ai-text">✨ Generate AI Depth (Depth Anything V2)</span>
+                </button>
+
+                <div id="ai-status-indicator" class="hidden text-center py-1">
+                  <span id="ai-status-text" class="text-[11px] font-mono text-charcoal-600 dark:text-slate-400"></span>
+                </div>
+              </div>
+
+              <!-- Scientific Transparency Notice Card -->
+              <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-300 space-y-1.5 text-xs">
+                <div class="flex items-center gap-2 font-bold font-mono text-[11px] text-amber-800 dark:text-amber-200">
+                  <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  SCIENTIFIC HONESTY PRINCIPLE
+                </div>
+                <p class="text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/90">
+                  This output is <strong>AI-PREDICTED DEPTH</strong>, never sensor Ground Truth. The model predicts uncalibrated relative disparity. It cannot measure metric scale without physical sensor calibration. Self-evaluation is strictly prohibited.
+                </p>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Results Showcase & Comparison -->
+            <div class="lg:col-span-8 space-y-4">
+              
+              <div class="p-5 rounded-2xl bg-ivory-50 dark:bg-slate-900/60 border border-ivory-300 dark:border-slate-800 space-y-4 shadow-sm">
+                
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ivory-200 dark:border-slate-800 pb-3">
+                  <div>
+                    <h3 class="text-sm font-bold text-charcoal-950 dark:text-white uppercase tracking-wider font-mono">2. Monocular Prediction & Comparison</h3>
+                    <p class="text-xs text-charcoal-500 dark:text-slate-400">Interactive comparison between input RGB photograph and inferred dense depth map.</p>
+                  </div>
+                  
+                  <!-- View Mode Switcher -->
+                  <div class="flex items-center gap-1.5 bg-white dark:bg-slate-950 p-1 rounded-xl border border-ivory-300 dark:border-slate-800 text-xs font-semibold">
+                    <button type="button" id="btn-view-sidebyside" onclick="setAiViewMode('sidebyside')" class="px-2.5 py-1 rounded-lg bg-pink-600 text-white transition-colors">Side-by-Side</button>
+                    <button type="button" id="btn-view-slider" onclick="setAiViewMode('slider')" class="px-2.5 py-1 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors">Split Slider</button>
+                  </div>
+                </div>
+
+                <!-- Display Canvas (Empty State by Default) -->
+                <div id="ai-empty-state" class="p-12 text-center rounded-xl border-2 border-dashed border-ivory-300 dark:border-slate-800 space-y-3 bg-white dark:bg-slate-950">
+                  <div class="w-12 h-12 mx-auto rounded-full bg-pink-100 dark:bg-pink-950/60 flex items-center justify-center text-pink-600 dark:text-pink-400">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                  </div>
+                  <h4 class="text-sm font-bold text-charcoal-900 dark:text-white">No Monocular Depth Generated Yet</h4>
+                  <p class="text-xs text-charcoal-500 dark:text-slate-400 max-w-md mx-auto">
+                    Upload an RGB photo on the left and click <strong>"Generate AI Depth"</strong> to run Depth Anything V2 inference.
+                  </p>
+                </div>
+
+                <!-- Active Result Display Area -->
+                <div id="ai-result-display" class="hidden space-y-4">
+                  
+                  <!-- Mode A: Side-by-Side View -->
+                  <div id="ai-sidebyside-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <div class="space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300 flex items-center gap-1.5">
+                          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                          Input RGB Photograph
+                        </span>
+                        <button type="button" onclick="openImageViewer('ai-view-rgb', 'Input RGB Photograph')" class="text-[10px] text-charcoal-500 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white font-mono">🔍 Zoom</button>
+                      </div>
+                      <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 flex items-center justify-center">
+                        <img id="ai-view-rgb" src="" class="w-full h-full object-contain" alt="Input RGB Photograph">
+                      </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-pink-600 dark:text-pink-400 flex items-center gap-1.5">
+                          <span class="w-2 h-2 rounded-full bg-pink-500"></span>
+                          AI-PREDICTED DEPTH (DEPTH ANYTHING V2)
+                        </span>
+                        <button type="button" onclick="openImageViewer('ai-view-depth', 'AI-Predicted Depth (Depth Anything V2)')" class="text-[10px] text-pink-600 dark:text-pink-400 hover:text-pink-800 dark:hover:text-white font-mono font-bold">🔍 Fullscreen</button>
+                      </div>
+                      <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 border border-pink-500/30 flex items-center justify-center">
+                        <img id="ai-view-depth" src="" class="w-full h-full object-contain" alt="AI-Predicted Depth Map">
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Mode B: Split Comparison Slider View -->
+                  <div id="ai-slider-container" class="hidden space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300">Interactive Split Slider Comparison</span>
+                      <span class="text-[10px] text-charcoal-500 dark:text-slate-400 font-mono">Drag divider horizontally</span>
+                    </div>
+                    <div id="ai-split-slider" class="relative aspect-[16/9] max-h-[380px] w-full rounded-xl overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 select-none cursor-ew-resize">
+                      <!-- Base Layer: AI Depth -->
+                      <img id="ai-slider-depth" src="" class="absolute inset-0 w-full h-full object-contain" alt="AI Depth">
+                      <!-- Overlay Layer: Original RGB -->
+                      <div id="ai-slider-overlay" class="absolute inset-0 overflow-hidden pointer-events-none" style="clip-path: inset(0 calc(100% - var(--ai-slider-pct, 50%)) 0 0);">
+                        <img id="ai-slider-rgb" src="" class="absolute inset-0 w-full h-full object-contain" alt="Original RGB">
+                      </div>
+                      <!-- Pinned Badges -->
+                      <div class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/75 text-[10px] font-mono text-white pointer-events-none">RGB PHOTOGRAPH</div>
+                      <div class="absolute top-3 right-3 px-2 py-0.5 rounded bg-pink-900/80 text-[10px] font-mono text-pink-200 pointer-events-none">AI-PREDICTED DEPTH</div>
+                      <!-- Draggable Divider Line -->
+                      <div id="ai-slider-divider" class="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none" style="left: var(--ai-slider-pct, 50%);">
+                        <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-pink-600 border-2 border-white text-white flex items-center justify-center shadow-md">
+                          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Metadata & Technical Specs Grid -->
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                    <div class="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800">
+                      <span class="text-[9px] font-mono text-charcoal-400 dark:text-slate-500 uppercase block">Model Architecture</span>
+                      <span id="ai-meta-model" class="text-xs font-bold text-charcoal-900 dark:text-white font-mono block">Depth Anything V2 (ViT-S)</span>
+                      <span class="text-[9px] text-pink-600 dark:text-pink-400">24.8M parameters</span>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800">
+                      <span class="text-[9px] font-mono text-charcoal-400 dark:text-slate-500 uppercase block">Measured Latency</span>
+                      <span id="ai-meta-latency" class="text-xs font-bold text-charcoal-900 dark:text-white font-mono block">-- ms</span>
+                      <span class="text-[9px] text-emerald-600 dark:text-emerald-400">Single-thread CPU</span>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800">
+                      <span class="text-[9px] font-mono text-charcoal-400 dark:text-slate-500 uppercase block">Depth Format</span>
+                      <span id="ai-meta-type" class="text-xs font-bold text-charcoal-900 dark:text-white font-mono block">Relative Disparity</span>
+                      <span class="text-[9px] text-amber-600 dark:text-amber-400">Uncalibrated scale</span>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-ivory-200 dark:border-slate-800">
+                      <span class="text-[9px] font-mono text-charcoal-400 dark:text-slate-500 uppercase block">Resolution</span>
+                      <span id="ai-meta-res" class="text-xs font-bold text-charcoal-900 dark:text-white font-mono block">-- × --</span>
+                      <span class="text-[9px] text-charcoal-500 dark:text-slate-400">Preserved Aspect</span>
+                    </div>
+                  </div>
+
+                  <!-- Actions Bar: Downloads & Transfer -->
+                  <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-ivory-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2">
+                      <button type="button" onclick="downloadAiDepth('npy')" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-950 hover:bg-ivory-100 dark:hover:bg-slate-900 border border-ivory-300 dark:border-slate-700 text-xs font-bold text-charcoal-800 dark:text-slate-200 transition-colors flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Download .NPY (Raw Array)
+                      </button>
+                      <button type="button" onclick="downloadAiDepth('png')" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-950 hover:bg-ivory-100 dark:hover:bg-slate-900 border border-ivory-300 dark:border-slate-700 text-xs font-bold text-charcoal-800 dark:text-slate-200 transition-colors flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        Download .PNG (Preview)
+                      </button>
+                    </div>
+
+                    <!-- Transfer to Reconstruction Pipeline -->
+                    <button type="button" onclick="openAiDepthConfirmModal()" class="px-4 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-gradient-to-r dark:from-pink-600 dark:to-cyan-600 text-white font-bold text-xs transition-all shadow-md flex items-center gap-2">
+                      <span>🚀 Use as Reconstruction Input</span>
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Confirmation Modal: Transfer AI Depth to Reconstruction Lab -->
+      <div id="modal-ai-confirm" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-charcoal-950 dark:text-white">Confirm Input Transfer</h3>
+              <p class="text-xs text-charcoal-500 dark:text-slate-400">Scientific Calibration Notice</p>
+            </div>
+          </div>
+          
+          <div class="space-y-2 text-xs text-charcoal-700 dark:text-slate-300 bg-ivory-100 dark:bg-slate-900 p-3.5 rounded-xl border border-ivory-200 dark:border-slate-800 leading-relaxed">
+            <p>
+              You are about to load an <strong>AI-predicted monocular depth map</strong> into the EdgeFuse-DCR reconstruction pipeline.
+            </p>
+            <ul class="list-disc pl-4 space-y-1 text-charcoal-600 dark:text-slate-400">
+              <li>The prediction will be labeled <strong>AI-PREDICTED DEPTH</strong> (not sensor ground truth).</li>
+              <li>Relative disparity will be treated as an initial uncalibrated geometric prior.</li>
+              <li>Quantitative metric evaluation (RMSE / MAE / SSIM) is strictly disabled unless an independent, aligned reference Ground Truth is provided.</li>
+            </ul>
+          </div>
+
+          <div class="flex items-center justify-end gap-2.5 pt-2">
+            <button type="button" onclick="closeAiDepthConfirmModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-charcoal-600 dark:text-slate-400 hover:bg-ivory-200 dark:hover:bg-slate-800">Cancel</button>
+            <button type="button" onclick="confirmUseAiDepthAsInput()" class="px-4 py-2 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white shadow-md">I Understand & Confirm Transfer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================================= -->
       <!-- 2.5 RECONSTRUCTION LAB: COMPLETE SCIENTIFIC WORKSPACE                   -->
       <!-- ======================================================================= -->
       <section id="section-reconstruction" class="py-16 sm:py-20 px-4 sm:px-8 lg:px-12 bg-ivory-100 dark:bg-lab-bg border-b border-ivory-300 dark:border-slate-800 transition-colors">
@@ -976,8 +1247,30 @@
               <!-- Custom File Upload Card -->
               <div id="upload-panel-card" class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-4 shadow-md">
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-charcoal-950 dark:text-white uppercase tracking-wider font-mono">1. Custom File Upload</span>
+                  <span class="text-xs font-bold text-charcoal-950 dark:text-white uppercase tracking-wider font-mono">1. Input Configuration</span>
                   <button type="button" onclick="clearCustomFiles()" class="text-[11px] text-charcoal-500 dark:text-slate-400 hover:text-rose-500 transition-colors">Clear</button>
+                </div>
+
+                <!-- Input Source Selector -->
+                <div class="space-y-1.5">
+                  <label class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">Input Depth Source</label>
+                  <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-[11px] font-bold">
+                    <button type="button" id="source-btn-sensor" onclick="selectInputSource('sensor')" class="py-1.5 px-1.5 text-center rounded-lg bg-blue-600 text-white transition-all shadow-sm truncate">Sensor Depth</button>
+                    <button type="button" id="source-btn-ai" onclick="selectInputSource('ai_predicted')" class="py-1.5 px-1.5 text-center rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-all truncate">AI-Predicted</button>
+                    <button type="button" id="source-btn-dataset" onclick="selectInputSource('dataset')" class="py-1.5 px-1.5 text-center rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-all truncate">Dataset Demo</button>
+                  </div>
+                  <input type="hidden" id="selected-input-source" value="sensor">
+                </div>
+
+                <!-- AI-Predicted Notice Banner inside Lab (Shown when AI-Predicted is active) -->
+                <div id="lab-ai-notice" class="hidden p-3 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-700 dark:text-pink-300 space-y-1 text-xs">
+                  <div class="flex items-center gap-1.5 font-bold font-mono text-[10px] uppercase">
+                    <span class="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span>
+                    AI-PREDICTED DEPTH ACTIVE
+                  </div>
+                  <p class="text-[11px] leading-tight text-pink-800 dark:text-pink-200">
+                    Depth Anything V2 relative monocular prior loaded. Ground Truth evaluation is disabled unless reference GT is uploaded.
+                  </p>
                 </div>
 
                 <div class="space-y-1.5">
@@ -2420,22 +2713,24 @@
       const spinner = document.getElementById('spinner');
       const btnText = document.getElementById('btn-text');
 
+      const inputSource = document.getElementById('selected-input-source') ? document.getElementById('selected-input-source').value : 'sensor';
       const isCustomRun = Boolean(
+        inputSource === 'ai_predicted' ||
         activeIsCustom ||
         (uploadedRgbFile && uploadedDepthFile) ||
         (!currentDemo && (uploadedRgbFile || uploadedDepthFile))
       );
 
-      if (isCustomRun) {
+      if (isCustomRun && inputSource !== 'ai_predicted') {
         if (!uploadedRgbFile) {
           showToast('Please upload an RGB Guidance Image before executing.', true);
           return;
         }
         if (!uploadedDepthFile) {
-          showToast('Please upload a valid Depth Map before executing.', true);
+          showToast('Please upload a valid Depth Map or switch to "AI-Predicted" to generate depth.', true);
           return;
         }
-      } else if (!currentDemo) {
+      } else if (!isCustomRun && !currentDemo) {
         showToast('Please select a dataset scene or upload custom RGB and Depth files.', true);
         return;
       }
@@ -2452,6 +2747,7 @@
       formData.append('method', method);
       formData.append('upsample_factor', factor);
       formData.append('apply_texture_suppression', textureSupp);
+      formData.append('input_source', inputSource);
 
       if (isCustomRun) {
         // Enforce custom upload reconstruction: session_id + uploaded files (DEMO IGNORED)
@@ -2819,6 +3115,254 @@
 
     function handleDepthScaleChange() {
       if (uploadedDepthFile) previewDepthMap(uploadedDepthFile);
+    }
+
+    // -------------------------------------------------------------------------
+    // 6.5 AI-PREDICTED DEPTH (DEPTH ANYTHING V2) STATE & HANDLERS
+    // -------------------------------------------------------------------------
+    let aiUploadedRgbFile = null;
+    let activeAiPredictionId = null;
+    let aiViewMode = 'sidebyside';
+    let aiSliderDragging = false;
+
+    function handleAiDepthFileSelected(input) {
+      if (!input.files || input.files.length === 0) return;
+      aiUploadedRgbFile = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const thumb = document.getElementById('preview-ai-rgb-thumb');
+        const prompt = document.getElementById('ai-rgb-prompt');
+        if (thumb) {
+          thumb.src = e.target.result;
+          thumb.classList.remove('hidden');
+        }
+        if (prompt) prompt.classList.add('hidden');
+        document.getElementById('label-ai-rgb').innerText = aiUploadedRgbFile.name;
+        showToast(`RGB selected: ${aiUploadedRgbFile.name}`);
+      };
+      reader.readAsDataURL(aiUploadedRgbFile);
+    }
+
+    function clearAiDepthUpload() {
+      aiUploadedRgbFile = null;
+      activeAiPredictionId = null;
+      const f = document.getElementById('file-ai-rgb');
+      if (f) f.value = '';
+      const thumb = document.getElementById('preview-ai-rgb-thumb');
+      const prompt = document.getElementById('ai-rgb-prompt');
+      if (thumb) { thumb.src = ''; thumb.classList.add('hidden'); }
+      if (prompt) prompt.classList.remove('hidden');
+      document.getElementById('label-ai-rgb').innerText = 'Click or drag & drop photograph...';
+      document.getElementById('ai-empty-state').classList.remove('hidden');
+      document.getElementById('ai-result-display').classList.add('hidden');
+      document.getElementById('ai-status-indicator').classList.add('hidden');
+    }
+
+    async function executeAiDepthPrediction() {
+      if (!aiUploadedRgbFile) {
+        showToast('Please select or upload an RGB photograph first.', true);
+        return;
+      }
+
+      const btn = document.getElementById('btn-ai-predict');
+      const spinner = document.getElementById('ai-spinner');
+      const btnText = document.getElementById('btn-ai-text');
+      const statusInd = document.getElementById('ai-status-indicator');
+      const statusText = document.getElementById('ai-status-text');
+
+      btn.disabled = true;
+      spinner.classList.remove('hidden');
+      btnText.innerText = 'Inferring Monocular Depth...';
+      statusInd.classList.remove('hidden');
+      statusText.innerHTML = '<span class="text-pink-500 font-bold animate-pulse">Running Depth Anything V2 (ViT-S, 24.8M parameters) on CPU...</span>';
+
+      const fd = new FormData();
+      fd.append('rgb_file', aiUploadedRgbFile);
+      fd.append('input_size', document.getElementById('ai-input-size').value || '518');
+
+      try {
+        const res = await fetch('/api/ai_depth/predict', { method: 'POST', body: fd });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: 'Prediction request failed.' }));
+          throw new Error(err.detail || 'Inference failed');
+        }
+        const data = await res.json();
+        activeAiPredictionId = data.prediction_id;
+
+        // Populate side-by-side view
+        document.getElementById('ai-view-rgb').src = data.rgb_preview_b64;
+        document.getElementById('ai-view-depth').src = data.preview_b64;
+
+        // Populate split slider view
+        document.getElementById('ai-slider-rgb').src = data.rgb_preview_b64;
+        document.getElementById('ai-slider-depth').src = data.preview_b64;
+
+        // Populate technical specs
+        document.getElementById('ai-meta-model').innerText = data.model_name;
+        document.getElementById('ai-meta-latency').innerText = `${data.inference_time_ms} ms`;
+        document.getElementById('ai-meta-type').innerText = data.depth_type;
+        document.getElementById('ai-meta-res').innerText = data.dimensions;
+
+        // Switch to display area
+        document.getElementById('ai-empty-state').classList.add('hidden');
+        document.getElementById('ai-result-display').classList.remove('hidden');
+
+        statusText.innerHTML = `<span class="text-emerald-500 font-bold">✅ Depth predicted in ${data.inference_time_ms} ms (${data.dimensions})</span>`;
+        showToast(`AI Depth Generated: ${data.dimensions} in ${data.inference_time_ms} ms`);
+      } catch (e) {
+        statusText.innerHTML = `<span class="text-rose-500 font-bold">❌ Error: ${e.message}</span>`;
+        showToast(e.message, true);
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btnText.innerText = '✨ Generate AI Depth (Depth Anything V2)';
+      }
+    }
+
+    function setAiViewMode(mode) {
+      aiViewMode = mode;
+      const btnSide = document.getElementById('btn-view-sidebyside');
+      const btnSlider = document.getElementById('btn-view-slider');
+      const sideContainer = document.getElementById('ai-sidebyside-container');
+      const sliderContainer = document.getElementById('ai-slider-container');
+
+      if (mode === 'sidebyside') {
+        btnSide.className = 'px-2.5 py-1 rounded-lg bg-pink-600 text-white transition-colors';
+        btnSlider.className = 'px-2.5 py-1 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors';
+        sideContainer.classList.remove('hidden');
+        sliderContainer.classList.add('hidden');
+      } else {
+        btnSlider.className = 'px-2.5 py-1 rounded-lg bg-pink-600 text-white transition-colors';
+        btnSide.className = 'px-2.5 py-1 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors';
+        sliderContainer.classList.remove('hidden');
+        sideContainer.classList.add('hidden');
+      }
+    }
+
+    function downloadAiDepth(fmt) {
+      if (!activeAiPredictionId) {
+        showToast('Please generate an AI depth map first.', true);
+        return;
+      }
+      window.location.href = `/api/ai_depth/download/${activeAiPredictionId}?format=${fmt}`;
+    }
+
+    function openAiDepthConfirmModal() {
+      if (!activeAiPredictionId) {
+        showToast('Please generate an AI depth prediction first.', true);
+        return;
+      }
+      const modal = document.getElementById('modal-ai-confirm');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeAiDepthConfirmModal() {
+      const modal = document.getElementById('modal-ai-confirm');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    async function confirmUseAiDepthAsInput() {
+      closeAiDepthConfirmModal();
+      if (!activeAiPredictionId) return;
+
+      try {
+        const fd = new FormData();
+        fd.append('prediction_id', activeAiPredictionId);
+        fd.append('session_id', customSessionId);
+        fd.append('confirmed', 'true');
+
+        const res = await fetch('/api/ai_depth/use_as_input', { method: 'POST', body: fd });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: 'Transfer failed' }));
+          throw new Error(err.detail || 'Transfer failed');
+        }
+        const data = await res.json();
+
+        // Switch Reconstruction Lab input source to AI-Predicted
+        selectInputSource('ai_predicted');
+
+        // Set Lab views
+        const rgbSrc = document.getElementById('ai-view-rgb').src;
+        const depthSrc = document.getElementById('ai-view-depth').src;
+        if (rgbSrc) setViewImage('view-rgb', rgbSrc);
+        if (depthSrc) setViewImage('view-lr-depth', depthSrc);
+
+        document.getElementById('header-sample-pill').innerText = 'Custom RGB + AI-Predicted Depth';
+        document.getElementById('sample-dimensions').innerText = document.getElementById('ai-meta-res').innerText + ' (AI Prior)';
+
+        // Scroll smoothly to reconstruction lab
+        const labSection = document.getElementById('section-reconstruction');
+        if (labSection) labSection.scrollIntoView({ behavior: 'smooth' });
+
+        showToast('AI-Predicted Depth transferred to Reconstruction Lab! Click "Execute Depth Reconstruction" to refine.');
+      } catch (e) {
+        showToast(e.message, true);
+      }
+    }
+
+    function selectInputSource(source) {
+      document.getElementById('selected-input-source').value = source;
+      const btnSensor = document.getElementById('source-btn-sensor');
+      const btnAi = document.getElementById('source-btn-ai');
+      const btnDataset = document.getElementById('source-btn-dataset');
+      const aiNotice = document.getElementById('lab-ai-notice');
+
+      const activeCls = 'py-1.5 px-1.5 text-center rounded-lg bg-blue-600 text-white transition-all shadow-sm truncate';
+      const activeAiCls = 'py-1.5 px-1.5 text-center rounded-lg bg-pink-600 text-white transition-all shadow-sm truncate';
+      const inactiveCls = 'py-1.5 px-1.5 text-center rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-all truncate';
+
+      if (btnSensor) btnSensor.className = (source === 'sensor') ? activeCls : inactiveCls;
+      if (btnAi) btnAi.className = (source === 'ai_predicted') ? activeAiCls : inactiveCls;
+      if (btnDataset) btnDataset.className = (source === 'dataset') ? activeCls : inactiveCls;
+
+      if (source === 'ai_predicted') {
+        if (aiNotice) aiNotice.classList.remove('hidden');
+        document.getElementById('header-sample-pill').innerText = 'Custom RGB + AI-Predicted Depth';
+        activeIsCustom = true;
+      } else if (source === 'sensor') {
+        if (aiNotice) aiNotice.classList.add('hidden');
+        document.getElementById('header-sample-pill').innerText = 'Custom Sensor Upload';
+        activeIsCustom = true;
+      } else {
+        if (aiNotice) aiNotice.classList.add('hidden');
+        activeIsCustom = false;
+        if (currentDemo) selectGallerySample(currentDemo);
+      }
+    }
+
+    function initAiSplitSlider() {
+      const container = document.getElementById('ai-split-slider');
+      if (!container) return;
+
+      function updateSliderPos(clientX) {
+        const rect = container.getBoundingClientRect();
+        let pct = ((clientX - rect.left) / rect.width) * 100.0;
+        pct = Math.max(2.0, Math.min(98.0, pct));
+        container.style.setProperty('--ai-slider-pct', `${pct}%`);
+      }
+
+      container.addEventListener('mousedown', function(e) {
+        aiSliderDragging = true;
+        updateSliderPos(e.clientX);
+      });
+      window.addEventListener('mousemove', function(e) {
+        if (aiSliderDragging) updateSliderPos(e.clientX);
+      });
+      window.addEventListener('mouseup', function() {
+        aiSliderDragging = false;
+      });
+      container.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 0) updateSliderPos(e.touches[0].clientX);
+      }, { passive: true });
+      container.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 0) updateSliderPos(e.touches[0].clientX);
+      }, { passive: true });
     }
 
     // -------------------------------------------------------------------------
@@ -3251,6 +3795,7 @@
       initTheme();
       setupDragDrop();
       loadDatasetGallery();
+      initAiSplitSlider();
     });
   </script>
 </body>
