@@ -160,6 +160,13 @@ def run_tests():
     assert res_transfer.get("depth_type") == "relative"
     print(f"Confirmed transfer SUCCESSFUL: Session {test_session}, Source={res_transfer.get('input_source')}")
 
+    def sync_run(coro):
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+
     # Test 8: EdgeFuse-DCR Reconstruction Pipeline across Algorithms
     print("\n[TEST 8] Testing EdgeFuse-DCR Reconstruction with AI-Predicted Depth...")
     algorithms = ["nearest", "bilinear", "bicubic", "joint_bilateral", "guided", "cnn", "hybrid"]
@@ -171,7 +178,7 @@ def run_tests():
             apply_texture_suppression=True,
             input_source="ai_predicted"
         )
-        rec_res = asyncio.run(coro) if asyncio.iscoroutine(coro) else coro
+        rec_res = sync_run(coro) if asyncio.iscoroutine(coro) else coro
         assert rec_res.get("success") is True
         # Verify scientific honesty: No reference GT was provided
         assert rec_res.get("has_gt") is False, "has_gt must be False when reference GT is absent"
