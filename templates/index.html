@@ -1543,6 +1543,10 @@
                       <input type="range" id="slider-point-size" min="1" max="8" step="0.5" value="2.5" oninput="set3DPointSize(this.value)" class="w-16 h-1 accent-purple-600">
                     </div>
 
+                    <button type="button" id="btn-3d-autorotate" onclick="toggle3DAutoRotate()" class="px-2 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-600 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white text-xs font-mono transition-colors" title="Toggle Auto-Rotation">
+                      ⟳ Rotate
+                    </button>
+
                     <button type="button" onclick="reset3DCamera()" class="px-2 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-600 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white text-xs font-mono transition-colors" title="Reset Camera">
                       ↺ Reset
                     </button>
@@ -1845,7 +1849,7 @@
         </div>
 
         <div class="flex items-center gap-4 text-xs font-semibold">
-          <a href="#section-why-matters" class="hover:text-charcoal-950 dark:hover:text-white transition-colors">Back to Top ↑</a>
+          <a href="#section-hero" class="hover:text-charcoal-950 dark:hover:text-white transition-colors">Back to Top ↑</a>
           <a href="https://github.com/991627aishu/CV_EDGEFUSE-DCR" target="_blank" rel="noopener noreferrer" class="hover:text-charcoal-950 dark:hover:text-white transition-colors">GitHub Repository</a>
         </div>
       </div>
@@ -3050,6 +3054,10 @@
       if (data.boundary_b64) setViewImage('view-boundary', data.boundary_b64);
 
       lastLiveReconstructionData = data;
+      const ptTab = document.getElementById('view-tab-pointcloud');
+      if (three3DInitialized && ptTab && !ptTab.classList.contains('hidden')) {
+        update3DPointCloud(data);
+      }
 
       if (data.is_custom) {
         if (data.has_gt) {
@@ -4190,10 +4198,32 @@
 
     function reset3DCamera() {
       if (threeCamera && threeControls) {
+        threeControls.autoRotate = false;
+        const rBtn = document.getElementById('btn-3d-autorotate');
+        if (rBtn) {
+          rBtn.className = 'px-2 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-600 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white text-xs font-mono transition-colors';
+          rBtn.innerText = '⟳ Rotate';
+        }
         threeCamera.position.set(0, 0, 3.5);
         threeCamera.lookAt(0, 0, -2.5);
         threeControls.target.set(0, 0, -2.5);
         threeControls.reset();
+      }
+    }
+
+    function toggle3DAutoRotate() {
+      if (!threeControls) return;
+      threeControls.autoRotate = !threeControls.autoRotate;
+      threeControls.autoRotateSpeed = 2.0;
+      const btn = document.getElementById('btn-3d-autorotate');
+      if (btn) {
+        if (threeControls.autoRotate) {
+          btn.className = 'px-2 py-1 rounded-lg bg-purple-600 text-white text-xs font-mono transition-colors shadow-sm';
+          btn.innerText = '⏸ Pause';
+        } else {
+          btn.className = 'px-2 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-600 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white text-xs font-mono transition-colors';
+          btn.innerText = '⟳ Rotate';
+        }
       }
     }
 
@@ -4616,6 +4646,7 @@
       initTheme();
       setupDragDrop();
       loadDatasetGallery();
+      initHeroSplitSlider();
       initAiSplitSlider();
     });
   </script>

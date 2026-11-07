@@ -90,7 +90,9 @@ METHOD_STAGE_MAP = {
     "guided": ("A1", "Guided Filter"),
     "cnn": ("A2", "Deep Learning (EdgeFuseNet Alone)"),
     "cnn_confidence": ("A3", "CNN + Confidence Guidance"),
+    "cnn_conf": ("A3", "CNN + Confidence Guidance"),
     "cnn_boundary": ("A4", "CNN + Conf + Boundary Refinement"),
+    "cnn_conf_refined": ("A4", "CNN + Conf + Boundary Refinement"),
     "hybrid": ("A5", "EdgeFuse-DCR Full Hybrid")
 }
 
