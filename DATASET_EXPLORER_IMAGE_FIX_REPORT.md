@@ -207,3 +207,4 @@ Executed via `scripts/generate_all_thumbnails.py` and saved to `dataset_image_in
   - Headless browser validation suite for Group D.
 - `test_performance_and_redesign.py`:
   - Restored DOM assertions for `#section-hero` and split slider.
+

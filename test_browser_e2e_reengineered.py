@@ -182,3 +182,4 @@ except Exception as err:
 finally:
     if driver:
         driver.quit()
+
