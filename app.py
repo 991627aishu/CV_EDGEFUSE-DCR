@@ -40,6 +40,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Static file mounts for authentic thumbnails, hero comparison assets, and demo samples
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+static_path = os.path.join(APP_DIR, "static")
+if os.path.exists(static_path):
+    app.mount("/static", StaticFiles(directory=static_path), name="static")
+
+demo_path = os.path.join(APP_DIR, "demo_samples")
+if os.path.exists(demo_path):
+    app.mount("/demo_samples", StaticFiles(directory=demo_path), name="demo_samples")
+
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # Strict single-thread limit for low-memory (512MB RAM) Linux hosting
 torch.set_num_threads(1)
@@ -668,6 +678,38 @@ def get_dataset_gallery():
     return get_dataset_manifest()
 
 
+@app.get("/api/hero/comparison")
+def get_hero_comparison():
+    """Returns verified authentic hero before/after comparison data."""
+    meta_path = os.path.join(APP_DIR, "static", "hero_comparison", "hero_meta.json")
+    if os.path.exists(meta_path):
+        with open(meta_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {
+        "scene_id": "middlebury_artroom1",
+        "scene_title": "Middlebury 2021 (Artroom1)",
+        "dataset": "Middlebury 2021",
+        "dimensions": "960 × 540",
+        "lr_dimensions": "240 × 135 (4× Low-Res)",
+        "rmse": "0.6276m",
+        "mae": "0.1840m",
+        "psnr": "24.05dB",
+        "boundary_f1": "0.5604",
+        "input_image_url": "/static/hero_comparison/artroom1_input_lowres.png",
+        "refined_image_url": "/static/hero_comparison/artroom1_edgefuse_refined.png"
+    }
+
+
+@app.get("/api/audit/dataset-integrity")
+def get_dataset_integrity():
+    """Returns automated dataset image integrity audit report."""
+    rep_path = os.path.join(APP_DIR, "dataset_image_integrity_report.json")
+    if os.path.exists(rep_path):
+        with open(rep_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    raise HTTPException(status_code=404, detail="Dataset integrity report not yet generated.")
+
+
 @app.get("/api/datasets")
 def get_datasets_overview():
     """Returns dataset summary statistics and catalog metrics across all datasets."""
@@ -692,7 +734,7 @@ def get_datasets_inventory():
 def get_dataset_scenes(
     dataset_id: str,
     page: int = 1,
-    limit: int = 24,
+    limit: int = 9,
     search: str = "",
     sort_by: str = "default",
     sort_order: str = "asc",

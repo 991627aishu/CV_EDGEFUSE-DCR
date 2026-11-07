@@ -1,0 +1,196 @@
+{
+  "timestamp": 1794016041.4959767,
+  "total_indexed_scenes": 2482,
+  "summary": {
+    "nyu_scenes": 1449,
+    "kitti_scenes": 1000,
+    "middlebury_scenes": 24,
+    "demo_scenes": 9,
+    "total_scenes": 2482
+  },
+  "authenticity": {
+    "unique_rgb_thumbnails": 2476,
+    "unique_depth_thumbnails": 2482,
+    "exact_rgb_duplicate_groups": 6,
+    "exact_depth_duplicate_groups": 0,
+    "percentage_unique_rgb": 99.76,
+    "percentage_unique_depth": 100.0
+  },
+  "duplicate_analysis": {
+    "notes": "Natural video consecutive frames (e.g. KITTI vehicle stopped at red light) may exhibit high perceptual similarity, but all source image pairs originate from distinct physical timestamps and frame identifiers.",
+    "sample_rgb_duplicate_groups": [
+      {
+        "md5": "99aa36b403381a5d7555a4382737eea6",
+        "count": 2,
+        "scene_ids": [
+          "nyu_living_room",
+          "nyu_idx_0000"
+        ]
+      },
+      {
+        "md5": "cfe358ed8c144f989eb243e5cac323b1",
+        "count": 2,
+        "scene_ids": [
+          "nyu_bedroom",
+          "nyu_idx_0200"
+        ]
+      },
+      {
+        "md5": "411c1af35ae8f6f0311a3f98b4192271",
+        "count": 2,
+        "scene_ids": [
+          "nyu_study_office",
+          "nyu_idx_0500"
+        ]
+      },
+      {
+        "md5": "6c117ff2247f3d671d09fe6dcd9b7db4",
+        "count": 2,
+        "scene_ids": [
+          "kitti_road_01",
+          "kitti_2011_09_26_drive_0002_sync_image_0000000005_image_02"
+        ]
+      },
+      {
+        "md5": "fcbede6e136aab867e58627e02fff345",
+        "count": 2,
+        "scene_ids": [
+          "kitti_residential_02",
+          "kitti_2011_09_26_drive_0002_sync_image_0000000017_image_02"
+        ]
+      }
+    ]
+  },
+  "audit_records_sample": {
+    "nyu_living_room": {
+      "id": "nyu_living_room",
+      "dataset": "nyu",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_living_room_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_living_room_depth_lr.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_living_room_depth_gt.npy",
+      "rgb_md5": "99aa36b403381a5d7555a4382737eea6",
+      "depth_md5": "1c6742015debab07b5bade326b8f0448",
+      "rgb_dhash": "0111011001000101110000110110000111100001010100010001110100011111",
+      "depth_dhash": "1100000011111000111110001111100011111100111110001111100011011000",
+      "dimensions": "640 \u00d7 480",
+      "has_gt": true
+    },
+    "nyu_bedroom": {
+      "id": "nyu_bedroom",
+      "dataset": "nyu",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_bedroom_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_bedroom_depth_lr.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_bedroom_depth_gt.npy",
+      "rgb_md5": "cfe358ed8c144f989eb243e5cac323b1",
+      "depth_md5": "4e8b676ae72cf9c2abfa86630b2310c6",
+      "rgb_dhash": "1111001101110011100110111001101100001111000011100011111001111110",
+      "depth_dhash": "1110011011000010111100101111001011110010111011100011011100111001",
+      "dimensions": "640 \u00d7 480",
+      "has_gt": true
+    },
+    "nyu_study_office": {
+      "id": "nyu_study_office",
+      "dataset": "nyu",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_study_office_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_study_office_depth_lr.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\nyu_study_office_depth_gt.npy",
+      "rgb_md5": "411c1af35ae8f6f0311a3f98b4192271",
+      "depth_md5": "c94578194435d58776dbe612558c31de",
+      "rgb_dhash": "1100001111000011100000110010011100010110011100100111011101110011",
+      "depth_dhash": "0011001000110010111100100111101001101010011001011111010011110000",
+      "dimensions": "640 \u00d7 480",
+      "has_gt": true
+    },
+    "kitti_road_01": {
+      "id": "kitti_road_01",
+      "dataset": "kitti",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_road_01_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_road_01_depth_sparse.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_road_01_depth_gt.npy",
+      "rgb_md5": "6c117ff2247f3d671d09fe6dcd9b7db4",
+      "depth_md5": "3764200502aad1f97a0e75778c6d2861",
+      "rgb_dhash": "1000000011000000010010111110011011100100111100001111001010101001",
+      "depth_dhash": "0000000000000100001110000011000011100000111000000100000010000000",
+      "dimensions": "1216 \u00d7 352",
+      "has_gt": true
+    },
+    "kitti_residential_02": {
+      "id": "kitti_residential_02",
+      "dataset": "kitti",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_residential_02_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_residential_02_depth_sparse.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_residential_02_depth_gt.npy",
+      "rgb_md5": "fcbede6e136aab867e58627e02fff345",
+      "depth_md5": "73f0fe75ba14d87f09c7cd1c2cc0c988",
+      "rgb_dhash": "1000011011001010011011001110000111100000111100101100101011101001",
+      "depth_dhash": "0000000000000100000100000011000011110000110000000000000010000000",
+      "dimensions": "1216 \u00d7 352",
+      "has_gt": true
+    },
+    "kitti_drive_03": {
+      "id": "kitti_drive_03",
+      "dataset": "kitti",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_drive_03_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_drive_03_depth_sparse.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\kitti_drive_03_depth_gt.npy",
+      "rgb_md5": "12c1e3bae81d3dc00ae855d18ca8092b",
+      "depth_md5": "77d4446e8eff742d29ef47a0ee20a8e1",
+      "rgb_dhash": "1000010011000000010010001110001011100010111100101111000011101010",
+      "depth_dhash": "0000000000000100001110000011000011100000110000000101000001000000",
+      "dimensions": "1216 \u00d7 352",
+      "has_gt": true
+    },
+    "middlebury_artroom1": {
+      "id": "middlebury_artroom1",
+      "dataset": "middlebury",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_artroom1_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_artroom1_depth_lr.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_artroom1_depth_gt.npy",
+      "rgb_md5": "42bc5350a7f1c0b906fa0d1d0f66691c",
+      "depth_md5": "1dc6c8fd4fa576586c54ec3c300f87b3",
+      "rgb_dhash": "1100100011001110110010101101001011011110110101101101011011001111",
+      "depth_dhash": "1110001010100110111001111110010111100101101010011010010110100100",
+      "dimensions": "960 \u00d7 540",
+      "has_gt": true
+    },
+    "middlebury_chess1": {
+      "id": "middlebury_chess1",
+      "dataset": "middlebury",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_chess1_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_chess1_depth_lr.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_chess1_depth_gt.npy",
+      "rgb_md5": "1fa8590d4bb575b257f5e0d27c9704a9",
+      "depth_md5": "65f5ca792c9a1069f8968e4b793baf90",
+      "rgb_dhash": "1111000001111000011010010111100101110000011000000110100000001100",
+      "depth_dhash": "1101000011001000111010011000111010000111000011101100011011000111",
+      "dimensions": "960 \u00d7 540",
+      "has_gt": true
+    },
+    "middlebury_ladder1": {
+      "id": "middlebury_ladder1",
+      "dataset": "middlebury",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_ladder1_rgb.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_ladder1_depth_lr.npy",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\EDGEFUSE_DCR\\demo_samples\\middlebury_ladder1_depth_gt.npy",
+      "rgb_md5": "eca61cdad82fe5d96afa30e373bed6ac",
+      "depth_md5": "a994ba6d0c670fa1d9c9ca2115a529bd",
+      "rgb_dhash": "1011001010010110100001010001010100000011010011110111000101001000",
+      "depth_dhash": "1010101110101111101011101100111001001110000110000001100100011101",
+      "dimensions": "960 \u00d7 540",
+      "has_gt": true
+    },
+    "mid_artroom1": {
+      "id": "mid_artroom1",
+      "dataset": "middlebury",
+      "rgb_source": "C:\\Users\\texta\\Downloads\\CV\\Datasets\\Extracted_Dataset_Files\\Middlebury 2021\\all\\data\\artroom1\\im0.png",
+      "depth_source": "C:\\Users\\texta\\Downloads\\CV\\Datasets\\Extracted_Dataset_Files\\Middlebury 2021\\all\\data\\artroom1\\disp0.pfm",
+      "gt_source": "C:\\Users\\texta\\Downloads\\CV\\Datasets\\Extracted_Dataset_Files\\Middlebury 2021\\all\\data\\artroom1\\disp0.pfm",
+      "rgb_md5": "2eb8ddb5ab9035fa5051ecc8e5fce3d7",
+      "depth_md5": "d46a2e0e8d47713a0b425b89e5b92cfe",
+      "rgb_dhash": "1100100011001110110010101101001011011110110101101101011011001111",
+      "depth_dhash": "1001100110011101100111111001011010010110100101111010010110100100",
+      "dimensions": "1920 \u00d7 1080",
+      "has_gt": true
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "scene_id": "middlebury_artroom1",
+  "scene_title": "Middlebury 2021 (Artroom1)",
+  "dataset": "Middlebury 2021",
+  "dimensions": "960x540",
+  "lr_dimensions": "240x135 (4x Low-Res)",
+  "rmse": "0.6276m",
+  "mae": "0.1840m",
+  "psnr": "24.05dB",
+  "boundary_f1": "0.5604",
+  "input_image_url": "/static/hero_comparison/artroom1_input_lowres.png",
+  "refined_image_url": "/static/hero_comparison/artroom1_edgefuse_refined.png"
+}

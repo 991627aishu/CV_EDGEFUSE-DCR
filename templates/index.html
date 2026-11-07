@@ -183,7 +183,7 @@
       <!-- Logo & Brand Header -->
       <div class="space-y-3 border-b border-ivory-300 dark:border-slate-800/80 pb-4">
         <div class="flex items-center justify-between">
-          <a href="#section-why-matters" class="flex items-center gap-3 group">
+          <a href="#section-hero" class="flex items-center gap-3 group">
             <div class="w-9 h-9 rounded-xl bg-forest-900 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
               <svg class="w-5 h-5 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
@@ -227,6 +227,11 @@
       <nav class="space-y-1 text-xs font-semibold">
         <span class="text-[10px] font-bold uppercase tracking-wider text-charcoal-500 dark:text-slate-400 font-mono block px-3 py-1">Sections</span>
         
+        <a href="#section-hero" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
+          <svg class="w-4 h-4 text-forest-700 dark:text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          Overview & Hero
+        </a>
+
         <a href="#section-why-matters" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
           <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           Why Depth Matters
@@ -303,6 +308,153 @@
   <div class="md:pl-64 lg:pl-72 flex-1 min-h-screen flex flex-col justify-between">
     
     <div>
+      <!-- ======================================================================= -->
+      <!-- 2.1 HERO SECTION WITH INTERACTIVE SPLIT COMPARISON SLIDER                -->
+      <!-- ======================================================================= -->
+      <section id="section-hero" class="relative overflow-hidden py-12 sm:py-20 px-4 sm:px-8 lg:px-12 border-b border-ivory-300 dark:border-slate-800 bg-ivory-100 dark:bg-lab-bg transition-colors">
+        <div class="max-w-6xl mx-auto space-y-8">
+          
+          <!-- Top Meta Badges -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-forest-900 text-white">
+              <span class="w-1.5 h-1.5 rounded-full bg-forest-400"></span>
+              Computer Vision Research Platform
+            </span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ivory-200 dark:bg-slate-800 text-charcoal-700 dark:text-slate-300 border border-ivory-300 dark:border-slate-700 font-mono">
+              P4: Depth Upsampling & Refinement
+            </span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ivory-200 dark:bg-slate-800 text-charcoal-700 dark:text-slate-300 border border-ivory-300 dark:border-slate-700 font-mono">
+              1,308,610 Trainable Parameters
+            </span>
+          </div>
+
+          <!-- Hero Grid: Headline & Interactive Split Comparison -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            <!-- Left Narrative -->
+            <div class="lg:col-span-6 space-y-6">
+              <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-charcoal-950 dark:text-white tracking-tight leading-[1.15]">
+                Reconstructing the Missing. <br>
+                <span class="text-forest-700 dark:text-cyan-400">Preserving the Edges.</span>
+              </h1>
+              
+              <p class="text-sm sm:text-base text-charcoal-700 dark:text-slate-300 leading-relaxed max-w-lg">
+                An edge-aware, confidence-guided depth completion framework that transforms sparse and low-resolution depth measurements into refined, high-resolution depth representations with crisp geometric boundaries.
+              </p>
+
+              <!-- Feature Cards -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1 shadow-sm">
+                  <div class="flex items-center gap-2 text-xs font-bold text-charcoal-900 dark:text-white">
+                    <svg class="w-4 h-4 text-forest-700 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    Dual-Branch CNN
+                  </div>
+                  <p class="text-[11px] text-charcoal-600 dark:text-slate-400">Simultaneously extracts high-frequency RGB photometric edges and depth geometry.</p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder space-y-1 shadow-sm">
+                  <div class="flex items-center gap-2 text-xs font-bold text-charcoal-900 dark:text-white">
+                    <svg class="w-4 h-4 text-forest-700 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="m10 15 5-3-5-3v6Z"></path></svg>
+                    Confidence Solver
+                  </div>
+                  <p class="text-[11px] text-charcoal-600 dark:text-slate-400">Distance-attenuated bilateral refinement prevents texture-copy artifacts.</p>
+                </div>
+              </div>
+
+              <!-- CTAs -->
+              <div class="flex flex-wrap items-center gap-3 pt-2">
+                <a href="#section-reconstruction" class="px-5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-gradient-to-r dark:from-blue-600 dark:to-cyan-600 text-white font-bold text-xs transition-all shadow-md flex items-center gap-2">
+                  <span>Launch Reconstruction Lab</span>
+                  <svg class="w-3.5 h-3.5 text-forest-400 dark:text-cyan-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+                <a href="#section-explorer" class="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-ivory-200 dark:hover:bg-slate-700 text-charcoal-800 dark:text-slate-200 border border-ivory-300 dark:border-slate-700 font-semibold text-xs transition-colors">
+                  Explore Dataset Gallery
+                </a>
+              </div>
+            </div>
+
+            <!-- Right Interactive Before/After Split Comparison Slider -->
+            <div class="lg:col-span-6">
+              <div class="bg-white dark:bg-lab-card p-3 sm:p-4 rounded-2xl border border-ivory-300 dark:border-lab-cardborder shadow-xl space-y-3">
+                <div class="flex items-center justify-between px-1">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-forest-600 dark:bg-cyan-400 animate-pulse"></span>
+                    <span class="text-xs font-bold text-charcoal-900 dark:text-white">Live Boundary Comparison Demo</span>
+                  </div>
+                  <span id="hero-slider-scene-tag" class="text-[11px] font-mono text-charcoal-500 dark:text-slate-400">Middlebury 2021 (Artroom1)</span>
+                </div>
+
+                <!-- Split Container -->
+                <div id="hero-slider-container" class="relative w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden cursor-ew-resize select-none touch-none shadow-inner" style="--slider-pct: 50%;">
+                  
+                  <!-- Reconstructed Refined Depth (Full Background Base Layer) -->
+                  <img id="hero-slider-after-img" 
+                       src="/static/hero_comparison/artroom1_edgefuse_refined.png" 
+                       class="absolute inset-0 w-full h-full object-cover select-none pointer-events-none" 
+                       alt="EdgeFuse-DCR Refined Depth"
+                       loading="eager"
+                       onerror="handleHeroImageError('refined')">
+
+                  <!-- Raw Input Low-Res Depth (Clipped Top Overlay Layer) -->
+                  <div id="hero-slider-before-wrap" 
+                       class="absolute inset-0 w-full h-full pointer-events-none overflow-hidden select-none"
+                       style="clip-path: inset(0 calc(100% - var(--slider-pct, 50%)) 0 0);">
+                    <img id="hero-slider-before-img" 
+                         src="/static/hero_comparison/artroom1_input_lowres.png" 
+                         class="absolute inset-0 w-full h-full object-cover select-none" 
+                         alt="Raw Input Low-Res Depth"
+                         loading="eager"
+                         onerror="handleHeroImageError('input')">
+                  </div>
+
+                  <!-- Pinned Non-Overlapping Header Badges -->
+                  <span class="pointer-events-none absolute top-3 left-3 px-2 py-0.5 rounded bg-black/85 text-white font-mono text-[9px] font-bold tracking-wider z-20 shadow-sm border border-white/10">
+                    RAW INPUT (4× LOW-RES)
+                  </span>
+
+                  <span class="pointer-events-none absolute top-3 right-3 px-2 py-0.5 rounded bg-forest-900/90 dark:bg-cyan-950/90 text-forest-300 dark:text-cyan-300 font-mono text-[9px] font-bold tracking-wider z-20 shadow-sm border border-forest-500/20 dark:border-cyan-500/30">
+                    EDGEFUSE-DCR (REFINED)
+                  </span>
+
+                  <!-- Draggable Divider Line & Handle -->
+                  <div id="hero-slider-divider" class="absolute top-0 bottom-0 pointer-events-none z-30" style="left: var(--slider-pct, 50%); transform: translateX(-50%);">
+                    <div class="w-0.5 h-full bg-cyan-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]"></div>
+                  </div>
+
+                  <div id="hero-slider-handle" class="absolute top-1/2 z-30 w-8 h-8 rounded-full bg-cyan-500 text-white shadow-lg border-2 border-white flex items-center justify-center cursor-ew-resize transition-transform hover:scale-110 active:scale-95" style="left: var(--slider-pct, 50%); transform: translate(-50%, -50%);">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </div>
+
+                  <!-- Error / Empty State (hidden by default) -->
+                  <div id="hero-slider-fallback" class="hidden absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-center p-6 space-y-3 z-40">
+                    <span class="text-2xl">⚠️</span>
+                    <p class="text-xs font-bold text-white">Boundary Demo Image Unavailable</p>
+                    <p class="text-[11px] text-slate-400 max-w-xs">Failed to load genuine scene depth assets. Click below to retry.</p>
+                    <button type="button" onclick="initHeroSplitSlider(true)" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-colors">
+                      Retry Loading
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-charcoal-600 dark:text-slate-400 px-1">
+                  <span>← Drag slider horizontally to inspect boundary preservation</span>
+                  <div class="flex items-center gap-2">
+                    <span id="hero-slider-rmse-badge" class="font-bold text-forest-700 dark:text-cyan-400 font-mono">RMSE: 0.6276m (Best)</span>
+                    <button type="button" onclick="openSceneViewerModal('middlebury_artroom1')" class="text-[10px] underline font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500">
+                      Inspect Full Resolution 🔍
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
       <!-- ======================================================================= -->
       <!-- 2.2 RESEARCH STORYTELLING: WHY DEPTH MATTERS                            -->
       <!-- ======================================================================= -->
@@ -670,8 +822,14 @@
                 <div class="flex items-center gap-1.5">
                   <span class="text-charcoal-500 dark:text-slate-400 text-[11px] font-mono">Show:</span>
                   <select id="gallery-limit-select" onchange="handleGalleryLimitChange()" class="px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-ivory-300 dark:border-slate-700 text-charcoal-800 dark:text-slate-200 text-xs font-semibold focus:outline-none focus:border-cyan-500">
+                    <option value="3">3 / page</option>
+                    <option value="6">6 / page</option>
+                    <option value="9" selected>9 / page</option>
                     <option value="12">12 / page</option>
-                    <option value="24" selected>24 / page</option>
+                    <option value="15">15 / page</option>
+                    <option value="18">18 / page</option>
+                    <option value="24">24 / page</option>
+                    <option value="30">30 / page</option>
                     <option value="48">48 / page</option>
                     <option value="96">96 / page</option>
                   </select>
@@ -1595,14 +1753,14 @@
     // -------------------------------------------------------------------------
     let currentGalleryDataset = 'all';
     let galleryPage = 1;
-    let galleryLimit = 24;
+    let galleryLimit = 9;
     let gallerySearch = '';
     let gallerySort = 'default';
     let gallerySortOrder = 'asc';
     let galleryFilterGt = 'all';
     let galleryFilterRes = 'all';
-    let galleryTotalScenes = 2479;
-    let galleryTotalPages = 104;
+    let galleryTotalScenes = 2482;
+    let galleryTotalPages = 276;
     let galleryCurrentScenes = [];
     let isGalleryLoading = false;
     let searchDebounceTimer = null;
@@ -1611,6 +1769,7 @@
       await fetchDatasetsSummary();
       await fetchGalleryPage(1);
       checkLiveModelHealth();
+      initHeroSplitSlider();
     }
 
     async function fetchDatasetsSummary() {
@@ -1829,17 +1988,22 @@
       scenes.forEach(sample => {
         const item = document.createElement('div');
         const isActive = (sample.id === currentDemo);
+        const rgbSrc = sample.rgb_thumb_url || sample.rgb_thumb_b64 || '';
+        const depthSrc = sample.depth_thumb_url || sample.depth_thumb_b64 || '';
+        const gtBadgeHtml = sample.has_gt 
+          ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-400 shrink-0">● GT Verified</span>'
+          : '<span class="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 shrink-0">○ No GT</span>';
 
         if (galleryViewMode === 'list') {
           item.className = `gallery-item bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder rounded-xl p-3 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 cursor-pointer transition-all shadow-sm ${isActive ? 'active' : ''}`;
           item.id = `gal-item-${sample.id}`;
           item.innerHTML = `
             <div class="flex items-center gap-3 shrink-0">
-              <div class="w-20 h-14 rounded-lg overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 shrink-0">
-                <img src="${sample.rgb_thumb_b64 || ''}" class="w-full h-full object-cover" alt="RGB" loading="lazy">
+              <div class="w-20 h-14 rounded-lg overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 shrink-0 relative">
+                <img src="${rgbSrc}" class="w-full h-full object-cover" alt="RGB Preview" loading="lazy" onerror="handleThumbnailImgError(this, '${sample.id}', 'rgb')">
               </div>
-              <div class="w-20 h-14 rounded-lg overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 shrink-0">
-                <img src="${sample.depth_thumb_b64 || ''}" class="w-full h-full object-cover" alt="Depth" loading="lazy">
+              <div class="w-20 h-14 rounded-lg overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 shrink-0 relative">
+                <img src="${depthSrc}" class="w-full h-full object-cover" alt="Depth Preview" loading="lazy" onerror="handleThumbnailImgError(this, '${sample.id}', 'depth')">
               </div>
             </div>
 
@@ -1851,7 +2015,7 @@
                   'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
                 }">${sample.dataset_key}</span>
                 <h4 class="text-xs font-bold text-charcoal-950 dark:text-white truncate" title="${sample.title}">${sample.title}</h4>
-                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">● GT Verified</span>
+                ${gtBadgeHtml}
               </div>
               <div class="flex items-center gap-2 text-[10px] font-mono text-charcoal-500 dark:text-slate-400">
                 <span>${sample.dimensions}</span>
@@ -1879,11 +2043,11 @@
           item.innerHTML = `
             <div class="gallery-dual-thumbs grid grid-cols-2 gap-2">
               <div class="relative rounded-lg overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 aspect-[4/3]">
-                <img src="${sample.rgb_thumb_b64 || ''}" class="w-full h-full object-cover" alt="RGB Preview" loading="lazy">
+                <img src="${rgbSrc}" class="w-full h-full object-cover" alt="RGB Preview" loading="lazy" onerror="handleThumbnailImgError(this, '${sample.id}', 'rgb')">
                 <span class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] font-bold text-slate-200">RGB</span>
               </div>
               <div class="relative rounded-lg overflow-hidden bg-slate-950 border border-ivory-300 dark:border-slate-800 aspect-[4/3]">
-                <img src="${sample.depth_thumb_b64 || ''}" class="w-full h-full object-cover" alt="Depth Preview" loading="lazy">
+                <img src="${depthSrc}" class="w-full h-full object-cover" alt="Depth Preview" loading="lazy" onerror="handleThumbnailImgError(this, '${sample.id}', 'depth')">
                 <span class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] font-bold text-cyan-300">DEPTH</span>
               </div>
             </div>
@@ -1898,7 +2062,7 @@
                   }">${sample.dataset_key}</span>
                   <h4 class="text-xs font-bold text-charcoal-950 dark:text-white truncate" title="${sample.title}">${sample.title}</h4>
                 </div>
-                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-400 shrink-0">● GT</span>
+                ${gtBadgeHtml}
               </div>
               <div class="flex items-center gap-1.5 text-[10px] font-mono text-charcoal-500 dark:text-slate-400">
                 <span class="px-1.5 py-0.5 rounded bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800">${sample.dimensions}</span>
@@ -1909,6 +2073,12 @@
 
             <div class="flex items-center gap-2 pt-1">
               <button type="button" onclick="loadDiscoveredScene('${sample.id}')" class="flex-1 py-1.5 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] transition-colors text-center">
+                Load in Workspace
+              </button>
+              <button type="button" onclick="openSceneViewerModal('${sample.id}')" class="py-1.5 px-2.5 rounded-lg bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white font-semibold text-[11px] transition-colors" title="Inspect full resolution & GT">
+                Inspect 🔍
+              </button>
+            </div>
                 Load in Workspace
               </button>
               <button type="button" onclick="openSceneViewerModal('${sample.id}')" class="py-1.5 px-2.5 rounded-lg bg-ivory-200 dark:bg-slate-800 hover:bg-ivory-300 dark:hover:bg-slate-700 text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white font-semibold text-[11px] transition-colors" title="Inspect full resolution & GT">
@@ -2670,6 +2840,84 @@
           }
         }
       });
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. INTERACTIVE BEFORE/AFTER HERO SPLIT SLIDER & IMAGE ERROR RESILIENCE
+    // -------------------------------------------------------------------------
+    async function initHeroSplitSlider(isRetry = false) {
+      const container = document.getElementById('hero-slider-container');
+      const beforeWrap = document.getElementById('hero-slider-before-wrap');
+      const handle = document.getElementById('hero-slider-handle');
+      const afterImg = document.getElementById('hero-slider-after-img');
+      const beforeImg = document.getElementById('hero-slider-before-img');
+      const fallback = document.getElementById('hero-slider-fallback');
+      const rmseBadge = document.getElementById('hero-slider-rmse-badge');
+      const sceneTag = document.getElementById('hero-slider-scene-tag');
+
+      if (!container || !beforeWrap || !handle) return;
+      if (fallback) fallback.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/hero/comparison');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.input_image_url && beforeImg) beforeImg.src = data.input_image_url;
+          if (data.refined_image_url && afterImg) afterImg.src = data.refined_image_url;
+          if (data.rmse && rmseBadge) rmseBadge.innerText = `RMSE: ${data.rmse} (Best)`;
+          if (data.scene_title && sceneTag) sceneTag.innerText = data.scene_title;
+        }
+      } catch (err) {
+        console.warn('Hero comparison fetch notice:', err);
+      }
+
+      let isDragging = false;
+      function setSliderPosition(clientX) {
+        const rect = container.getBoundingClientRect();
+        let x = clientX - rect.left;
+        x = Math.max(0, Math.min(x, rect.width));
+        const pct = (x / rect.width) * 100;
+        container.style.setProperty('--slider-pct', pct + '%');
+      }
+
+      container.onmousedown = (e) => {
+        isDragging = true;
+        setSliderPosition(e.clientX);
+      };
+      window.addEventListener('mousemove', (e) => {
+        if (isDragging) setSliderPosition(e.clientX);
+      });
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      // Touch device support
+      container.ontouchstart = (e) => {
+        if (e.touches && e.touches[0]) {
+          isDragging = true;
+          setSliderPosition(e.touches[0].clientX);
+        }
+      };
+      window.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches && e.touches[0]) {
+          setSliderPosition(e.touches[0].clientX);
+        }
+      });
+      window.addEventListener('touchend', () => {
+        isDragging = false;
+      });
+    }
+
+    function handleHeroImageError(which) {
+      console.warn(`Hero slider ${which} image failed to load.`);
+      const fallback = document.getElementById('hero-slider-fallback');
+      if (fallback) fallback.classList.remove('hidden');
+    }
+
+    function handleThumbnailImgError(imgEl, sceneId, kind) {
+      console.warn(`Thumbnail load error for ${sceneId} (${kind})`);
+      imgEl.onerror = null;
+      imgEl.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="100" viewBox="0 0 160 100"><rect width="100%" height="100%" fill="%230f172a"/><text x="50%" y="45%" fill="%2338bdf8" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">${kind.toUpperCase()}</text><text x="50%" y="65%" fill="%2394a3b8" font-family="monospace" font-size="8" text-anchor="middle">${sceneId.slice(0, 16)}</text></svg>`;
     }
 
     // -------------------------------------------------------------------------
