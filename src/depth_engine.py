@@ -468,12 +468,12 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
         conf = estimate_confidence_map(rec, rec > 0.05, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
         gate = np.ones(target_shape, dtype=np.float32)
 
-    elif method == "cnn_confidence":
+    elif method in ("cnn_confidence", "cnn_conf"):
         conf = estimate_confidence_map(cnn_depth, valid_mask, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
         rec = conf * cnn_depth + (1.0 - conf) * base_up
         gate = np.ones(target_shape, dtype=np.float32)
 
-    elif method == "cnn_boundary":
+    elif method in ("cnn_boundary", "cnn_conf_refined"):
         res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=False, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
         rec = res["final_depth"]
         conf = res["confidence_map"]

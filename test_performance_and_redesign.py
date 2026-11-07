@@ -60,10 +60,8 @@ def run_performance_audit():
     size_kb = len(html.encode("utf-8")) / 1024.0
     print(f" -> Template size: {size_kb:.1f} KB")
     
-    # Assert key architectural components
+    # Assert key architectural components (Overview & Hero intentionally removed as requested)
     checks = [
-      ("Editorial Canvas", "Reconstructing the Missing"),
-      ("Split Comparison Slider", "hero-slider-container"),
       ("Why Depth Matters Storytelling", "Why Depth Completion Matters"),
       ("8-Step Workflow", "How to Use EDGEFUSE-DCR"),
       ("Dataset Explorer Section", "section-explorer"),
@@ -71,7 +69,7 @@ def run_performance_audit():
       ("Reconstruction Workspace", "section-reconstruction"),
       ("KPI Metrics", "kpi-metric-bar"),
       ("Comparative Benchmarks", "section-benchmark"),
-      ("6-Card Research Exports", "section-exports"),
+      ("Research Exports Center", "section-exports"),
       ("Guided Spotlight Tour", "startGuidedTour"),
       ("Dual Thumbnails Class", "gallery-dual-thumbs"),
     ]

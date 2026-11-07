@@ -183,7 +183,7 @@
       <!-- Logo & Brand Header -->
       <div class="space-y-3 border-b border-ivory-300 dark:border-slate-800/80 pb-4">
         <div class="flex items-center justify-between">
-          <a href="#section-hero" class="flex items-center gap-3 group">
+          <a href="#section-why-matters" class="flex items-center gap-3 group">
             <div class="w-9 h-9 rounded-xl bg-forest-900 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
               <svg class="w-5 h-5 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
@@ -227,11 +227,6 @@
       <nav class="space-y-1 text-xs font-semibold">
         <span class="text-[10px] font-bold uppercase tracking-wider text-charcoal-500 dark:text-slate-400 font-mono block px-3 py-1">Sections</span>
         
-        <a href="#section-hero" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <svg class="w-4 h-4 text-forest-700 dark:text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-          Overview & Hero
-        </a>
-
         <a href="#section-why-matters" onclick="closeMobileSidebar()" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
           <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           Why Depth Matters
@@ -308,120 +303,6 @@
   <div class="md:pl-64 lg:pl-72 flex-1 min-h-screen flex flex-col justify-between">
     
     <div>
-      <!-- ======================================================================= -->
-      <!-- 2.1 HERO SECTION WITH INTERACTIVE SPLIT COMPARISON SLIDER                -->
-      <!-- ======================================================================= -->
-      <section id="section-hero" class="relative overflow-hidden py-12 sm:py-20 px-4 sm:px-8 lg:px-12 border-b border-ivory-300 dark:border-slate-800 bg-ivory-100 dark:bg-lab-bg transition-colors">
-        <div class="max-w-6xl mx-auto space-y-8">
-          
-          <!-- Top Meta Badges -->
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-forest-900 text-white">
-              <span class="w-1.5 h-1.5 rounded-full bg-forest-400"></span>
-              Computer Vision Research Platform
-            </span>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ivory-200 dark:bg-slate-800 text-charcoal-700 dark:text-slate-300 border border-ivory-300 dark:border-slate-700 font-mono">
-              P4: Depth Upsampling & Refinement
-            </span>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ivory-200 dark:bg-slate-800 text-charcoal-700 dark:text-slate-300 border border-ivory-300 dark:border-slate-700 font-mono">
-              1,308,610 Trainable Parameters
-            </span>
-          </div>
-
-          <!-- Hero Grid: Headline & Interactive Split Comparison -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            
-            <!-- Left Narrative -->
-            <div class="lg:col-span-6 space-y-6">
-              <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-charcoal-950 dark:text-white tracking-tight leading-[1.15]">
-                Reconstructing the Missing. <br>
-                <span class="text-forest-700 dark:text-cyan-400">Preserving the Edges.</span>
-              </h1>
-              
-              <p class="text-sm sm:text-base text-charcoal-700 dark:text-slate-300 leading-relaxed max-w-lg">
-                An edge-aware, confidence-guided depth completion framework that transforms sparse and low-resolution depth measurements into refined, high-resolution depth representations with crisp geometric boundaries.
-              </p>
-
-              <!-- Feature Cards -->
-              <div class="grid grid-cols-2 gap-3 pt-1">
-                <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder shadow-sm space-y-1">
-                  <div class="flex items-center gap-1.5 text-forest-800 dark:text-cyan-400 font-bold text-xs">
-                    <svg class="w-4 h-4 text-forest-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                    Dual-Branch CNN
-                  </div>
-                  <p class="text-[11px] text-charcoal-600 dark:text-slate-400">Simultaneously extracts high-frequency RGB photometric edges and depth geometry.</p>
-                </div>
-
-                <div class="p-3.5 rounded-xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder shadow-sm space-y-1">
-                  <div class="flex items-center gap-1.5 text-forest-800 dark:text-cyan-400 font-bold text-xs">
-                    <svg class="w-4 h-4 text-forest-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="m10 15 5-3-5-3v6Z"></path></svg>
-                    Confidence Solver
-                  </div>
-                  <p class="text-[11px] text-charcoal-600 dark:text-slate-400">Distance-attenuated bilateral refinement prevents texture-copy artifacts.</p>
-                </div>
-              </div>
-
-              <!-- CTAs -->
-              <div class="flex flex-wrap items-center gap-3 pt-2">
-                <a href="#section-reconstruction" class="px-5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-gradient-to-r dark:from-blue-600 dark:to-cyan-600 text-white font-bold text-xs transition-all shadow-md flex items-center gap-2">
-                  <span>Launch Reconstruction Lab</span>
-                  <svg class="w-3.5 h-3.5 text-forest-400 dark:text-cyan-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </a>
-                <a href="#section-explorer" class="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-ivory-200 dark:hover:bg-slate-700 text-charcoal-800 dark:text-slate-200 border border-ivory-300 dark:border-slate-700 font-semibold text-xs transition-colors">
-                  Explore Dataset Gallery
-                </a>
-              </div>
-            </div>
-
-            <!-- Right Interactive Before/After Split Comparison Slider -->
-            <div class="lg:col-span-6">
-              <div class="bg-white dark:bg-lab-card p-3 sm:p-4 rounded-2xl border border-ivory-300 dark:border-lab-cardborder shadow-xl space-y-3">
-                <div class="flex items-center justify-between px-1">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-forest-600 dark:bg-cyan-400"></span>
-                    <span class="text-xs font-bold text-charcoal-900 dark:text-white">Live Boundary Comparison Demo</span>
-                  </div>
-                  <span class="text-[11px] font-mono text-charcoal-500 dark:text-slate-400">Middlebury 2021 (Artroom1)</span>
-                </div>
-
-                <!-- Split Container -->
-                <div id="hero-slider-container" class="split-slider-container w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden cursor-ew-resize">
-                  <!-- Reconstructed (Full Background) -->
-                  <img id="hero-slider-after-img" src="" class="absolute inset-0 w-full h-full object-cover" alt="EdgeFuse-DCR Refined Depth">
-                  
-                  <!-- Raw Input (Clipped Layer) -->
-                  <div id="hero-slider-before-wrap" class="split-slider-before">
-                    <img id="hero-slider-before-img" src="" class="absolute inset-0 w-full h-full object-cover max-w-none" alt="Raw Input Low-Res Depth">
-                    <span class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 text-white font-mono text-[9px] font-bold tracking-wider">
-                      RAW INPUT (4× LOW-RES)
-                    </span>
-                  </div>
-
-                  <!-- Draggable Divider Handle -->
-                  <div id="hero-slider-handle" class="split-slider-handle">
-                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <polyline points="15 18 9 12 15 6"></polyline>
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                  </div>
-
-                  <span class="absolute top-3 right-3 px-2 py-0.5 rounded bg-forest-900/90 dark:bg-cyan-950/90 text-forest-300 dark:text-cyan-300 font-mono text-[9px] font-bold tracking-wider z-0">
-                    EDGEFUSE-DCR (REFINED)
-                  </span>
-                </div>
-
-                <div class="flex items-center justify-between text-[11px] text-charcoal-600 dark:text-slate-400 px-1">
-                  <span>← Drag slider horizontally to inspect boundary preservation</span>
-                  <span class="font-bold text-forest-700 dark:text-cyan-400 font-mono">RMSE: 0.4468m (Best)</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
       <!-- ======================================================================= -->
       <!-- 2.2 RESEARCH STORYTELLING: WHY DEPTH MATTERS                            -->
       <!-- ======================================================================= -->
@@ -1141,9 +1022,19 @@
                 </div>
 
                 <div class="bg-white dark:bg-lab-card p-3 rounded-2xl border border-ivory-300 dark:border-lab-cardborder space-y-2 shadow-sm">
-                  <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300 block">Absolute Error Heatmap (|Dpred - Dgt|)</span>
-                  <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-charcoal-800 dark:text-slate-300 block">Absolute Error Heatmap (|Dpred - Dgt|)</span>
+                    <span id="error-heatmap-status-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">GT Verified</span>
+                  </div>
+                  <div class="aspect-[16/10] rounded-xl overflow-hidden bg-slate-950 relative flex items-center justify-center">
                     <img id="view-error" src="" class="w-full h-full object-cover" alt="Absolute Error Heatmap">
+                    <div id="view-error-unavailable" class="hidden absolute inset-0 p-6 flex flex-col items-center justify-center text-center space-y-2.5 bg-slate-950/95">
+                      <div class="inline-flex p-3 rounded-xl bg-slate-900 border border-slate-800 text-amber-400">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                      </div>
+                      <p class="text-xs font-bold text-white font-mono">Reference Ground Truth Required</p>
+                      <p class="text-[11px] text-slate-400 max-w-xs leading-relaxed">Quantitative error heatmaps (|Dpred - Dgt|) require an authentic ground truth map. Upload an optional Ground Truth file (.npy or 16-bit PNG) in Step 1 to generate residual error visualizations.</p>
+                    </div>
                   </div>
                   <p class="text-[11px] text-charcoal-500 dark:text-slate-400">Dark Blue = 0m error. Red = >0.5m error against ground truth reference.</p>
                 </div>
@@ -1268,6 +1159,15 @@
               <p class="text-xs text-charcoal-600 dark:text-slate-400">Binary sensor measurement mask (White = 255 valid seeds, Black = 0 void regions).</p>
             </a>
 
+            <a href="/api/download/boundary" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-emerald-500/50 transition-all space-y-2 group block shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">BOUNDARY OVERLAY</span>
+                <span class="text-xs text-charcoal-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">↓ Download</span>
+              </div>
+              <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">Boundary Overlay (.png)</h4>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400">Photometric RGB image with dual-edge contours (Red: RGB photometric, Cyan: Depth geometric).</p>
+            </a>
+
             <a href="/api/download/error_map" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-rose-500/50 transition-all space-y-2 group block shadow-sm">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-mono font-bold text-rose-700 dark:text-rose-400">ERROR HEATMAP</span>
@@ -1306,7 +1206,7 @@
         </div>
 
         <div class="flex items-center gap-4 text-xs font-semibold">
-          <a href="#section-hero" class="hover:text-charcoal-950 dark:hover:text-white transition-colors">Back to Top ↑</a>
+          <a href="#section-why-matters" class="hover:text-charcoal-950 dark:hover:text-white transition-colors">Back to Top ↑</a>
           <a href="https://github.com/991627aishu/CV_EDGEFUSE-DCR" target="_blank" rel="noopener noreferrer" class="hover:text-charcoal-950 dark:hover:text-white transition-colors">GitHub Repository</a>
         </div>
       </div>
@@ -1605,6 +1505,8 @@
     let uploadedRgbFile = null;
     let uploadedDepthFile = null;
     let uploadedGtFile = null;
+    let customSessionId = 'sess_' + Math.random().toString(36).substring(2, 12);
+    let activeIsCustom = false;
 
     // Modal Active Sample
     let modalActiveSample = null;
@@ -1709,7 +1611,6 @@
       await fetchDatasetsSummary();
       await fetchGalleryPage(1);
       checkLiveModelHealth();
-      initHeroSplitSlider();
     }
 
     async function fetchDatasetsSummary() {
@@ -2242,9 +2143,16 @@
     // -------------------------------------------------------------------------
     function selectGallerySample(sampleId, idx) {
       currentDemo = sampleId;
+      activeIsCustom = false;
       uploadedRgbFile = null;
       uploadedDepthFile = null;
       uploadedGtFile = null;
+      const fRgb = document.getElementById('file-rgb');
+      if (fRgb) fRgb.value = '';
+      const fDepth = document.getElementById('file-depth');
+      if (fDepth) fDepth.value = '';
+      const fGt = document.getElementById('file-gt');
+      if (fGt) fGt.value = '';
       const lRgb = document.getElementById('label-rgb');
       if (lRgb) lRgb.innerText = 'Drag & drop or browse RGB...';
       const lDepth = document.getElementById('label-depth');
@@ -2314,16 +2222,51 @@
     }
 
     // -------------------------------------------------------------------------
-    // 3. RECONSTRUCTION EXECUTION ENGINE
+    // 3. RECONSTRUCTION EXECUTION ENGINE & STATE INVALIDATION
     // -------------------------------------------------------------------------
+    function invalidateReconstructionState() {
+      clearReconstructionPanels();
+      document.getElementById('val-rmse').innerText = 'N/A';
+      document.getElementById('val-mae').innerText = 'N/A';
+      document.getElementById('val-psnr').innerText = 'N/A';
+      document.getElementById('val-ssim').innerText = 'N/A';
+      document.getElementById('val-f1').innerText = 'N/A';
+      document.getElementById('val-latency').innerHTML = `--<span class="text-xs font-normal text-charcoal-500 dark:text-slate-400 ml-0.5">ms</span>`;
+      
+      const vErr = document.getElementById('view-error');
+      if (vErr) { vErr.src = ''; vErr.classList.add('hidden'); }
+      const vErrUnavail = document.getElementById('view-error-unavailable');
+      if (vErrUnavail) vErrUnavail.classList.remove('hidden');
+
+      const errBadge = document.getElementById('error-heatmap-status-badge');
+      if (errBadge) {
+        errBadge.innerText = 'GT Required';
+        errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800';
+      }
+    }
+
     async function executeReconstruction() {
       const btn = document.getElementById('btn-run');
       const spinner = document.getElementById('spinner');
       const btnText = document.getElementById('btn-text');
 
-      if (!currentDemo && (!uploadedRgbFile || !uploadedDepthFile)) {
-        if (!uploadedRgbFile) showToast('Please upload an RGB Guidance Image before executing.', true);
-        else showToast('Please upload a valid Depth Map before executing.', true);
+      const isCustomRun = Boolean(
+        activeIsCustom ||
+        (uploadedRgbFile && uploadedDepthFile) ||
+        (!currentDemo && (uploadedRgbFile || uploadedDepthFile))
+      );
+
+      if (isCustomRun) {
+        if (!uploadedRgbFile) {
+          showToast('Please upload an RGB Guidance Image before executing.', true);
+          return;
+        }
+        if (!uploadedDepthFile) {
+          showToast('Please upload a valid Depth Map before executing.', true);
+          return;
+        }
+      } else if (!currentDemo) {
+        showToast('Please select a dataset scene or upload custom RGB and Depth files.', true);
         return;
       }
 
@@ -2340,13 +2283,15 @@
       formData.append('upsample_factor', factor);
       formData.append('apply_texture_suppression', textureSupp);
 
-      if (currentDemo) {
-        formData.append('demo_sample_id', currentDemo);
-      } else {
-        formData.append('rgb_file', uploadedRgbFile);
-        formData.append('depth_file', uploadedDepthFile);
+      if (isCustomRun) {
+        // Enforce custom upload reconstruction: session_id + uploaded files (DEMO IGNORED)
+        formData.append('session_id', customSessionId);
+        if (uploadedRgbFile) formData.append('rgb_file', uploadedRgbFile);
+        if (uploadedDepthFile) formData.append('depth_file', uploadedDepthFile);
         if (uploadedGtFile) formData.append('gt_file', uploadedGtFile);
         formData.append('depth_scale', document.getElementById('depth-scale-select').value);
+      } else {
+        formData.append('demo_sample_id', currentDemo);
       }
 
       try {
@@ -2368,20 +2313,46 @@
     }
 
     function updateReconstructionUI(data) {
-      if (data.metrics && typeof data.metrics.rmse !== 'undefined') {
+      document.getElementById('val-latency').innerHTML = `${Number(data.latency_ms).toFixed(1)}<span class="text-xs font-normal text-charcoal-500 dark:text-slate-400 ml-0.5">ms</span>`;
+
+      if (data.has_gt && data.metrics && typeof data.metrics.rmse !== 'undefined') {
         document.getElementById('val-rmse').innerText = Number(data.metrics.rmse).toFixed(4);
         document.getElementById('val-mae').innerText = Number(data.metrics.mae).toFixed(4);
         document.getElementById('val-psnr').innerText = Number(data.metrics.psnr).toFixed(2);
         document.getElementById('val-ssim').innerText = Number(data.metrics.ssim).toFixed(4);
         document.getElementById('val-f1').innerText = Number(data.metrics.boundary_f1).toFixed(4);
+
+        if (data.error_b64) {
+          setViewImage('view-error', data.error_b64);
+          const vErr = document.getElementById('view-error');
+          if (vErr) vErr.classList.remove('hidden');
+          const vErrUnavail = document.getElementById('view-error-unavailable');
+          if (vErrUnavail) vErrUnavail.classList.add('hidden');
+        }
+        const errBadge = document.getElementById('error-heatmap-status-badge');
+        if (errBadge) {
+          errBadge.innerText = 'GT Verified';
+          errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
+        }
       } else {
+        // Scientifically honest: no GT reference provided -> show N/A
         document.getElementById('val-rmse').innerText = 'N/A';
         document.getElementById('val-mae').innerText = 'N/A';
         document.getElementById('val-psnr').innerText = 'N/A';
         document.getElementById('val-ssim').innerText = 'N/A';
         document.getElementById('val-f1').innerText = 'N/A';
+
+        const vErr = document.getElementById('view-error');
+        if (vErr) { vErr.src = ''; vErr.classList.add('hidden'); }
+        const vErrUnavail = document.getElementById('view-error-unavailable');
+        if (vErrUnavail) vErrUnavail.classList.remove('hidden');
+
+        const errBadge = document.getElementById('error-heatmap-status-badge');
+        if (errBadge) {
+          errBadge.innerText = 'GT Required';
+          errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800';
+        }
       }
-      document.getElementById('val-latency').innerHTML = `${Number(data.latency_ms).toFixed(1)}<span class="text-xs font-normal text-charcoal-500 dark:text-slate-400 ml-0.5">ms</span>`;
 
       if (data.reconstructed_b64) {
         setViewImage('view-reconstructed', data.reconstructed_b64);
@@ -2391,10 +2362,54 @@
       if (data.cnn_b64) setViewImage('view-cnn', data.cnn_b64);
       if (data.confidence_b64) setViewImage('view-confidence', data.confidence_b64);
       if (data.boundary_b64) setViewImage('view-boundary', data.boundary_b64);
-      if (data.error_b64) setViewImage('view-error', data.error_b64);
 
-      const dsetKey = currentDemo ? currentDatasetKey : 'custom';
-      renderBenchmarkTable(dsetKey, data.metrics, data.latency_ms, currentSceneBenchmarks);
+      if (data.is_custom) {
+        if (data.has_gt) {
+          fetchCustomBenchmark();
+        } else {
+          renderCustomNoGtBenchmark();
+        }
+      } else {
+        const dsetKey = currentDemo ? currentDatasetKey : 'custom';
+        renderBenchmarkTable(dsetKey, data.metrics, data.latency_ms, currentSceneBenchmarks);
+        renderBenchmarkBars(currentSceneBenchmarks);
+      }
+    }
+
+    async function fetchCustomBenchmark() {
+      try {
+        const fd = new FormData();
+        fd.append('session_id', customSessionId);
+        const res = await fetch('/api/benchmark/custom', { method: 'POST', body: fd });
+        if (res.ok) {
+          const bData = await res.json();
+          renderBenchmarkTable('custom', null, null, bData.benchmark_rows);
+          renderBenchmarkBars(bData.benchmark_rows);
+        }
+      } catch (e) {
+        console.warn('Custom benchmark error:', e);
+      }
+    }
+
+    function renderCustomNoGtBenchmark() {
+      const tbody = document.getElementById('benchmark-tbody');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-8 px-4 text-center text-charcoal-500 dark:text-slate-400">
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 font-mono text-xs mb-2">
+                <span>⚠ Ground Truth Reference Not Supplied</span>
+              </div>
+              <p class="text-xs">Comparative benchmarking against all 9 baseline methods requires an authentic ground truth reference depth map.</p>
+              <p class="text-[11px] text-charcoal-400 dark:text-slate-500 mt-1">Upload an optional Ground Truth file (.npy or 16-bit PNG) in Step 1 to generate live evaluation metrics.</p>
+            </td>
+          </tr>
+        `;
+      }
+      const bars = document.getElementById('benchmark-visual-bars');
+      if (bars) {
+        bars.innerHTML = `<div class="p-6 text-center text-xs text-charcoal-500 dark:text-slate-400 font-mono">No Ground Truth reference available for relative error reduction calculation.</div>`;
+      }
     }
 
     function setViewImage(imgId, b64) {
@@ -2517,46 +2532,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // 5. INTERACTIVE BEFORE/AFTER HERO SPLIT SLIDER
-    // -------------------------------------------------------------------------
-    function initHeroSplitSlider() {
-      const container = document.getElementById('hero-slider-container');
-      const beforeWrap = document.getElementById('hero-slider-before-wrap');
-      const handle = document.getElementById('hero-slider-handle');
-      const afterImg = document.getElementById('hero-slider-after-img');
-      const beforeImg = document.getElementById('hero-slider-before-img');
-      if (!container || !beforeWrap || !handle) return;
-
-      afterImg.src = '/demo_samples/middlebury_artroom1_rgb.png';
-      beforeImg.src = '/demo_samples/middlebury_depth_lr.png';
-
-      if (datasetManifest?.datasets?.middlebury?.samples?.[0]) {
-        const s = datasetManifest.datasets.middlebury.samples[0];
-        if (s.rgb_thumb_b64) afterImg.src = s.rgb_thumb_b64;
-        if (s.depth_thumb_b64) beforeImg.src = s.depth_thumb_b64;
-      }
-
-      let isDragging = false;
-      function setSliderPosition(clientX) {
-        const rect = container.getBoundingClientRect();
-        let x = clientX - rect.left;
-        x = Math.max(0, Math.min(x, rect.width));
-        const pct = (x / rect.width) * 100;
-        beforeWrap.style.width = pct + '%';
-        handle.style.left = pct + '%';
-      }
-
-      container.addEventListener('mousedown', (e) => { isDragging = true; setSliderPosition(e.clientX); });
-      window.addEventListener('mouseup', () => { isDragging = false; });
-      window.addEventListener('mousemove', (e) => { if (isDragging) setSliderPosition(e.clientX); });
-
-      container.addEventListener('touchstart', (e) => { isDragging = true; setSliderPosition(e.touches[0].clientX); }, { passive: true });
-      window.addEventListener('touchend', () => { isDragging = false; });
-      window.addEventListener('touchmove', (e) => { if (isDragging) setSliderPosition(e.touches[0].clientX); }, { passive: true });
-    }
-
-    // -------------------------------------------------------------------------
-    // 6. CUSTOM FILE UPLOAD HANDLERS
+    // 5. CUSTOM FILE UPLOAD HANDLERS
     // -------------------------------------------------------------------------
     function setupDragDrop() {
       ['rgb', 'depth', 'gt'].forEach(type => {
@@ -2577,7 +2553,11 @@
     function handleFileSelected(input, type) {
       if (!input.files || !input.files[0]) return;
       const file = input.files[0];
+      
+      // Explicitly switch into custom mode
       currentDemo = null;
+      activeIsCustom = true;
+      invalidateReconstructionState();
 
       if (type === 'rgb') {
         uploadedRgbFile = file;
@@ -2590,10 +2570,16 @@
       } else if (type === 'gt') {
         uploadedGtFile = file;
         document.getElementById('label-gt').innerText = `✓ ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        const errBadge = document.getElementById('error-heatmap-status-badge');
+        if (errBadge) {
+          errBadge.innerText = 'GT Attached';
+          errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
+        }
       }
 
       document.getElementById('header-sample-pill').innerText = 'Custom Upload';
-      document.getElementById('sample-dimensions').innerText = `Custom User Input (${file.name})`;
+      const bLabel = document.getElementById('benchmark-active-sample-label');
+      if (bLabel) bLabel.innerText = `Scene: Custom User Upload (${uploadedGtFile ? 'GT Attached' : 'No GT Reference'})`;
       showToast(`Selected ${file.name} for ${type.toUpperCase()}`);
     }
 
@@ -2617,6 +2603,16 @@
         const data = await res.json();
         setViewImage('view-lr-depth', data.preview_b64);
         if (data.valid_mask_b64) setViewImage('view-valid-mask', data.valid_mask_b64);
+        
+        const vStats = data.valid_mask_stats || data;
+        const validPx = typeof data.valid_pixels !== 'undefined' ? data.valid_pixels : (vStats.valid_pixels || 0);
+        const invalidPx = typeof data.invalid_pixels !== 'undefined' ? data.invalid_pixels : (vStats.invalid_pixels || 0);
+        const totalPx = typeof data.total_pixels !== 'undefined' ? data.total_pixels : (vStats.total_pixels || (validPx + invalidPx));
+
+        document.getElementById('validity-mask-title').innerText = 'Sensor Validity Mask (Custom Upload)';
+        document.getElementById('validity-mask-stats').innerText = `${data.valid_percent}% Valid Measurements`;
+        document.getElementById('validity-px-counts').innerText = `${validPx} Valid / ${invalidPx} Void (${totalPx} total px)`;
+        document.getElementById('sample-dimensions').innerText = `Custom User Input (${data.dimensions} • ${file.name})`;
         showToast(`Depth Map Validated: ${data.dimensions} (${data.valid_percent}% Valid)`);
       } catch (e) {
         showToast('Depth Validation Warning: ' + e.message, true);
@@ -2627,15 +2623,26 @@
       uploadedRgbFile = null;
       uploadedDepthFile = null;
       uploadedGtFile = null;
-      document.getElementById('file-rgb').value = '';
-      document.getElementById('file-depth').value = '';
-      document.getElementById('file-gt').value = '';
+      activeIsCustom = false;
+      customSessionId = 'sess_' + Math.random().toString(36).substring(2, 12);
+
+      const fRgb = document.getElementById('file-rgb');
+      if (fRgb) fRgb.value = '';
+      const fDepth = document.getElementById('file-depth');
+      if (fDepth) fDepth.value = '';
+      const fGt = document.getElementById('file-gt');
+      if (fGt) fGt.value = '';
+
       document.getElementById('label-rgb').innerText = 'Drag & drop or browse RGB...';
       document.getElementById('label-depth').innerText = 'Drag & drop depth map...';
       document.getElementById('label-gt').innerText = 'Reference GT (for quantitative metrics)...';
 
+      invalidateReconstructionState();
+
       if (galleryCurrentScenes && galleryCurrentScenes.length > 0) {
         selectGallerySample(galleryCurrentScenes[0].id);
+      } else {
+        selectGallerySample('nyu_living_room');
       }
       showToast('Custom files cleared. Restored dataset sample.');
     }

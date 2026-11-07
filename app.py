@@ -565,6 +565,75 @@ def align_rgb_and_depth(rgb_image: np.ndarray, depth_input: np.ndarray, factor: 
     return proc_rgb, proc_depth, alignment_info
 
 
+@app.post("/api/benchmark/custom")
+async def benchmark_custom_upload(
+    session_id: str = Form(...),
+    max_depth: float = Form(10.0)
+):
+    """
+    Evaluates all 9 benchmark methods against Ground Truth for a custom upload session.
+    """
+    if session_id not in CUSTOM_SESSIONS:
+        raise HTTPException(status_code=404, detail="Custom session not found.")
+    sess = CUSTOM_SESSIONS[session_id]
+    if sess.get("raw_gt") is None:
+        raise HTTPException(status_code=400, detail="Cannot compute benchmark metrics without reference Ground Truth.")
+
+    raw_rgb = sess["raw_rgb"]
+    raw_depth = sess["raw_depth"]
+    raw_gt = sess["raw_gt"]
+
+    proc_rgb, proc_depth, _ = align_rgb_and_depth(raw_rgb, raw_depth, factor=4)
+    h_tgt, w_tgt = proc_rgb.shape[:2]
+    aligned_gt = cv2.resize(raw_gt, (w_tgt, h_tgt), interpolation=cv2.INTER_NEAREST)
+
+    methods = [
+        ("A0: Nearest Neighbor", "nearest"),
+        ("A0: Bilinear Interpolation", "bilinear"),
+        ("A0: Bicubic Interpolation", "bicubic"),
+        ("A1: Joint Bilateral Filter", "joint_bilateral"),
+        ("A1: Guided Filter", "guided"),
+        ("A2: Deep Learning (EdgeFuseNet Alone)", "cnn"),
+        ("A3: CNN + Confidence Guidance", "cnn_confidence"),
+        ("A4: CNN + Conf + Boundary Refinement", "cnn_boundary"),
+        ("A5: EdgeFuse-DCR Full Hybrid (Ours)", "hybrid")
+    ]
+
+    rows = []
+    for label, m_key in methods:
+        t0 = time.perf_counter()
+        res = await run_in_threadpool(
+            reconstruct_depth,
+            rgb_image=proc_rgb,
+            depth_input=proc_depth,
+            factor=4,
+            method=m_key,
+            cnn_model=MODEL,
+            device=DEVICE,
+            apply_suppression=True
+        )
+        lat = (time.perf_counter() - t0) * 1000.0
+        m = compute_depth_metrics(res["reconstructed_depth"], aligned_gt, max_depth=max_depth)
+        rows.append({
+            "method": label,
+            "rmse": f"{m['rmse']:.4f}",
+            "mae": f"{m['mae']:.4f}",
+            "psnr": f"{m['psnr']:.2f}",
+            "ssim": f"{m['ssim']:.4f}",
+            "f1": f"{m['boundary_f1']:.4f}",
+            "grad": f"{m['grad_mae']:.4f}",
+            "latency": f"{lat:.1f} ms",
+            "highlight": (m_key == "hybrid")
+        })
+
+    return {
+        "success": True,
+        "sample_id": session_id,
+        "title": "Custom User Upload (Ground Truth Verified)",
+        "benchmark_rows": rows
+    }
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
@@ -801,6 +870,7 @@ async def preview_depth(
             "filename": depth_file.filename,
             "width": stats["width"],
             "height": stats["height"],
+            "dimensions": f"{stats['width']} × {stats['height']}",
             "size_bytes": len(content),
             "total_pixels": stats["total_pixels"],
             "valid_pixels": stats["valid_pixels"],
@@ -811,12 +881,17 @@ async def preview_depth(
             "min_depth": stats["min"],
             "max_depth": stats["max"],
             "mean_depth": stats["mean"],
+            "valid_mask_stats": stats,
             "preview_b64": preview_b64,
             "valid_mask_b64": mask_b64,
             "warning": warning_msg
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# Active custom upload sessions: session_id -> dict
+CUSTOM_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
 
 @app.post("/api/reconstruct")
@@ -828,7 +903,8 @@ async def run_reconstruction(
     method: str = Form("hybrid"),
     upsample_factor: int = Form(4),
     apply_texture_suppression: bool = Form(True),
-    depth_scale: str = Form("auto")
+    depth_scale: str = Form("auto"),
+    session_id: Optional[str] = Form(None)
 ):
     """
     Core Reconstruction Endpoint.
@@ -836,9 +912,16 @@ async def run_reconstruction(
     """
     t_start = time.perf_counter()
 
-    # Check cache for demo reconstructions
+    # Determine if this request is a custom file upload
+    has_custom_files = bool(
+        (rgb_file and rgb_file.filename) or
+        (depth_file and depth_file.filename) or
+        (session_id and session_id in CUSTOM_SESSIONS and not demo_sample_id)
+    )
+
+    # Check cache for demo reconstructions ONLY (never cache custom uploads)
     cache_key = None
-    if demo_sample_id and not (rgb_file and rgb_file.filename) and not (depth_file and depth_file.filename):
+    if demo_sample_id and not has_custom_files:
         cache_key = f"{demo_sample_id}_{method}_{upsample_factor}_{apply_texture_suppression}"
         if cache_key in _RECONSTRUCT_DEMO_CACHE:
             cached_data = _RECONSTRUCT_DEMO_CACHE[cache_key]
@@ -854,8 +937,8 @@ async def run_reconstruction(
     depth_unit = "m"
     alignment_info = None
 
-    sample_title = "Custom Input Upload"
-    if demo_sample_id:
+    if not has_custom_files and demo_sample_id:
+        # Benchmark Demo Scene Path
         if demo_sample_id in CATALOG.scenes_by_id:
             try:
                 rgb_image, depth_input, gt_depth, info = CATALOG.load_scene_data(demo_sample_id)
@@ -879,36 +962,67 @@ async def run_reconstruction(
             sample_title = info["title"]
 
     else:
-        if not (rgb_file and rgb_file.filename and depth_file and depth_file.filename):
+        # Custom Upload Path
+        curr_session_id = session_id or uuid.uuid4().hex
+        sample_title = "Custom User Input"
+
+        if rgb_file and rgb_file.filename and depth_file and depth_file.filename:
+            # Fresh file upload
+            rgb_bytes = await rgb_file.read()
+            depth_bytes = await depth_file.read()
+
+            try:
+                raw_rgb = parse_rgb_bytes(rgb_bytes, filename=rgb_file.filename)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
+            try:
+                raw_depth, depth_type, depth_unit, depth_warning = parse_depth_bytes(
+                    depth_bytes, filename=depth_file.filename, depth_scale=depth_scale
+                )
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
+            raw_gt = None
+            if gt_file and gt_file.filename:
+                gt_bytes = await gt_file.read()
+                try:
+                    gt_parsed, _, _, _ = parse_depth_bytes(gt_bytes, filename=gt_file.filename, depth_scale=depth_scale)
+                    raw_gt = gt_parsed
+                except Exception as e:
+                    depth_warning = f"Warning: Could not decode optional Ground Truth ({e}). Proceeding without GT."
+
+            # Store in session cache
+            CUSTOM_SESSIONS[curr_session_id] = {
+                "raw_rgb": raw_rgb,
+                "raw_depth": raw_depth,
+                "raw_gt": raw_gt,
+                "depth_type": depth_type,
+                "depth_unit": depth_unit,
+                "depth_warning": depth_warning,
+                "rgb_filename": rgb_file.filename,
+                "depth_filename": depth_file.filename,
+                "timestamp": time.time()
+            }
+        elif curr_session_id in CUSTOM_SESSIONS:
+            # Reusing existing session files (e.g. changing algorithm or upsample factor)
+            sess = CUSTOM_SESSIONS[curr_session_id]
+            raw_rgb = sess["raw_rgb"]
+            raw_depth = sess["raw_depth"]
+            raw_gt = sess.get("raw_gt")
+            depth_type = sess.get("depth_type", "metric")
+            depth_unit = sess.get("depth_unit", "m")
+            depth_warning = sess.get("depth_warning")
+        else:
             raise HTTPException(status_code=400, detail="Both RGB Guidance Image and Depth Map are required for custom reconstruction.")
 
-        rgb_bytes = await rgb_file.read()
-        depth_bytes = await depth_file.read()
-
-        try:
-            rgb_image = parse_rgb_bytes(rgb_bytes, filename=rgb_file.filename)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
-        try:
-            depth_input, depth_type, depth_unit, depth_warning = parse_depth_bytes(
-                depth_bytes, filename=depth_file.filename, depth_scale=depth_scale
-            )
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
         # Spatial alignment & aspect ratio verification
-        rgb_image, depth_input, alignment_info = align_rgb_and_depth(rgb_image, depth_input, factor=upsample_factor)
+        rgb_image, depth_input, alignment_info = align_rgb_and_depth(raw_rgb, raw_depth, factor=upsample_factor)
 
-        # Optional Ground Truth ingestion
-        if gt_file and gt_file.filename:
-            gt_bytes = await gt_file.read()
-            try:
-                gt_raw, _, _, _ = parse_depth_bytes(gt_bytes, filename=gt_file.filename, depth_scale=depth_scale)
-                h_tgt, w_tgt = rgb_image.shape[:2]
-                gt_depth = cv2.resize(gt_raw, (w_tgt, h_tgt), interpolation=cv2.INTER_NEAREST)
-            except Exception as e:
-                depth_warning = f"Warning: Could not decode optional Ground Truth ({e}). Proceeding without GT."
+        # Handle Ground Truth alignment if provided
+        if raw_gt is not None:
+            h_tgt, w_tgt = rgb_image.shape[:2]
+            gt_depth = cv2.resize(raw_gt, (w_tgt, h_tgt), interpolation=cv2.INTER_NEAREST)
 
     # Compute Input Depth Statistics
     valid_mask, input_stats = compute_validity_mask_and_stats(depth_input, depth_type=depth_type, depth_unit=depth_unit)
@@ -1005,12 +1119,13 @@ async def run_reconstruction(
         "colored": rec_colored,
         "conf_colored": cv2.cvtColor(conf_colored, cv2.COLOR_BGR2RGB),
         "mask_img": (valid_mask.astype(np.uint8) * 255),
+        "boundary_img": overlay,
         "err_colored": cv2.cvtColor(err_colored, cv2.COLOR_BGR2RGB) if has_gt else None,
         "metrics": metrics,
         "method": method,
         "factor": upsample_factor,
         "sample_name": sample_title,
-        "is_custom": demo_sample_id is None,
+        "is_custom": has_custom_files,
         "has_gt": has_gt,
         "timestamp": time.time(),
         "input_stats": input_stats,
@@ -1021,6 +1136,7 @@ async def run_reconstruction(
         "success": True,
         "sample_name": sample_title,
         "method": method,
+        "is_custom": has_custom_files,
         "has_gt": has_gt,
         "warning": depth_warning,
         "latency_ms": round(total_latency, 1),
@@ -1122,20 +1238,42 @@ def download_validity_mask():
     )
 
 
+@app.get("/api/download/boundary")
+def download_boundary_overlay():
+    """Downloads Boundary Discontinuity Overlay as PNG."""
+    if not hasattr(app.state, "last_rec") or app.state.last_rec.get("boundary_img") is None:
+        raise HTTPException(status_code=404, detail="No boundary overlay available for this run.")
+
+    pil_img = Image.fromarray(app.state.last_rec["boundary_img"])
+    buf = io.BytesIO()
+    pil_img.save(buf, format="PNG")
+    buf.seek(0)
+    fname = "custom_boundary_overlay.png" if app.state.last_rec.get("is_custom") else "edgefuse_dcr_boundary_overlay.png"
+    return Response(
+        content=buf.getvalue(),
+        media_type="image/png",
+        headers={"Content-Disposition": f"attachment; filename={fname}"}
+    )
+
+
 @app.get("/api/download/error_map")
 def download_error_map():
     """Downloads Jet absolute error heatmap (only when Ground Truth was provided)."""
     if not hasattr(app.state, "last_rec") or not app.state.last_rec.get("has_gt") or app.state.last_rec.get("err_colored") is None:
-        raise HTTPException(status_code=404, detail="Ground Truth reference error map is not available for this run.")
+        raise HTTPException(
+            status_code=400,
+            detail="Ground Truth reference error map is not available because no Ground Truth was provided for this custom upload."
+        )
 
     pil_img = Image.fromarray(app.state.last_rec["err_colored"])
     buf = io.BytesIO()
     pil_img.save(buf, format="PNG")
     buf.seek(0)
+    fname = "custom_error_heatmap.png" if app.state.last_rec.get("is_custom") else "edgefuse_dcr_error_heatmap.png"
     return Response(
         content=buf.getvalue(),
         media_type="image/png",
-        headers={"Content-Disposition": "attachment; filename=edgefuse_dcr_error_heatmap.png"}
+        headers={"Content-Disposition": f"attachment; filename={fname}"}
     )
 
 
