@@ -1082,15 +1082,49 @@ def predict_ai_depth(
     """
     AI-Powered Monocular Depth Estimation using Depth Anything V2 (ViT-S).
     Accepts uploaded RGB image file, preset demo ID, or active custom session RGB.
+    Custom user upload ALWAYS takes absolute top priority over preset catalog scenes.
     FastAPI automatically executes sync endpoint in its worker threadpool.
     Returns colorized preview, metadata, and unique prediction_id for downloads.
     """
-    preset_samples = {
+    raw_rgb = None
+    filename = "rgb_input.jpg"
+
+    # 1. Custom User File Upload ALWAYS takes absolute first priority
+    if rgb_file and hasattr(rgb_file, "filename") and rgb_file.filename:
+        filename = rgb_file.filename
+        try:
+            if hasattr(rgb_file, "file"):
+                try:
+                    rgb_file.file.seek(0)
+                except Exception:
+                    pass
+                content = rgb_file.file.read()
+            elif hasattr(rgb_file, "read"):
+                content = rgb_file.read()
+            else:
+                content = bytes(rgb_file)
+        except Exception:
+            content = rgb_file.file.read() if hasattr(rgb_file, "file") else b""
+
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded photograph file is empty.")
+
+        try:
+            raw_rgb = parse_rgb_bytes(content, filename=filename)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    # 2. Preset Demo Sample fallback (only when no custom file was provided)
+    elif preset_id and preset_id in {
         "indoor_nyu": ("indoor_nyu_rgb.jpg", "indoor_nyu_depth.npy", "Indoor Living Room (NYU Depth V2)"),
         "outdoor_kitti": ("outdoor_kitti_rgb.jpg", "outdoor_kitti_depth.npy", "Outdoor Automotive Road (KITTI LiDAR)"),
         "lab_middlebury": ("lab_middlebury_rgb.jpg", "lab_middlebury_depth.npy", "Artroom Lab Setup (Middlebury 2021)")
-    }
-    if preset_id and preset_id in preset_samples:
+    }:
+        preset_samples = {
+            "indoor_nyu": ("indoor_nyu_rgb.jpg", "indoor_nyu_depth.npy", "Indoor Living Room (NYU Depth V2)"),
+            "outdoor_kitti": ("outdoor_kitti_rgb.jpg", "outdoor_kitti_depth.npy", "Outdoor Automotive Road (KITTI LiDAR)"),
+            "lab_middlebury": ("lab_middlebury_rgb.jpg", "lab_middlebury_depth.npy", "Artroom Lab Setup (Middlebury 2021)")
+        }
         rgb_fname, depth_fname, sample_title = preset_samples[preset_id]
         p_rgb = os.path.join(APP_DIR, "static", "ai_samples", rgb_fname)
         p_depth = os.path.join(APP_DIR, "static", "ai_samples", depth_fname)
@@ -1108,8 +1142,8 @@ def predict_ai_depth(
             }
             prediction_id = uuid.uuid4().hex
             colored = colorize_depth(depth_rel, colormap="turbo")
-            preview_b64 = encode_image_base64(colored)
-            rgb_preview_b64 = encode_image_base64(raw_rgb)
+            preview_b64 = encode_image_base64(colored, quality=85)
+            rgb_preview_b64 = encode_image_base64(raw_rgb, quality=85)
             now = time.time()
             AI_PREDICTIONS[prediction_id] = {
                 "depth": depth_rel,
@@ -1132,24 +1166,7 @@ def predict_ai_depth(
                 "depth_type": meta["depth_type"]
             }
 
-    raw_rgb = None
-    filename = "rgb_input.jpg"
-
-    if rgb_file and rgb_file.filename:
-        filename = rgb_file.filename
-        try:
-            if hasattr(rgb_file, "file"):
-                content = rgb_file.file.read()
-            elif hasattr(rgb_file, "read"):
-                content = rgb_file.read()
-            else:
-                content = bytes(rgb_file)
-        except Exception:
-            content = rgb_file.file.read() if hasattr(rgb_file, "file") else b""
-        try:
-            raw_rgb = parse_rgb_bytes(content, filename=filename)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+    # 3. Active Custom Session RGB
     elif session_id and session_id in CUSTOM_SESSIONS:
         sess = CUSTOM_SESSIONS[session_id]
         raw_rgb = sess.get("raw_rgb")
@@ -1161,16 +1178,43 @@ def predict_ai_depth(
 
     h_orig, w_orig = raw_rgb.shape[:2]
 
+    # Pre-scale high-resolution uploads to max 1024px to ensure CPU-friendly, hang-free inference under 512MB RAM
+    MAX_AI_DIM = 1024
+    if max(h_orig, w_orig) > MAX_AI_DIM:
+        scale = MAX_AI_DIM / float(max(h_orig, w_orig))
+        target_w = max(14, int(w_orig * scale))
+        target_h = max(14, int(h_orig * scale))
+        infer_rgb = cv2.resize(raw_rgb, (target_w, target_h), interpolation=cv2.INTER_AREA)
+    else:
+        infer_rgb = raw_rgb
+
     try:
-        depth_rel, meta = AI_DEPTH_MGR.predict(raw_rgb, input_size=input_size)
+        depth_rel, meta = AI_DEPTH_MGR.predict(infer_rgb, input_size=input_size)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Depth Anything V2 inference failed: {str(e)}")
 
+    # Resize depth map back to user original resolution if scaled
+    if infer_rgb.shape[:2] != (h_orig, w_orig):
+        depth_rel = cv2.resize(depth_rel, (w_orig, h_orig), interpolation=cv2.INTER_CUBIC)
+
     prediction_id = uuid.uuid4().hex
 
-    colored = colorize_depth(depth_rel)
-    preview_b64 = encode_image_base64(colored)
-    rgb_preview_b64 = encode_image_base64(raw_rgb)
+    colored = colorize_depth(depth_rel, colormap="turbo")
+
+    # Downscale previews to max 960px for JSON serialization to guarantee lightweight (~90KB) network payload
+    disp_max = 960
+    if max(depth_rel.shape[:2]) > disp_max:
+        d_scale = disp_max / float(max(depth_rel.shape[:2]))
+        dw = int(depth_rel.shape[1] * d_scale)
+        dh = int(depth_rel.shape[0] * d_scale)
+        disp_colored = cv2.resize(colored, (dw, dh), interpolation=cv2.INTER_AREA)
+        disp_rgb = cv2.resize(infer_rgb, (dw, dh), interpolation=cv2.INTER_AREA)
+    else:
+        disp_colored = colored
+        disp_rgb = infer_rgb
+
+    preview_b64 = encode_image_base64(disp_colored, quality=85)
+    rgb_preview_b64 = encode_image_base64(disp_rgb, quality=85)
 
     now = time.time()
     stale_keys = [k for k, v in AI_PREDICTIONS.items() if now - v.get("timestamp", 0) > 3600]
