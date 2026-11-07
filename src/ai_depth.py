@@ -178,9 +178,15 @@ class DepthAnythingV2Manager:
                 # Inference execution
                 raw_depth = self.model.infer_image(proc_bgr, input_size=input_size)
 
-        # High-quality restoration to original user resolution with OpenCV (C++ zero-overhead streaming)
-        if (raw_depth.shape[0], raw_depth.shape[1]) != (h_orig, w_orig):
-            depth_map = cv2.resize(raw_depth, (w_orig, h_orig), interpolation=cv2.INTER_CUBIC)
+        # High-quality restoration to original user resolution with OpenCV (clamped to max 768px for memory safety)
+        out_w, out_h = w_orig, h_orig
+        if max(out_w, out_h) > 768:
+            s_cap = 768.0 / float(max(out_w, out_h))
+            out_w = max(16, int(out_w * s_cap))
+            out_h = max(16, int(out_h * s_cap))
+
+        if (raw_depth.shape[0], raw_depth.shape[1]) != (out_h, out_w):
+            depth_map = cv2.resize(raw_depth, (out_w, out_h), interpolation=cv2.INTER_CUBIC)
         else:
             depth_map = raw_depth
 

@@ -1115,6 +1115,19 @@ def predict_ai_depth(
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+        # Cloud free-tier memory safeguard (512MB RAM ceiling):
+        # High-res uploads (e.g. 1080p desktop screenshots, 4K camera photos) are uniformly
+        # scaled to max dimension 768px preserving aspect ratio to avoid container OOM.
+        MAX_AI_INPUT_DIM = 768
+        h_in, w_in = raw_rgb.shape[:2]
+        if max(h_in, w_in) > MAX_AI_INPUT_DIM:
+            scale_in = MAX_AI_INPUT_DIM / float(max(h_in, w_in))
+            clamped_w = max(16, int(w_in * scale_in))
+            clamped_h = max(16, int(h_in * scale_in))
+            raw_rgb = cv2.resize(raw_rgb, (clamped_w, clamped_h), interpolation=cv2.INTER_AREA)
+        del content
+        trim_process_memory()
+
     # 2. Preset Demo Sample fallback (only when no custom file was provided)
     elif preset_id and preset_id in {
         "indoor_nyu": ("indoor_nyu_rgb.jpg", "indoor_nyu_depth.npy", "Indoor Living Room (NYU Depth V2)"),
