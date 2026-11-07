@@ -164,13 +164,14 @@ def run_tests():
     print("\n[TEST 8] Testing EdgeFuse-DCR Reconstruction with AI-Predicted Depth...")
     algorithms = ["nearest", "bilinear", "bicubic", "joint_bilateral", "guided", "cnn", "hybrid"]
     for alg in algorithms:
-        rec_res = run_reconstruction(
+        coro = run_reconstruction(
             session_id=test_session,
             method=alg,
             upsample_factor=4,
             apply_texture_suppression=True,
             input_source="ai_predicted"
         )
+        rec_res = asyncio.run(coro) if asyncio.iscoroutine(coro) else coro
         assert rec_res.get("success") is True
         # Verify scientific honesty: No reference GT was provided
         assert rec_res.get("has_gt") is False, "has_gt must be False when reference GT is absent"

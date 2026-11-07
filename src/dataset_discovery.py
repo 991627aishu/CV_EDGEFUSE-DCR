@@ -132,6 +132,7 @@ class DatasetCatalog:
                 self.datasets_summary = cached_data.get("datasets_summary", {})
                 self.inventory_audit = cached_data.get("inventory_audit", {})
                 self.scenes_by_id = {s["id"]: s for s in self.scenes}
+                self._link_demo_benchmarks()
                 self._is_indexed = True
                 print(f"[DatasetCatalog] Loaded {len(self.scenes)} indexed scenes from cache.")
                 return
@@ -169,6 +170,7 @@ class DatasetCatalog:
 
         self.scenes = all_scenes
         self.scenes_by_id = {s["id"]: s for s in self.scenes}
+        self._link_demo_benchmarks()
 
         # Compute Dataset Summaries & Inventories
         self._compute_summaries()
@@ -189,6 +191,18 @@ class DatasetCatalog:
 
         t1 = time.perf_counter()
         print(f"[DatasetCatalog] Successfully indexed {len(self.scenes)} scenes across all datasets in {(t1-t0)*1000:.1f} ms.")
+
+    def _link_demo_benchmarks(self):
+        """Ensures catalog scenes corresponding to verified demo scenes inherit precomputed benchmark rows."""
+        demo_links = {
+            "nyu_idx_0000": "nyu_living_room",
+            "kitti_drive_0002_0014": "kitti_road_01",
+            "middlebury_artroom1": "middlebury_artroom1"
+        }
+        for indexed_id, demo_id in demo_links.items():
+            if indexed_id in self.scenes_by_id and demo_id in self.scenes_by_id:
+                if not self.scenes_by_id[indexed_id].get("benchmark_rows"):
+                    self.scenes_by_id[indexed_id]["benchmark_rows"] = list(self.scenes_by_id[demo_id].get("benchmark_rows", []))
 
     def _index_demo_samples(self) -> List[Dict[str, Any]]:
         """Indexes pre-extracted demo samples from demo_samples/manifest.json."""

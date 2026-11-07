@@ -24,6 +24,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 
+async def to_worker_thread(func, *args, **kwargs):
+    """Executes blocking sync work in standard ThreadPoolExecutor safely."""
+    return await asyncio.to_thread(func, *args, **kwargs)
+
 from src.depth_engine import reconstruct_depth, detect_rgb_edges, detect_depth_discontinuities
 from src.model import load_model
 from src.evaluation import compute_depth_metrics
@@ -54,9 +58,10 @@ if os.path.exists(demo_path):
     app.mount("/demo_samples", StaticFiles(directory=demo_path), name="demo_samples")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-# Strict thread limit for memory safety
+# Strict single-thread limit for low-memory (512MB RAM) Linux hosting
+torch.set_num_threads(1)
 try:
-    torch.set_num_threads(2)
+    torch.set_num_interop_threads(1)
 except Exception:
     pass
 MODEL_PATH = "EDGEFUSE_DCR/models/edgefuse_dcr_compact.pth"
@@ -74,11 +79,23 @@ else:
 AI_DEPTH_MGR = DepthAnythingV2Manager.get_instance()
 AI_PREDICTIONS: Dict[str, Dict[str, Any]] = {}
 
+METHOD_STAGE_MAP = {
+    "nearest": ("A0", "Nearest Neighbor"),
+    "bilinear": ("A0", "Bilinear Interpolation"),
+    "bicubic": ("A0", "Bicubic Interpolation"),
+    "joint_bilateral": ("A1", "Joint Bilateral Filter"),
+    "guided": ("A1", "Guided Filter"),
+    "cnn": ("A2", "Deep Learning (EdgeFuseNet Alone)"),
+    "cnn_confidence": ("A3", "CNN + Confidence Guidance"),
+    "cnn_boundary": ("A4", "CNN + Conf + Boundary Refinement"),
+    "hybrid": ("A5", "EdgeFuse-DCR Full Hybrid")
+}
+
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     """Pre-warm models on startup."""
     try:
-        AI_DEPTH_MGR.ensure_model_loaded()
+        await to_worker_thread(AI_DEPTH_MGR.ensure_model_loaded)
     except Exception as e:
         print(f"Depth Anything V2 background loading deferred: {e}")
 
@@ -590,7 +607,7 @@ def align_rgb_and_depth(rgb_image: np.ndarray, depth_input: np.ndarray, factor: 
 
 
 @app.post("/api/benchmark/custom")
-def benchmark_custom_upload(
+async def benchmark_custom_upload(
     session_id: str = Form(...),
     max_depth: float = Form(10.0)
 ):
@@ -629,7 +646,8 @@ def benchmark_custom_upload(
     rows = []
     for label, m_key in methods:
         t0 = time.perf_counter()
-        res = reconstruct_depth(
+        res = await to_worker_thread(
+            reconstruct_depth,
             rgb_image=proc_rgb,
             depth_input=proc_depth,
             factor=4,
@@ -781,11 +799,82 @@ def get_scene_details(dataset_id: str, scene_id: str):
     return {"success": True, "scene": scene}
 
 
+SCENE_BENCHMARK_CACHE: Dict[str, list] = {}
+
+async def compute_scene_benchmark_rows(rgb_image: np.ndarray, depth_input: np.ndarray, gt_depth: np.ndarray, max_eval_depth: float = 10.0) -> list:
+    """Computes authentic per-scene ablation metrics across A0-A5 on the exact same input."""
+    methods = [
+        ("A0: Nearest Neighbor", "nearest"),
+        ("A0: Bilinear Interpolation", "bilinear"),
+        ("A0: Bicubic Interpolation", "bicubic"),
+        ("A1: Joint Bilateral Filter", "joint_bilateral"),
+        ("A1: Guided Filter", "guided"),
+        ("A2: Deep Learning (EdgeFuseNet Alone)", "cnn"),
+        ("A3: CNN + Confidence Guidance", "cnn_confidence"),
+        ("A4: CNN + Conf + Boundary Refinement", "cnn_boundary"),
+        ("A5: EdgeFuse-DCR Full Hybrid (Ours)", "hybrid")
+    ]
+    rows = []
+    for label, m_key in methods:
+        t0 = time.perf_counter()
+        res = await to_worker_thread(
+            reconstruct_depth,
+            rgb_image=rgb_image,
+            depth_input=depth_input,
+            factor=4,
+            method=m_key,
+            cnn_model=MODEL,
+            device=DEVICE,
+            apply_suppression=True
+        )
+        lat = (time.perf_counter() - t0) * 1000.0
+        m = compute_depth_metrics(res["reconstructed_depth"], gt_depth, max_depth=max_eval_depth)
+        rows.append({
+            "method": label,
+            "key": m_key,
+            "rmse": f"{m['rmse']:.4f}",
+            "mae": f"{m['mae']:.4f}",
+            "psnr": f"{m['psnr']:.2f}",
+            "ssim": f"{m['ssim']:.4f}",
+            "f1": f"{m['boundary_f1']:.4f}",
+            "grad": f"{m['grad_mae']:.4f}",
+            "latency": f"{lat:.1f} ms",
+            "highlight": (m_key == "hybrid")
+        })
+    return rows
+
+
 @app.get("/api/benchmark/scene/{sample_id}")
-def get_scene_benchmark(sample_id: str):
-    """Returns authentic precomputed per-scene benchmark rows evaluated against Ground Truth."""
+async def get_scene_benchmark(sample_id: str, compute: bool = False):
+    """Returns authentic precomputed or on-demand per-scene benchmark rows evaluated against Ground Truth."""
+    if sample_id in SCENE_BENCHMARK_CACHE:
+        return {
+            "success": True,
+            "sample_id": sample_id,
+            "title": sample_id,
+            "dataset_key": "nyu",
+            "dataset_name": "NYU Depth V2",
+            "has_gt": True,
+            "is_precomputed": True,
+            "benchmark_rows": SCENE_BENCHMARK_CACHE[sample_id]
+        }
+
     if sample_id in CATALOG.scenes_by_id:
         info = CATALOG.scenes_by_id[sample_id]
+        rows = info.get("benchmark_rows", [])
+
+        # On-demand compute if requested and missing
+        if not rows and compute and info.get("has_gt", True):
+            try:
+                rgb, lr_depth, gt_depth, _ = CATALOG.load_scene_data(sample_id)
+                if gt_depth is not None:
+                    max_d = info.get("max_eval_depth", 10.0)
+                    rows = await compute_scene_benchmark_rows(rgb, lr_depth, gt_depth, max_eval_depth=max_d)
+                    SCENE_BENCHMARK_CACHE[sample_id] = rows
+                    info["benchmark_rows"] = rows
+            except Exception as e:
+                print(f"[SceneBenchmark] Warning: computation failed for {sample_id} ({e})")
+
         return {
             "success": True,
             "sample_id": sample_id,
@@ -793,7 +882,7 @@ def get_scene_benchmark(sample_id: str):
             "dataset_key": info["dataset_key"],
             "dataset_name": info["dataset_name"],
             "has_gt": info.get("has_gt", True),
-            "benchmark_rows": info.get("benchmark_rows", [])
+            "benchmark_rows": rows
         }
 
     info = resolve_demo_sample(sample_id)
@@ -1132,7 +1221,7 @@ def use_ai_depth_as_input(
 
 
 @app.post("/api/reconstruct")
-def run_reconstruction(
+async def run_reconstruction(
     rgb_file: Optional[UploadFile] = None,
     depth_file: Optional[UploadFile] = None,
     gt_file: Optional[UploadFile] = None,
@@ -1149,14 +1238,6 @@ def run_reconstruction(
     Handles custom uploaded RGB+Depth (with optional Ground Truth) or built-in demo samples.
     """
     t_start = time.perf_counter()
-
-    # Normalize parameters if invoked directly in tests
-    demo_sample_id = demo_sample_id if isinstance(demo_sample_id, str) else (getattr(demo_sample_id, "default", None) if isinstance(getattr(demo_sample_id, "default", None), str) else None)
-    method = method if isinstance(method, str) else (getattr(method, "default", "hybrid") or "hybrid")
-    upsample_factor = int(upsample_factor) if isinstance(upsample_factor, (int, float)) else (getattr(upsample_factor, "default", 4) or 4)
-    apply_texture_suppression = bool(apply_texture_suppression) if isinstance(apply_texture_suppression, bool) else bool(getattr(apply_texture_suppression, "default", True))
-    session_id = session_id if isinstance(session_id, str) else (getattr(session_id, "default", None) if isinstance(getattr(session_id, "default", None), str) else None)
-    input_source = input_source if isinstance(input_source, str) else (getattr(input_source, "default", "sensor") or "sensor")
 
     # Determine if this request is a custom file upload
     has_custom_files = bool(
@@ -1216,17 +1297,13 @@ def run_reconstruction(
             # Fresh file upload
             if hasattr(rgb_file, "file") and hasattr(rgb_file.file, "read"):
                 rgb_bytes = rgb_file.file.read()
-            elif hasattr(rgb_file, "read"):
-                rgb_bytes = rgb_file.read()
             else:
-                rgb_bytes = bytes(rgb_file)
+                rgb_bytes = await rgb_file.read()
 
             if hasattr(depth_file, "file") and hasattr(depth_file.file, "read"):
                 depth_bytes = depth_file.file.read()
-            elif hasattr(depth_file, "read"):
-                depth_bytes = depth_file.read()
             else:
-                depth_bytes = bytes(depth_file)
+                depth_bytes = await depth_file.read()
 
             try:
                 raw_rgb = parse_rgb_bytes(rgb_bytes, filename=rgb_file.filename)
@@ -1244,10 +1321,8 @@ def run_reconstruction(
             if gt_file and gt_file.filename:
                 if hasattr(gt_file, "file") and hasattr(gt_file.file, "read"):
                     gt_bytes = gt_file.file.read()
-                elif hasattr(gt_file, "read"):
-                    gt_bytes = gt_file.read()
                 else:
-                    gt_bytes = bytes(gt_file)
+                    gt_bytes = await gt_file.read()
                 try:
                     gt_parsed, _, _, _ = parse_depth_bytes(gt_bytes, filename=gt_file.filename, depth_scale=depth_scale)
                     raw_gt = gt_parsed
@@ -1296,8 +1371,13 @@ def run_reconstruction(
     input_depth_b64 = encode_image_base64(colorize_depth(depth_input, valid_mask=valid_mask))
     valid_mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
+    t_prep_end = time.perf_counter()
+    prep_latency_ms = (t_prep_end - t_start) * 1000.0
+
     # 3. Execute Reconstruction in worker threadpool
-    res = reconstruct_depth(
+    t_model_start = time.perf_counter()
+    res = await to_worker_thread(
+        reconstruct_depth,
         rgb_image=rgb_image,
         depth_input=depth_input,
         factor=upsample_factor,
@@ -1306,6 +1386,8 @@ def run_reconstruction(
         device=DEVICE,
         apply_suppression=apply_texture_suppression
     )
+    t_model_end = time.perf_counter()
+    model_latency_ms = (t_model_end - t_model_start) * 1000.0
 
     rec_depth = res["reconstructed_depth"]
     conf_map = res["confidence_map"]
@@ -1376,8 +1458,24 @@ def run_reconstruction(
         err_colored[~eval_mask] = [15, 23, 42]
         error_b64 = encode_image_base64(cv2.cvtColor(err_colored, cv2.COLOR_BGR2RGB))
 
-    total_latency = (time.perf_counter() - t_start) * 1000.0
+    t_post_end = time.perf_counter()
+    post_latency_ms = (t_post_end - t_model_end) * 1000.0
+    total_latency = (t_post_end - t_start) * 1000.0
+    model_time = round(res.get("latency_ms", model_latency_ms), 1)
+
+    latency_breakdown = {
+        "model_latency_ms": model_time,
+        "preprocess_latency_ms": round(prep_latency_ms, 1),
+        "postprocess_latency_ms": round(post_latency_ms, 1),
+        "total_latency_ms": round(total_latency, 1),
+        "device": DEVICE.upper(),
+        "execution_mode": "CPU (Single-Thread Optimized)" if DEVICE == "cpu" else "GPU Accelerated (CUDA)",
+        "timing_boundary": "reconstruct_depth (inference + filter kernel)"
+    }
     peak_mem = 43.5 * 1024 * 1024
+
+    algo_stage, algo_disp_name = METHOD_STAGE_MAP.get(method, ("A5", "EdgeFuse-DCR Full Hybrid"))
+    live_label = "Live A5 — Current Execution" if method == "hybrid" else f"Live {algo_stage} ({algo_disp_name}) — Current Execution"
 
     # Save latest reconstruction in memory cache for downloads
     app.state.last_rec = {
@@ -1389,6 +1487,10 @@ def run_reconstruction(
         "err_colored": cv2.cvtColor(err_colored, cv2.COLOR_BGR2RGB) if has_gt else None,
         "metrics": metrics,
         "method": method,
+        "algorithm_stage": algo_stage,
+        "algorithm_name": algo_disp_name,
+        "live_row_label": live_label,
+        "latency_breakdown": latency_breakdown,
         "factor": upsample_factor,
         "sample_name": sample_title,
         "is_custom": has_custom_files,
@@ -1402,12 +1504,17 @@ def run_reconstruction(
         "success": True,
         "sample_name": sample_title,
         "method": method,
+        "algorithm_stage": algo_stage,
+        "algorithm_name": algo_disp_name,
+        "live_row_label": live_label,
         "is_custom": has_custom_files,
         "input_source": (CUSTOM_SESSIONS[curr_session_id].get("input_source", input_source) if has_custom_files and curr_session_id in CUSTOM_SESSIONS else ("ai_predicted" if input_source == "ai_predicted" else ("custom_sensor" if has_custom_files else "dataset"))),
         "depth_type": depth_type,
         "has_gt": has_gt,
         "warning": depth_warning,
-        "latency_ms": round(total_latency, 1),
+        "latency_ms": model_time,
+        "total_latency_ms": round(total_latency, 1),
+        "latency_breakdown": latency_breakdown,
         "peak_ram_mb": round(peak_mem / (1024 * 1024), 2),
         "input_depth_b64": input_depth_b64,
         "valid_mask_b64": valid_mask_b64,
@@ -1557,10 +1664,14 @@ def download_evaluation_report():
         "problem_statement": "P4: Edge-Preserving Depth Map Upsampling and Refinement",
         "sample": rec.get("sample_name"),
         "method": rec.get("method"),
+        "algorithm_stage": rec.get("algorithm_stage", "A5"),
+        "algorithm_name": rec.get("algorithm_name", "EdgeFuse-DCR Full Hybrid"),
+        "live_row_label": rec.get("live_row_label"),
         "upsample_factor": rec.get("factor", 4),
         "is_custom_upload": rec.get("is_custom", False),
         "has_ground_truth": rec.get("has_gt", False),
         "metrics": rec.get("metrics"),
+        "latency_breakdown": rec.get("latency_breakdown"),
         "algorithm_comparison": rec.get("algo_comparison"),
         "input_statistics": rec.get("input_stats"),
         "timestamp": rec.get("timestamp"),
