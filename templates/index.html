@@ -1634,8 +1634,21 @@
                     <span class="text-xs font-bold text-cyan-700 dark:text-cyan-300">EdgeFuse-DCR Refined Depth</span>
                     <button type="button" onclick="openImageViewer('view-reconstructed', 'EdgeFuse-DCR Refined Depth')" class="text-[10px] text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-white font-bold">🔍 Fullscreen</button>
                   </div>
-                  <div class="aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-cyan-500/20">
-                    <img id="view-reconstructed" src="" class="w-full h-full object-cover" alt="EdgeFuse-DCR Final Reconstruction">
+                  <div class="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-cyan-500/20">
+                    <img id="view-reconstructed" src="" class="hidden w-full h-full object-cover" alt="EdgeFuse-DCR Final Reconstruction">
+                    <!-- Dynamic Placeholder / Awaiting State -->
+                    <div id="view-reconstructed-placeholder" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-4 text-center space-y-2 z-10">
+                      <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-inner">
+                        <svg id="view-rec-ph-icon" class="w-5 h-5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                      </div>
+                      <div class="space-y-0.5 max-w-xs">
+                        <span id="view-rec-ph-title" class="text-xs font-bold text-white font-mono block">Ready for Hybrid Refinement</span>
+                        <span id="view-rec-ph-desc" class="text-[10px] text-slate-400 block">Click &ldquo;Execute Depth Reconstruction&rdquo; below to refine.</span>
+                      </div>
+                      <button type="button" onclick="executeReconstruction()" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] transition-colors shadow-sm flex items-center gap-1.5">
+                        <span>⚡ Run EdgeFuse-DCR</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3233,11 +3246,15 @@
       if (data.reconstructed_b64) {
         setViewImage('view-reconstructed', data.reconstructed_b64);
         setViewImage('view-ablation-final', data.reconstructed_b64);
+        const ph = document.getElementById('view-reconstructed-placeholder');
+        if (ph) ph.classList.add('hidden');
       }
       if (data.classical_b64) setViewImage('view-classical', data.classical_b64);
       if (data.cnn_b64) setViewImage('view-cnn', data.cnn_b64);
       if (data.confidence_b64) setViewImage('view-confidence', data.confidence_b64);
       if (data.boundary_b64) setViewImage('view-boundary', data.boundary_b64);
+      if (data.valid_mask_b64) setViewImage('view-valid-mask', data.valid_mask_b64);
+      if (data.input_depth_b64) setViewImage('view-lr-depth', data.input_depth_b64);
 
       lastLiveReconstructionData = data;
       const ptTab = document.getElementById('view-tab-pointcloud');
@@ -3325,14 +3342,27 @@
 
     function setViewImage(imgId, b64) {
       const el = document.getElementById(imgId);
-      if (el && b64) el.src = b64;
+      if (el) {
+        if (b64 && b64.trim() !== '') {
+          el.src = b64;
+          el.classList.remove('hidden');
+        } else {
+          el.src = '';
+          el.classList.add('hidden');
+        }
+      }
     }
 
     function clearReconstructionPanels() {
       ['view-reconstructed', 'view-ablation-final', 'view-classical', 'view-cnn', 'view-confidence', 'view-boundary', 'view-error'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.src = '';
+        if (el) {
+          el.src = '';
+          el.classList.add('hidden');
+        }
       });
+      const ph = document.getElementById('view-reconstructed-placeholder');
+      if (ph) ph.classList.remove('hidden');
     }
 
     // -------------------------------------------------------------------------
@@ -4298,24 +4328,48 @@
           throw new Error(err.detail || 'Transfer failed');
         }
         const data = await res.json();
+        if (data.session_id) customSessionId = data.session_id;
 
-        // Switch Reconstruction Lab input source to AI-Predicted
+        // 1. Switch Reconstruction Lab input source to AI-Predicted
         selectInputSource('ai_predicted');
 
-        // Set Lab views
+        // 2. Set Lab input views
         const rgbSrc = document.getElementById('ai-view-rgb').src;
         const depthSrc = document.getElementById('ai-view-depth').src;
         if (rgbSrc) setViewImage('view-rgb', rgbSrc);
         if (depthSrc) setViewImage('view-lr-depth', depthSrc);
 
+        // 3. Clear old reconstruction panels & prevent broken image icons
+        clearReconstructionPanels();
+
+        // 4. Reset Top Metric KPI Cards honestly for uncalibrated AI depth prior (no GT)
+        document.getElementById('val-rmse').innerText = 'N/A';
+        document.getElementById('val-mae').innerText = 'N/A';
+        document.getElementById('val-psnr').innerText = 'N/A';
+        document.getElementById('val-ssim').innerText = 'N/A';
+        document.getElementById('val-f1').innerText = 'N/A';
+        document.getElementById('val-latency').innerHTML = '<span class="text-xs text-cyan-400 font-mono animate-pulse">Running...</span>';
+
+        // 5. Update header badges
         document.getElementById('header-sample-pill').innerText = 'Custom RGB + AI-Predicted Depth';
         document.getElementById('sample-dimensions').innerText = document.getElementById('ai-meta-res').innerText + ' (AI Prior)';
 
-        // Scroll smoothly to reconstruction lab
+        // 6. Set active computing status on reconstructed depth placeholder
+        const ph = document.getElementById('view-reconstructed-placeholder');
+        const phTitle = document.getElementById('view-rec-ph-title');
+        const phDesc = document.getElementById('view-rec-ph-desc');
+        if (ph) ph.classList.remove('hidden');
+        if (phTitle) phTitle.innerText = 'Refining Depth Geometry...';
+        if (phDesc) phDesc.innerText = 'Executing EdgeFuse-DCR CNN feature extraction & bilateral boundary refinement...';
+
+        // 7. Scroll smoothly to reconstruction lab
         const labSection = document.getElementById('section-reconstruction');
         if (labSection) labSection.scrollIntoView({ behavior: 'smooth' });
 
-        showToast('AI-Predicted Depth transferred to Reconstruction Lab! Click "Execute Depth Reconstruction" to refine.');
+        showToast('AI-Predicted Depth transferred! Executing EdgeFuse-DCR refinement...');
+
+        // 8. Automatically execute depth reconstruction for seamless 1-click completion!
+        await executeReconstruction();
       } catch (e) {
         showToast(e.message, true);
       }
