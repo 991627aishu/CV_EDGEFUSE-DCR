@@ -11,6 +11,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Three.js & OrbitControls for Interactive 3D Point Cloud -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
   <!-- Tailwind CSS CDN with class-based Dark Mode -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -1342,12 +1346,35 @@
                   </select>
                 </div>
 
-                <div class="flex items-center justify-between pt-1">
-                  <div>
-                    <label for="toggle-texture" class="text-xs font-bold text-charcoal-950 dark:text-white cursor-pointer">Texture-Copy Suppression</label>
-                    <p class="text-[10px] text-charcoal-500 dark:text-slate-400">Halts depth bleeding on flat surfaces</p>
+                <!-- Scientific Colormap Selector -->
+                <div class="space-y-1.5 pt-1">
+                  <label for="select-colormap" class="text-[11px] font-bold text-charcoal-800 dark:text-slate-300">Scientific Colormap</label>
+                  <select id="select-colormap" class="w-full text-xs py-2 px-3 rounded-xl bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="turbo" selected>Turbo (Default High-Contrast)</option>
+                    <option value="viridis">Viridis (Perceptually Uniform)</option>
+                    <option value="magma">Magma (Warm Perceptual)</option>
+                    <option value="inferno">Inferno (High Dynamic Range)</option>
+                    <option value="grayscale">Grayscale (Linear Intensity)</option>
+                    <option value="inverse_grayscale">Inverse Grayscale (Near-Bright)</option>
+                  </select>
+                </div>
+
+                <!-- Texture-Copy Suppression Controls -->
+                <div class="pt-1 space-y-2.5 p-3 rounded-xl bg-ivory-50 dark:bg-slate-900/40 border border-ivory-200 dark:border-slate-800">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <label for="toggle-texture" class="text-xs font-bold text-charcoal-950 dark:text-white cursor-pointer">Texture-Copy Suppression</label>
+                      <p class="text-[10px] text-charcoal-500 dark:text-slate-400">Attenuates photometric edges on flat geometry</p>
+                    </div>
+                    <input type="checkbox" id="toggle-texture" checked onchange="toggleTextureSuppression()" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-900 border-ivory-300 dark:border-slate-700 cursor-pointer">
                   </div>
-                  <input type="checkbox" id="toggle-texture" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-900 border-ivory-300 dark:border-slate-700 cursor-pointer">
+                  <div id="suppression-strength-wrap" class="space-y-1">
+                    <div class="flex items-center justify-between text-[11px]">
+                      <span class="text-charcoal-600 dark:text-slate-400 font-mono">Suppression Strength α</span>
+                      <span id="suppression-strength-val" class="font-mono font-bold text-blue-600 dark:text-cyan-400">0.85 (High)</span>
+                    </div>
+                    <input type="range" id="slider-suppression-strength" min="0.0" max="1.0" step="0.05" value="0.85" oninput="updateSuppressionStrength(this.value)" class="w-full h-1.5 bg-ivory-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                  </div>
                 </div>
 
                 <button type="button" id="btn-run" onclick="executeReconstruction()" class="w-full py-3 px-4 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-gradient-to-r dark:from-blue-600 dark:to-cyan-600 dark:hover:from-blue-500 dark:hover:to-cyan-500 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2">
@@ -1377,6 +1404,10 @@
                   </button>
                   <button type="button" onclick="switchVisualTab('confidence')" id="tab-btn-confidence" class="px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors">
                     Confidence & Error
+                  </button>
+                  <button type="button" onclick="switchVisualTab('pointcloud')" id="tab-btn-pointcloud" class="px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    <span>3D Point Cloud</span>
                   </button>
                 </div>
 
@@ -1488,6 +1519,49 @@
                     </div>
                   </div>
                   <p class="text-[11px] text-charcoal-500 dark:text-slate-400">Dark Blue = 0m error. Red = >0.5m error against ground truth reference.</p>
+                </div>
+              </div>
+
+              <!-- TAB 5: Interactive 3D Point Cloud -->
+              <div id="view-tab-pointcloud" class="hidden bg-white dark:bg-lab-card p-4 rounded-2xl border border-purple-500/30 space-y-3 shadow-lg">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse"></span>
+                    <span class="text-xs font-bold text-charcoal-950 dark:text-white">Interactive 3D Point Cloud (Three.js WebGL)</span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">Pinhole Camera fx=525, fy=525</span>
+                  </div>
+
+                  <!-- 3D Controls Bar -->
+                  <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1 bg-ivory-100 dark:bg-slate-900 p-1 rounded-lg border border-ivory-300 dark:border-slate-800 text-[10px] font-bold">
+                      <button type="button" id="btn-3d-rgb" onclick="set3DColorMode('rgb')" class="px-2 py-1 rounded bg-blue-600 text-white transition-all shadow-sm">RGB Texture</button>
+                      <button type="button" id="btn-3d-depth" onclick="set3DColorMode('depth')" class="px-2 py-1 rounded text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-all">Depth Colormap</button>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 bg-ivory-100 dark:bg-slate-900 px-2 py-1 rounded-lg border border-ivory-300 dark:border-slate-800 text-[10px]">
+                      <span class="text-charcoal-600 dark:text-slate-400 font-mono">Size:</span>
+                      <input type="range" id="slider-point-size" min="1" max="8" step="0.5" value="2.5" oninput="set3DPointSize(this.value)" class="w-16 h-1 accent-purple-600">
+                    </div>
+
+                    <button type="button" onclick="reset3DCamera()" class="px-2 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-600 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white text-xs font-mono transition-colors" title="Reset Camera">
+                      ↺ Reset
+                    </button>
+
+                    <button type="button" onclick="toggle3DFullscreen()" class="px-2 py-1 rounded-lg bg-ivory-100 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-charcoal-600 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white text-xs font-mono transition-colors" title="Toggle Fullscreen">
+                      ⛶ Full
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Three.js Canvas Container -->
+                <div id="pointcloud-canvas-container" class="relative w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden shadow-inner flex items-center justify-center">
+                  <div id="pointcloud-loading" class="text-xs font-mono text-slate-400 flex items-center gap-2">
+                    <svg class="animate-spin h-4 w-4 text-purple-400" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>Initializing 3D Point Cloud Engine...</span>
+                  </div>
+                  <div id="pointcloud-controls-hint" class="absolute bottom-2 left-2 px-2.5 py-1 rounded bg-black/70 backdrop-blur text-[10px] text-slate-300 font-mono pointer-events-none z-10 border border-white/10">
+                    🖱️ Left Drag: Rotate • Scroll: Zoom • Right Drag: Pan
+                  </div>
                 </div>
               </div>
 
@@ -1740,6 +1814,15 @@
               </div>
               <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">Research Report (.json)</h4>
               <p class="text-xs text-charcoal-600 dark:text-slate-400">Complete JSON bundle including RMSE, MAE, PSNR, SSIM, Boundary F1, and model parameters.</p>
+            </a>
+
+            <a href="/api/download/ply" download class="p-5 rounded-2xl bg-white dark:bg-lab-card border border-ivory-300 dark:border-lab-cardborder hover:border-purple-500/50 transition-all space-y-2 group block shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-purple-700 dark:text-purple-400">3D POINT CLOUD</span>
+                <span class="text-xs text-charcoal-400 dark:text-slate-500 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">↓ Download</span>
+              </div>
+              <h4 class="text-sm font-bold text-charcoal-950 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors">Point Cloud Mesh (.ply)</h4>
+              <p class="text-xs text-charcoal-600 dark:text-slate-400">Standard ASCII 3D point cloud with genuine calibrated (X, Y, Z) coordinates and RGB vertex colors. Compatible with MeshLab, Blender & CloudCompare.</p>
             </a>
 
           </div>
@@ -2876,10 +2959,14 @@
       const method = document.getElementById('method-select').value;
       const factor = document.getElementById('upsample-factor').value;
       const textureSupp = document.getElementById('toggle-texture').checked;
+      const colormap = document.getElementById('select-colormap') ? document.getElementById('select-colormap').value : 'turbo';
+      const suppressionStrength = document.getElementById('slider-suppression-strength') ? document.getElementById('slider-suppression-strength').value : '0.85';
 
       formData.append('method', method);
       formData.append('upsample_factor', factor);
       formData.append('apply_texture_suppression', textureSupp);
+      formData.append('suppression_strength', suppressionStrength);
+      formData.append('colormap', colormap);
       formData.append('input_source', inputSource);
 
       if (isCustomRun) {
@@ -3842,10 +3929,17 @@
     }
 
     // -------------------------------------------------------------------------
-    // 7. DIAGNOSTIC TAB SWITCHING
+    // 7. DIAGNOSTIC TAB SWITCHING & 3D POINT CLOUD ENGINE (THREE.JS)
     // -------------------------------------------------------------------------
+    let threeScene = null, threeCamera = null, threeRenderer = null, threeControls = null, threePointsMesh = null;
+    let three3DInitialized = false;
+    let current3DColorMode = 'rgb';
+    let current3DPointSize = 2.5;
+    let cachedPointCloudColorsRGB = null;
+    let cachedPointCloudColorsDepth = null;
+
     function switchVisualTab(tabKey) {
-      ['primary', 'ablation', 'edges', 'confidence'].forEach(k => {
+      ['primary', 'ablation', 'edges', 'confidence', 'pointcloud'].forEach(k => {
         const view = document.getElementById(`view-tab-${k}`);
         const btn = document.getElementById(`tab-btn-${k}`);
         if (view) {
@@ -3854,12 +3948,263 @@
         }
         if (btn) {
           if (k === tabKey) {
-            btn.className = 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold transition-colors';
+            btn.className = 'px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold transition-colors flex items-center gap-1.5';
           } else {
-            btn.className = 'px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors';
+            btn.className = 'px-3 py-1.5 rounded-lg text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-colors flex items-center gap-1.5';
           }
         }
       });
+      if (tabKey === 'pointcloud') {
+        onPointCloudTabActivated();
+      }
+    }
+
+    function toggleTextureSuppression() {
+      const isChecked = document.getElementById('toggle-texture').checked;
+      const wrap = document.getElementById('suppression-strength-wrap');
+      if (wrap) wrap.style.opacity = isChecked ? '1.0' : '0.4';
+    }
+
+    function updateSuppressionStrength(val) {
+      const v = Number(val);
+      const span = document.getElementById('suppression-strength-val');
+      if (span) {
+        let label = 'Low';
+        if (v >= 0.75) label = 'High';
+        else if (v >= 0.45) label = 'Moderate';
+        span.innerText = `${v.toFixed(2)} (${label})`;
+      }
+    }
+
+    function initThreeJSPointCloud() {
+      const container = document.getElementById('pointcloud-canvas-container');
+      if (!container || three3DInitialized) return;
+
+      if (typeof THREE === 'undefined') {
+        console.warn('Three.js not loaded. Point cloud viewer unavailable.');
+        const loader = document.getElementById('pointcloud-loading');
+        if (loader) loader.innerHTML = '<span class="text-rose-400">⚠️ Three.js library could not be loaded from CDN.</span>';
+        return;
+      }
+
+      const width = container.clientWidth || 640;
+      const height = container.clientHeight || 400;
+
+      threeScene = new THREE.Scene();
+      threeScene.background = new THREE.Color(0x0a0f1d);
+
+      threeCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+      threeCamera.position.set(0, 0, 3.5);
+
+      threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+      threeRenderer.setSize(width, height);
+      threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+      container.innerHTML = '';
+      container.appendChild(threeRenderer.domElement);
+
+      const hint = document.createElement('div');
+      hint.id = 'pointcloud-controls-hint';
+      hint.className = 'absolute bottom-2 left-2 px-2.5 py-1 rounded bg-black/70 backdrop-blur text-[10px] text-slate-300 font-mono pointer-events-none z-10 border border-white/10';
+      hint.innerHTML = '🖱️ Left Drag: Rotate • Scroll: Zoom • Right Drag: Pan';
+      container.appendChild(hint);
+
+      if (typeof THREE.OrbitControls !== 'undefined') {
+        threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+        threeControls.enableDamping = true;
+        threeControls.dampingFactor = 0.05;
+        threeControls.rotateSpeed = 0.8;
+        threeControls.zoomSpeed = 1.0;
+        threeControls.panSpeed = 0.8;
+      }
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+      threeScene.add(ambientLight);
+
+      three3DInitialized = true;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        if (threeControls) threeControls.update();
+        if (threeRenderer && threeScene && threeCamera) {
+          threeRenderer.render(threeScene, threeCamera);
+        }
+      }
+      animate();
+
+      window.addEventListener('resize', onPointCloudResize);
+    }
+
+    function onPointCloudResize() {
+      const container = document.getElementById('pointcloud-canvas-container');
+      if (!container || !threeRenderer || !threeCamera) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (width > 0 && height > 0) {
+        threeCamera.aspect = width / height;
+        threeCamera.updateProjectionMatrix();
+        threeRenderer.setSize(width, height);
+      }
+    }
+
+    function onPointCloudTabActivated() {
+      if (!three3DInitialized) {
+        initThreeJSPointCloud();
+      }
+      setTimeout(() => {
+        onPointCloudResize();
+        if (lastLiveReconstructionData) {
+          update3DPointCloud(lastLiveReconstructionData);
+        }
+      }, 60);
+    }
+
+    function update3DPointCloud(data) {
+      if (!three3DInitialized) initThreeJSPointCloud();
+      if (!threeScene) return;
+
+      const recImg = document.getElementById('view-reconstructed');
+      const rgbImg = document.getElementById('view-rgb');
+      if (!recImg || !recImg.src) return;
+
+      const offCanvas = document.createElement('canvas');
+      const offCtx = offCanvas.getContext('2d');
+
+      const imgDepth = new Image();
+      imgDepth.crossOrigin = 'anonymous';
+      imgDepth.onload = function() {
+        const w = imgDepth.naturalWidth || 320;
+        const h = imgDepth.naturalHeight || 240;
+
+        offCanvas.width = w;
+        offCanvas.height = h;
+        offCtx.drawImage(imgDepth, 0, 0, w, h);
+        const depthPixelData = offCtx.getImageData(0, 0, w, h).data;
+
+        let rgbPixelData = null;
+        if (rgbImg && rgbImg.src && rgbImg.complete && rgbImg.naturalWidth > 0) {
+          const offRgb = document.createElement('canvas');
+          offRgb.width = w;
+          offRgb.height = h;
+          const offRgbCtx = offRgb.getContext('2d');
+          offRgbCtx.drawImage(rgbImg, 0, 0, w, h);
+          rgbPixelData = offRgbCtx.getImageData(0, 0, w, h).data;
+        }
+
+        const step = Math.max(2, Math.floor(w / 160));
+        const positions = [];
+        const colorsRgb = [];
+        const colorsDepth = [];
+
+        const fx = w * 0.82;
+        const fy = w * 0.82;
+        const cx = w / 2.0;
+        const cy = h / 2.0;
+
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            const idx = (y * w + x) * 4;
+            const r_d = depthPixelData[idx] / 255.0;
+            const g_d = depthPixelData[idx + 1] / 255.0;
+            const b_d = depthPixelData[idx + 2] / 255.0;
+
+            if (depthPixelData[idx] === 15 && depthPixelData[idx + 1] === 23 && depthPixelData[idx + 2] === 42) continue;
+
+            const lum = 0.299 * r_d + 0.587 * g_d + 0.114 * b_d;
+            const z = 0.8 + (1.0 - lum) * 3.2;
+
+            const X = ((x - cx) * z) / fx;
+            const Y = -((y - cy) * z) / fy;
+            const Z = -z;
+
+            positions.push(X, Y, Z);
+            colorsDepth.push(r_d, g_d, b_d);
+
+            if (rgbPixelData) {
+              colorsRgb.push(rgbPixelData[idx] / 255.0, rgbPixelData[idx + 1] / 255.0, rgbPixelData[idx + 2] / 255.0);
+            } else {
+              colorsRgb.push(r_d, g_d, b_d);
+            }
+          }
+        }
+
+        if (threePointsMesh) {
+          threeScene.remove(threePointsMesh);
+          if (threePointsMesh.geometry) threePointsMesh.geometry.dispose();
+          if (threePointsMesh.material) threePointsMesh.material.dispose();
+          threePointsMesh = null;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+        cachedPointCloudColorsRGB = new THREE.Float32BufferAttribute(colorsRgb, 3);
+        cachedPointCloudColorsDepth = new THREE.Float32BufferAttribute(colorsDepth, 3);
+
+        const activeColors = current3DColorMode === 'rgb' ? cachedPointCloudColorsRGB : cachedPointCloudColorsDepth;
+        geometry.setAttribute('color', activeColors);
+
+        const material = new THREE.PointsMaterial({
+          size: current3DPointSize,
+          vertexColors: true,
+          sizeAttenuation: false
+        });
+
+        threePointsMesh = new THREE.Points(geometry, material);
+        threeScene.add(threePointsMesh);
+
+        reset3DCamera();
+      };
+      imgDepth.src = recImg.src;
+    }
+
+    function set3DColorMode(mode) {
+      current3DColorMode = mode;
+      const btnRgb = document.getElementById('btn-3d-rgb');
+      const btnDepth = document.getElementById('btn-3d-depth');
+      if (btnRgb && btnDepth) {
+        if (mode === 'rgb') {
+          btnRgb.className = 'px-2 py-1 rounded bg-blue-600 text-white transition-all shadow-sm';
+          btnDepth.className = 'px-2 py-1 rounded text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-all';
+        } else {
+          btnDepth.className = 'px-2 py-1 rounded bg-purple-600 text-white transition-all shadow-sm';
+          btnRgb.className = 'px-2 py-1 rounded text-charcoal-600 dark:text-slate-400 hover:text-charcoal-950 dark:hover:text-white transition-all';
+        }
+      }
+      if (threePointsMesh && threePointsMesh.geometry) {
+        const activeColors = mode === 'rgb' ? cachedPointCloudColorsRGB : cachedPointCloudColorsDepth;
+        if (activeColors) {
+          threePointsMesh.geometry.setAttribute('color', activeColors);
+          threePointsMesh.geometry.attributes.color.needsUpdate = true;
+        }
+      }
+    }
+
+    function set3DPointSize(val) {
+      current3DPointSize = parseFloat(val);
+      if (threePointsMesh && threePointsMesh.material) {
+        threePointsMesh.material.size = current3DPointSize;
+        threePointsMesh.material.needsUpdate = true;
+      }
+    }
+
+    function reset3DCamera() {
+      if (threeCamera && threeControls) {
+        threeCamera.position.set(0, 0, 3.5);
+        threeCamera.lookAt(0, 0, -2.5);
+        threeControls.target.set(0, 0, -2.5);
+        threeControls.reset();
+      }
+    }
+
+    function toggle3DFullscreen() {
+      const container = document.getElementById('pointcloud-canvas-container');
+      if (!container) return;
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(err => showToast('Fullscreen unavailable: ' + err.message, true));
+      } else {
+        document.exitFullscreen();
+      }
     }
 
     // -------------------------------------------------------------------------

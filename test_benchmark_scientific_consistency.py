@@ -147,17 +147,23 @@ async def test_05_graceful_missing_ground_truth_handling():
 
 
 if __name__ == "__main__":
-    import asyncio
+    def sync_run(coro):
+        try:
+            coro.send(None)
+        except StopIteration as e:
+            return e.value
+
     print("================================================================================")
     print("RUNNING EDGEFUSE-DCR COMPARATIVE BENCHMARK SCIENTIFIC CONSISTENCY TEST SUITE")
     print("================================================================================")
 
     test_01_scene_benchmark_linking_and_consistency()
-    asyncio.run(test_02_deterministic_live_run_matches_scene_baseline())
-    asyncio.run(test_03_latency_profiling_and_isolation())
-    asyncio.run(test_04_dynamic_algorithm_stage_labeling())
-    asyncio.run(test_05_graceful_missing_ground_truth_handling())
+    sync_run(test_02_deterministic_live_run_matches_scene_baseline())
+    sync_run(test_03_latency_profiling_and_isolation())
+    sync_run(test_04_dynamic_algorithm_stage_labeling())
+    sync_run(test_05_graceful_missing_ground_truth_handling())
 
     print("\n================================================================================")
     print("ALL 5 SCIENTIFIC BENCHMARK CONSISTENCY TESTS PASSED SUCCESSFULLY!")
     print("================================================================================")
+

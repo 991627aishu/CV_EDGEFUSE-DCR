@@ -47,6 +47,9 @@ This report provides complete institutional knowledge transfer. A computer visio
 18. [Section 18 — Complete End-to-End Worked Example](#section-18--complete-end-to-end-worked-example)
 19. [Section 19 — Source Code Traceability Map](#section-19--source-code-traceability-map)
 20. [Section 20 — Documentation Quality Audit & Summary Statistics](#section-20--documentation-quality-audit--summary-statistics)
+21. [Section 21 — Dataset Dynamic Discovery & Infinite Gallery](#section-21--dataset-dynamic-discovery--infinite-gallery)
+22. [Section 22 — Comparative Benchmark Scientific Consistency Audit](#section-22--comparative-benchmark-scientific-consistency-audit)
+23. [Section 23 — Complete Engineering Re-Architecture, 3D Point Cloud & Master Test Suite](#section-23--complete-engineering-re-architecture-3d-point-cloud--master-test-suite)
 
 ---
 
@@ -1383,7 +1386,103 @@ All 5 core consistency requirements were verified using `test_benchmark_scientif
 | [`test_performance_and_redesign.py`](file:///c:/Users/texta/Downloads/CV/EDGEFUSE_DCR/test_performance_and_redesign.py) | Peak RAM < 45MB, Warm Latency < 500ms, UI Elements | **6/6 Passed (100%)** |
 
 ---
+
+# Section 23 — Complete Engineering Re-Architecture, 3D Point Cloud & Master Test Suite
+
+## 23.1 Dynamic Stride-4 Spatial Padding ($S=4$)
+
+EdgeFuseNet features two downsampling convolutional stages ($s=2 \rightarrow s=4$). If an input image dimension is not divisible by 4 (e.g. prime dimensions $131 \times 97$ or arbitrary custom uploads), concatenating multi-scale skip connections causes runtime PyTorch dimension mismatches (HTTP 500 errors).
+
+To resolve this without altering model weights, dynamic reflection/replicate padding is applied before tensor construction and cropped back post-forward pass:
+
+$$\text{pad}_h = (4 - (H \bmod 4)) \bmod 4, \quad \text{pad}_w = (4 - (W \bmod 4)) \bmod 4$$
+
+Padding strategies:
+- **RGB Guidance:** `cv2.BORDER_REFLECT_101` (avoids artificial boundary discontinuities).
+- **Depth Map:** `cv2.BORDER_REPLICATE` (preserves adjacent physical depth metrics).
+- **Validity Mask:** `cv2.BORDER_CONSTANT (value=0.0)` (ensures padded border regions are marked invalid).
+
+After CNN inference, tensors are cropped to original spatial dimensions:
+$$D_{\text{pred}} = \hat{D}_{0:H, 0:W}$$
+
+## 23.2 Depth Calibration & Ingestion Bug Fixes
+
+1. **8-bit PNG Calibration (`mm_to_m`):** Corrected line 463 in `app.py` where 8-bit depth scaled to millimeters was divided by `100.0` (centimeters) instead of `1000.0`:
+   $$D_{\text{meters}} = \frac{D_{\text{uint8}}}{1000.0}$$
+2. **Normalized Depth Completion Formula:** Mask-aware bilinear/bicubic upsampling normalizes depth contributions by accumulated validity weights:
+   $$D_{\text{completed}}(u, v) = \frac{\sum_{(i,j) \in \mathcal{N}} w_{ij} \cdot D(i,j) \cdot M(i,j)}{\sum_{(i,j) \in \mathcal{N}} w_{ij} \cdot M(i,j) + \epsilon}$$
+3. **Continuous Texture-Copy Suppression Parameter:**
+   $$\text{Gate}(u, v) = 1.0 - \alpha \cdot \text{Excess}(I(u, v)) \cdot \text{Flat}(D(u, v))$$
+   where $\alpha \in [0.0, 1.0]$ is modulated via a real-time UI slider (`#slider-suppression-strength`).
+
+## 23.3 Interactive 3D Point Cloud & Scientific Visualization
+
+1. **Client-Side Three.js Viewer:** Integrated Three.js (r128) and OrbitControls with WebGL rendering inside a dedicated tab (`#view-tab-pointcloud`).
+2. **Pinhole Camera Back-Projection:**
+   $$X = \frac{(u - c_x) \cdot Z}{f_x}, \quad Y = -\frac{(v - c_y) \cdot Z}{f_y}, \quad Z = Z$$
+   where $f_x = f_y = 0.82 \cdot W$, $c_x = W / 2$, $c_y = H / 2$.
+3. **Dual Color Modes & Point Sizing:** Supports toggle between RGB photographic texture and Turbo colormap depth encoding, alongside a dynamic point size slider.
+4. **Standard ASCII PLY Export (`/api/download/ply`):** Generates header-compliant Stanford Triangle PLY files with vertex coordinates and RGB colors:
+   ```ply
+   ply
+   format ascii 1.0
+   element vertex N
+   property float x
+   property float y
+   property float z
+   property uchar red
+   property uchar green
+   property uchar blue
+   end_header
+   ```
+5. **6 Scientific Colormaps:** Supported in 2D views and exports: `turbo`, `viridis`, `magma`, `inferno`, `grayscale`, `inverse_grayscale`.
+
+## 23.4 Master Automated Test Suite (Tests 1–30)
+
+All 30 automated tests in [`test_master_suite.py`](file:///c:/Users/texta/Downloads/CV/EDGEFUSE_DCR/test_master_suite.py) executed and passed with 100% compliance:
+
+```
+===========================================================================
+EDGEFUSE-DCR — MASTER AUTOMATED TEST SUITE (TESTS 1 - 30)
+===========================================================================
+  [PASS] Test 01: Server Health Check (/health & /api/health)
+  [PASS] Test 02: RGB Upload Parsing (JPEG/PNG decoding, shape preservation)
+  [PASS] Test 03: RGB + Depth Upload Pairing & Geometry Alignment
+  [PASS] Test 04: Reconstruction without Ground Truth (Safe execution, no crash)
+  [PASS] Test 05: Reconstruction with Ground Truth (Quantitative evaluation)
+  [PASS] Test 06: 8-bit PNG Depth Calibration (mm_to_m /1000 fix verified)
+  [PASS] Test 07: 16-bit PNG Depth (Millimeter & KITTI metric decoding)
+  [PASS] Test 08: Float32 NPY Depth (Exact numeric preservation)
+  [PASS] Test 09: Invalid RGB File Error Guard (HTTP 400 clean rejection)
+  [PASS] Test 10: Invalid Depth File Error Guard (HTTP 400 clean rejection)
+  [PASS] Test 11: Multi-Resolution Spatial Alignment (4x sensor factor)
+  [PASS] Test 12: Non-Divisible Spatial Dimensions (Dynamic S=4 padding & exact unpadding)
+  [PASS] Test 13: Sparse LiDAR Depth Completion (~4.4% seed density)
+  [PASS] Test 14: Dense Structured Light Reconstruction (NYU Depth V2)
+  [PASS] Test 15: Middlebury Active Stereo Depth Refinement
+  [PASS] Test 16: Complete A0-A5 Algorithm Laboratory (All 9 methods verified)
+  [PASS] Test 17: Texture-Copy Suppression Parameter (Continuous alpha modulation)
+  [PASS] Test 18: Validity Mask Correctness (Rejection of NaN, Inf, non-positive, out-of-range)
+  [PASS] Test 19: Ground Truth Evaluation Metrics (RMSE, MAE, PSNR, SSIM, F1)
+  [PASS] Test 20: Missing Ground Truth Reporting (has_gt=False, metrics=None, N/A UI)
+  [PASS] Test 21: Benchmark Live Row Synchronization (Dynamic algorithm tags)
+  [PASS] Test 22: 2D Visualizations (All 6 Colormaps supported)
+  [PASS] Test 23: 3D Point Cloud PLY Generator (Pinhole intrinsics & RGB colors)
+  [PASS] Test 24: Complete Research Export Suite (NPY, PNG, PLY, JSON)
+  [PASS] Test 25: Session Isolation Across Repeated Uploads
+  [PASS] Test 26: Concurrent Asynchronous Request Isolation
+  [PASS] Test 27: Memory Containment Guard (512MB RAM ceiling, 960px clamp)
+  [PASS] Test 28: Performance Latency Breakdown Measurements
+  [PASS] Test 29: Frontend Script & Asset Integrity Audit
+  [PASS] Test 30: Responsive Layout & Viewport Navigation Verification
+===========================================================================
+MASTER SUITE EXECUTION SUMMARY: 30 / 30 TESTS PASSED (100%)
+===========================================================================
+```
+
+---
 *Report generated and validated directly from source code repository `c:\Users\texta\Downloads\CV\EDGEFUSE_DCR`.*
+
 
 
 

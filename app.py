@@ -25,8 +25,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 
 async def to_worker_thread(func, *args, **kwargs):
-    """Executes blocking sync work in standard ThreadPoolExecutor safely."""
-    return await asyncio.to_thread(func, *args, **kwargs)
+    """
+    Executes worker function safely without Windows OpenMP / PyTorch thread deadlock.
+    Direct synchronous execution inside worker coroutine ensures deterministic, hang-free performance.
+    """
+    return func(*args, **kwargs)
 
 from src.depth_engine import reconstruct_depth, detect_rgb_edges, detect_depth_discontinuities
 from src.model import load_model
@@ -198,8 +201,18 @@ def resolve_demo_sample(sample_id: str):
 # ---------------------------------------------------------------------------
 # Helpers for Array & Visualization Encoding
 # ---------------------------------------------------------------------------
-def colorize_depth(depth_map, valid_mask=None, colormap=cv2.COLORMAP_TURBO, vmin=None, vmax=None):
-    """Colorizes float32 depth map for web visualization."""
+COLORMAP_NAME_MAP = {
+    "turbo": cv2.COLORMAP_TURBO,
+    "viridis": cv2.COLORMAP_VIRIDIS,
+    "magma": cv2.COLORMAP_MAGMA,
+    "inferno": cv2.COLORMAP_INFERNO,
+}
+
+def colorize_depth(depth_map, valid_mask=None, colormap="turbo", vmin=None, vmax=None):
+    """
+    Colorizes float32 depth map for web visualization.
+    Supports 6 colormaps: Turbo, Viridis, Magma, Inferno, Grayscale, Inverse Grayscale.
+    """
     if valid_mask is None:
         valid_mask = (depth_map > 0.001) & np.isfinite(depth_map)
 
@@ -216,8 +229,18 @@ def colorize_depth(depth_map, valid_mask=None, colormap=cv2.COLORMAP_TURBO, vmin
 
     d_norm = np.clip((depth_map - vmin) / (vmax - vmin), 0.0, 1.0)
     d_uint8 = (d_norm * 255.0).astype(np.uint8)
-    colored = cv2.applyColorMap(d_uint8, colormap)
-    colored = cv2.cvtColor(colored, cv2.COLOR_BGR2RGB)
+
+    # Colormap selection
+    cm_str = str(colormap).lower()
+    if cm_str == "grayscale":
+        colored = np.stack([d_uint8, d_uint8, d_uint8], axis=-1)
+    elif cm_str in ("inverse_grayscale", "grayscale_inv"):
+        inv = 255 - d_uint8
+        colored = np.stack([inv, inv, inv], axis=-1)
+    else:
+        cv_cm = COLORMAP_NAME_MAP.get(cm_str, colormap if isinstance(colormap, int) else cv2.COLORMAP_TURBO)
+        bgr = cv2.applyColorMap(d_uint8, cv_cm)
+        colored = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
 
     # Mark invalid pixels as dark navy/black
     colored[~valid_mask] = [15, 23, 42]
@@ -440,7 +463,7 @@ def parse_depth_bytes(file_bytes: bytes, filename: str = "", depth_scale: str = 
             depth_unit = "m"
             warning_msg = "Note: Scaled 8-bit depth from centimeters to meters (/ 100.0)."
         elif depth_scale == "mm_to_m":
-            depth = arr_float / 100.0
+            depth = arr_float / 1000.0
             depth_type = "metric"
             depth_unit = "m"
             warning_msg = "Note: Scaled 8-bit depth from millimeters to meters (/ 1000.0)."
@@ -682,6 +705,7 @@ async def benchmark_custom_upload(
 # API Endpoints
 # ---------------------------------------------------------------------------
 @app.get("/health")
+@app.get("/api/health")
 def health():
     return {
         "status": "healthy",
@@ -1229,6 +1253,8 @@ async def run_reconstruction(
     method: str = Form("hybrid"),
     upsample_factor: int = Form(4),
     apply_texture_suppression: bool = Form(True),
+    suppression_strength: float = Form(0.85),
+    colormap: str = Form("turbo"),
     depth_scale: str = Form("auto"),
     session_id: Optional[str] = Form(None),
     input_source: str = Form("sensor")
@@ -1236,8 +1262,20 @@ async def run_reconstruction(
     """
     Core Reconstruction Endpoint.
     Handles custom uploaded RGB+Depth (with optional Ground Truth) or built-in demo samples.
+    Supports continuous texture-copy suppression strength and multiple scientific colormaps.
     """
     t_start = time.perf_counter()
+
+    # Unwrap Form defaults if invoked directly in test harness without FastAPI injection
+    demo_sample_id = getattr(demo_sample_id, "default", demo_sample_id) if hasattr(demo_sample_id, "default") else demo_sample_id
+    method = getattr(method, "default", method) if hasattr(method, "default") else method
+    upsample_factor = int(getattr(upsample_factor, "default", upsample_factor)) if hasattr(upsample_factor, "default") else int(upsample_factor)
+    apply_texture_suppression = getattr(apply_texture_suppression, "default", apply_texture_suppression) if hasattr(apply_texture_suppression, "default") else bool(apply_texture_suppression)
+    suppression_strength = float(getattr(suppression_strength, "default", suppression_strength)) if hasattr(suppression_strength, "default") else float(suppression_strength)
+    colormap = getattr(colormap, "default", colormap) if hasattr(colormap, "default") else colormap
+    depth_scale = getattr(depth_scale, "default", depth_scale) if hasattr(depth_scale, "default") else depth_scale
+    session_id = getattr(session_id, "default", session_id) if hasattr(session_id, "default") else session_id
+    input_source = getattr(input_source, "default", input_source) if hasattr(input_source, "default") else input_source
 
     # Determine if this request is a custom file upload
     has_custom_files = bool(
@@ -1249,7 +1287,7 @@ async def run_reconstruction(
     # Check cache for demo reconstructions ONLY (never cache custom uploads)
     cache_key = None
     if demo_sample_id and not has_custom_files:
-        cache_key = f"{demo_sample_id}_{method}_{upsample_factor}_{apply_texture_suppression}"
+        cache_key = f"{demo_sample_id}_{method}_{upsample_factor}_{apply_texture_suppression}_{suppression_strength}_{colormap}"
         if cache_key in _RECONSTRUCT_DEMO_CACHE:
             cached_data = _RECONSTRUCT_DEMO_CACHE[cache_key]
             if "_saved_last_rec" in cached_data:
@@ -1368,7 +1406,7 @@ async def run_reconstruction(
 
     # Compute Input Depth Statistics
     valid_mask, input_stats = compute_validity_mask_and_stats(depth_input, depth_type=depth_type, depth_unit=depth_unit)
-    input_depth_b64 = encode_image_base64(colorize_depth(depth_input, valid_mask=valid_mask))
+    input_depth_b64 = encode_image_base64(colorize_depth(depth_input, valid_mask=valid_mask, colormap=colormap))
     valid_mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
     t_prep_end = time.perf_counter()
@@ -1384,7 +1422,8 @@ async def run_reconstruction(
         method=method,
         cnn_model=MODEL,
         device=DEVICE,
-        apply_suppression=apply_texture_suppression
+        apply_suppression=apply_texture_suppression,
+        suppression_strength=suppression_strength
     )
     t_model_end = time.perf_counter()
     model_latency_ms = (t_model_end - t_model_start) * 1000.0
@@ -1396,16 +1435,16 @@ async def run_reconstruction(
     texture_gate = res["texture_gate"]
 
     # 4. Generate Visualizations
-    rec_colored = colorize_depth(rec_depth)
+    rec_colored = colorize_depth(rec_depth, colormap=colormap)
     rec_b64 = encode_image_base64(rec_colored)
 
     classical_depth = res.get("classical_baseline", rec_depth)
     cnn_depth = res.get("cnn_baseline", rec_depth)
 
-    classical_colored = colorize_depth(classical_depth)
+    classical_colored = colorize_depth(classical_depth, colormap=colormap)
     classical_b64 = encode_image_base64(classical_colored)
 
-    cnn_colored = colorize_depth(cnn_depth)
+    cnn_colored = colorize_depth(cnn_depth, colormap=colormap)
     cnn_b64 = encode_image_base64(cnn_colored)
 
     # Confidence map visualization (Viridis)
@@ -1480,6 +1519,7 @@ async def run_reconstruction(
     # Save latest reconstruction in memory cache for downloads
     app.state.last_rec = {
         "depth": rec_depth,
+        "rgb": rgb_image,
         "colored": rec_colored,
         "conf_colored": cv2.cvtColor(conf_colored, cv2.COLOR_BGR2RGB),
         "mask_img": (valid_mask.astype(np.uint8) * 255),
@@ -1487,6 +1527,8 @@ async def run_reconstruction(
         "err_colored": cv2.cvtColor(err_colored, cv2.COLOR_BGR2RGB) if has_gt else None,
         "metrics": metrics,
         "method": method,
+        "colormap": colormap,
+        "suppression_strength": suppression_strength,
         "algorithm_stage": algo_stage,
         "algorithm_name": algo_disp_name,
         "live_row_label": live_label,
@@ -1648,6 +1690,99 @@ def download_error_map():
     return Response(
         content=buf.getvalue(),
         media_type="image/png",
+        headers={"Content-Disposition": f"attachment; filename={fname}"}
+    )
+
+
+@app.get("/api/download/ply")
+def download_point_cloud_ply():
+    """
+    Downloads reconstructed 3D point cloud in standard ASCII PLY format.
+    Generates 3D (X, Y, Z) coordinates using pinhole camera model
+    and attaches genuine RGB vertex colors from the guidance image.
+    """
+    if not hasattr(app.state, "last_rec"):
+        raise HTTPException(status_code=404, detail="No reconstruction performed yet.")
+
+    rec = app.state.last_rec
+    depth = rec["depth"]
+    rgb = rec.get("rgb")
+    h, w = depth.shape[:2]
+
+    # Camera intrinsics (standard normalized pinhole approximation)
+    fx = float(w) * 0.82
+    fy = float(w) * 0.82
+    cx = float(w) / 2.0
+    cy = float(h) / 2.0
+
+    valid_mask = (depth > 0.05) & np.isfinite(depth)
+    u_coords, v_coords = np.meshgrid(np.arange(w), np.arange(h))
+
+    v_valid = v_coords[valid_mask]
+    u_valid = u_coords[valid_mask]
+    z_valid = depth[valid_mask]
+
+    x_valid = (u_valid - cx) * z_valid / fx
+    y_valid = (v_valid - cy) * z_valid / fy
+
+    if rgb is not None and rgb.shape[:2] == (h, w):
+        r_valid = rgb[v_valid, u_valid, 0]
+        g_valid = rgb[v_valid, u_valid, 1]
+        b_valid = rgb[v_valid, u_valid, 2]
+    else:
+        colored = rec.get("colored")
+        if colored is not None and colored.shape[:2] == (h, w):
+            r_valid = colored[v_valid, u_valid, 0]
+            g_valid = colored[v_valid, u_valid, 1]
+            b_valid = colored[v_valid, u_valid, 2]
+        else:
+            r_valid = np.full(z_valid.shape, 200, dtype=np.uint8)
+            g_valid = np.full(z_valid.shape, 200, dtype=np.uint8)
+            b_valid = np.full(z_valid.shape, 200, dtype=np.uint8)
+
+    num_vertices = len(z_valid)
+    header = (
+        "ply\n"
+        "format ascii 1.0\n"
+        "comment Generated by EdgeFuse-DCR 3D Point Cloud Export\n"
+        f"element vertex {num_vertices}\n"
+        "property float x\n"
+        "property float y\n"
+        "property float z\n"
+        "property uchar red\n"
+        "property uchar green\n"
+        "property uchar blue\n"
+        "end_header\n"
+    )
+
+    lines = [header]
+    # Format vertices efficiently
+    step = 1 if num_vertices <= 50000 else 2  # Downsample very large point clouds for fast download
+    sub_indices = range(0, num_vertices, step)
+    actual_count = len(sub_indices)
+    if step > 1:
+        lines[0] = (
+            "ply\n"
+            "format ascii 1.0\n"
+            "comment Generated by EdgeFuse-DCR 3D Point Cloud Export (Subsampled)\n"
+            f"element vertex {actual_count}\n"
+            "property float x\n"
+            "property float y\n"
+            "property float z\n"
+            "property uchar red\n"
+            "property uchar green\n"
+            "property uchar blue\n"
+            "end_header\n"
+        )
+
+    for i in sub_indices:
+        lines.append(f"{x_valid[i]:.4f} {y_valid[i]:.4f} {z_valid[i]:.4f} {int(r_valid[i])} {int(g_valid[i])} {int(b_valid[i])}\n")
+
+    ply_content = "".join(lines).encode("utf-8")
+    fname = "custom_point_cloud.ply" if rec.get("is_custom") else "edgefuse_dcr_point_cloud.ply"
+    return Response(
+        content=ply_content,
+        media_type="application/octet-stream",
         headers={"Content-Disposition": f"attachment; filename={fname}"}
     )
 

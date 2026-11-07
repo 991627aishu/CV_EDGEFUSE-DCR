@@ -285,7 +285,7 @@ def estimate_confidence_map(depth_map, valid_mask, window_size=5, factor=1, is_l
     return conf.astype(np.float32)
 
 
-def compute_texture_suppression_gate(rgb_grad, depth_grad, threshold=0.20, depth_discon_thresh=0.06):
+def compute_texture_suppression_gate(rgb_grad, depth_grad, threshold=0.20, depth_discon_thresh=0.06, suppression_strength=0.85):
     """
     Mechanism C: Texture-Copying Suppression Gate.
     Identifies RGB texture edges (e.g. wall wallpaper, fabric, text) that do NOT
@@ -298,14 +298,14 @@ def compute_texture_suppression_gate(rgb_grad, depth_grad, threshold=0.20, depth
     rgb_excess = np.clip((rgb_grad - threshold) / (1.0 - threshold + 1e-4), 0.0, 1.0)
     # Geometric depth flatness: 1.0 when depth discontinuity gradient is low, 0.0 at depth steps
     depth_flat = np.clip(1.0 - (depth_grad / depth_discon_thresh), 0.0, 1.0)
-    false_texture = rgb_excess * depth_flat
+    false_texture = rgb_excess * depth_flat * float(np.clip(suppression_strength, 0.0, 1.0))
 
     # Guidance gate: 1.0 where depth edge exists or flat region, lower where false texture occurs
     guidance_gate = np.clip(1.0 - false_texture, 0.05, 1.0)
     return guidance_gate.astype(np.float32), false_texture.astype(np.float32)
 
 
-def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, apply_suppression=True, factor=4, is_low_res=False, cnn_conf=None):
+def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, apply_suppression=True, suppression_strength=0.85, factor=4, is_low_res=False, cnn_conf=None):
     """
     Complete EdgeFuse-DCR Hybrid Refinement combining:
       A. Multi-source confidence map (anchors + consistency + CNN)
@@ -330,8 +330,8 @@ def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, 
     eps_base = max(0.002, 0.0012 * float(factor))
 
     # Step 3: Texture suppression gate
-    if apply_suppression:
-        guidance_gate, false_texture = compute_texture_suppression_gate(rgb_grad, depth_rel_grad)
+    if apply_suppression and suppression_strength > 0.001:
+        guidance_gate, false_texture = compute_texture_suppression_gate(rgb_grad, depth_rel_grad, suppression_strength=suppression_strength)
         # Adaptively increase epsilon on false texture surfaces to suppress texture transfer
         eps_map = eps_base * (1.0 + 50.0 * false_texture)
     else:
@@ -364,7 +364,7 @@ def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, 
 # 6. Unified Reconstruction Pipeline
 # ===========================================================================
 
-def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_model=None, device="cpu", apply_suppression=True):
+def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_model=None, device="cpu", apply_suppression=True, suppression_strength=0.85):
     """
     Unified public interface for all depth reconstruction methods.
     Supports:
@@ -412,15 +412,41 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
                 rgb_in = rgb_image
                 depth_in = base_up
 
-            rgb_t = torch.from_numpy(rgb_in.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0).to(device)
-            d_t = torch.from_numpy(depth_in.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
-            v_t = torch.from_numpy((depth_in > 0.05).astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+            # Stride-4 dynamic reflection/replicate/zero padding
+            # EdgeFuseNet has 2 downsampling stages (down1 s=2, down2 s=2 -> stride S=4).
+            # Inputs MUST be multiples of 4 to prevent tensor concatenation shape mismatch!
+            S = 4
+            orig_in_h, orig_in_w = rgb_in.shape[:2]
+            pad_h = (S - (orig_in_h % S)) % S
+            pad_w = (S - (orig_in_w % S)) % S
+
+            if pad_h > 0 or pad_w > 0:
+                rgb_in_pad = cv2.copyMakeBorder(rgb_in, 0, pad_h, 0, pad_w, cv2.BORDER_REFLECT_101)
+                depth_in_pad = cv2.copyMakeBorder(depth_in, 0, pad_h, 0, pad_w, cv2.BORDER_REPLICATE)
+                v_mask_in = (depth_in > 0.05).astype(np.float32)
+                v_mask_pad = cv2.copyMakeBorder(v_mask_in, 0, pad_h, 0, pad_w, cv2.BORDER_CONSTANT, value=0.0)
+            else:
+                rgb_in_pad = rgb_in
+                depth_in_pad = depth_in
+                v_mask_pad = (depth_in > 0.05).astype(np.float32)
+
+            rgb_t = torch.from_numpy(rgb_in_pad.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0).to(device)
+            d_t = torch.from_numpy(depth_in_pad.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
+            v_t = torch.from_numpy(v_mask_pad.astype(np.float32)).unsqueeze(0).unsqueeze(0).to(device)
 
             cnn_model.eval()
-            with torch.no_grad():
+            with torch.inference_mode():
                 pred_d, pred_conf = cnn_model(rgb_t, d_t, v_t)
-                cnn_depth_raw = pred_d.squeeze().cpu().numpy()
-                cnn_conf_raw = pred_conf.squeeze().cpu().numpy()
+                pred_d_np = pred_d.squeeze().cpu().numpy()
+                pred_conf_np = pred_conf.squeeze().cpu().numpy()
+
+            # Crop padding safely to restore exact original dimensions
+            if pad_h > 0 or pad_w > 0:
+                cnn_depth_raw = pred_d_np[:orig_in_h, :orig_in_w]
+                cnn_conf_raw = pred_conf_np[:orig_in_h, :orig_in_w]
+            else:
+                cnn_depth_raw = pred_d_np
+                cnn_conf_raw = pred_conf_np
 
             if cnn_scale != 1.0:
                 cnn_depth = cv2.resize(cnn_depth_raw, (w_c, h_c), interpolation=cv2.INTER_LINEAR)
@@ -480,7 +506,10 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
         gate = res["texture_gate"]
 
     elif method == "hybrid":  # Full hybrid EdgeFuse-DCR
-        res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=apply_suppression, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
+        res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=apply_suppression, suppression_strength=suppression_strength, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
+        rec = res["final_depth"]
+        conf = res["confidence_map"]
+        gate = res["texture_gate"]
         rec = res["final_depth"]
         conf = res["confidence_map"]
         gate = res["texture_gate"]
