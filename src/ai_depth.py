@@ -119,6 +119,20 @@ class DepthAnythingV2Manager:
                 logger.error(f"Failed to load Depth Anything V2 model: {e}")
                 return False
 
+    def unload(self):
+        """Releases Depth Anything V2 weights and activations to preserve 512MB RAM budget."""
+        with self._init_lock:
+            if self.model is not None:
+                try:
+                    del self.model
+                except Exception:
+                    pass
+                self.model = None
+                self.is_loaded = False
+                gc.collect()
+                trim_process_memory()
+                logger.info("Depth Anything V2 model unloaded from RAM.")
+
     def predict(
         self,
         rgb_image: np.ndarray,

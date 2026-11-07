@@ -1097,10 +1097,10 @@ CUSTOM_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
 def prune_session_cache():
     """Keeps heap lean (<200MB) by evicting older session bitmaps."""
-    while len(CUSTOM_SESSIONS) > 4:
+    while len(CUSTOM_SESSIONS) > 2:
         oldest_k = next(iter(CUSTOM_SESSIONS))
         del CUSTOM_SESSIONS[oldest_k]
-    while len(AI_PREDICTIONS) > 4:
+    while len(AI_PREDICTIONS) > 2:
         oldest_k = next(iter(AI_PREDICTIONS))
         del AI_PREDICTIONS[oldest_k]
     trim_process_memory()
@@ -1276,6 +1276,7 @@ def predict_ai_depth(
         "filename": filename,
         "timestamp": now
     }
+    AI_DEPTH_MGR.unload()
     trim_process_memory()
 
     try:
@@ -1521,6 +1522,10 @@ async def run_reconstruction(
     """
     t_start = time.perf_counter()
 
+    # Free auxiliary model RAM before reconstruction to guarantee <200MB memory ceiling
+    AI_DEPTH_MGR.unload()
+    trim_process_memory()
+
     # Unwrap Form defaults if invoked directly in test harness without FastAPI injection
     demo_sample_id = getattr(demo_sample_id, "default", demo_sample_id) if hasattr(demo_sample_id, "default") else demo_sample_id
     method = getattr(method, "default", method) if hasattr(method, "default") else method
@@ -1558,6 +1563,7 @@ async def run_reconstruction(
             return {k: v for k, v in cached_data.items() if k != "_saved_last_rec"}
 
     # 1. Load Inputs
+    curr_session_id = session_id or uuid.uuid4().hex
     gt_depth = None
     max_eval_depth = 10.0
     depth_warning = None
@@ -1591,7 +1597,6 @@ async def run_reconstruction(
 
     else:
         # Custom Upload Path
-        curr_session_id = session_id or uuid.uuid4().hex
         sample_title = "Custom User Input"
 
         if has_rgb_file and has_depth_file:

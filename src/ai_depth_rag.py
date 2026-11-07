@@ -546,6 +546,10 @@ def synthesize_rag_reference_depth(
             citation = "Silberman et al., 'Indoor segmentation and support inference from RGBD images', ECCV 2012."
             calib_equation = r"D_{\text{gt}} = 0.5\text{m} + 7.5\text{m} \cdot \hat{d}"
 
+    try:
+        mgr.unload()
+    except Exception:
+        pass
     trim_process_memory()
 
     meta = {
