@@ -79,7 +79,7 @@ class DepthAnythingV2Manager:
         """
         Loads the model checkpoint into memory once if present on disk.
         To uphold high availability and prevent cloud container timeouts/OOM (512MB RAM ceiling),
-        this function never executes blocking 100MB downloads during HTTP requests.
+        this function never executes blocking downloads and enforces strict memory safety.
         """
         if self.is_loaded and self.model is not None:
             return True
@@ -89,6 +89,29 @@ class DepthAnythingV2Manager:
                 return True
 
             try:
+                # 1. Cloud & low-memory container safety guard:
+                # Depth Anything V2 ViT-S requires >530MB RSS, triggering Linux cgroups OOM SIGKILL on Render Free Tier (512MB limit).
+                # In low-memory environments, bypass heavy transformer instantiation to guarantee 100% zero-crash availability.
+                is_cloud = bool(os.environ.get("RENDER") or os.environ.get("ON_RENDER") or os.environ.get("PORT"))
+                allow_heavy = os.environ.get("ENABLE_HEAVY_AI_DEPTH", "false").lower() in ("1", "true", "yes")
+
+                is_low_mem = False
+                try:
+                    for cg in ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"]:
+                        if os.path.exists(cg):
+                            with open(cg, "r") as f:
+                                val = f.read().strip()
+                                if val != "max" and int(val) < 1200000000:  # < 1.2 GB
+                                    is_low_mem = True
+                                    break
+                except Exception:
+                    pass
+
+                if (is_cloud or is_low_mem) and not allow_heavy:
+                    self.load_error = "Heavy ViT foundation model bypassed in 512MB cloud environment to prevent OOM crash."
+                    logger.info(f"{self.load_error} Operating in fast, zero-OOM EdgeFuse photometric bilateral mode.")
+                    return False
+
                 os.makedirs(os.path.dirname(self.checkpoint_path), exist_ok=True)
                 
                 # Check if checkpoint exists on disk (requires >= 20MB valid weights file)

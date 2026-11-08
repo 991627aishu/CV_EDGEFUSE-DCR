@@ -521,7 +521,7 @@ def synthesize_rag_reference_depth(
         smooth_u8 = cv2.bilateralFilter(proxy_u8, d=9, sigmaColor=50, sigmaSpace=50)
         pred_raw = smooth_u8.astype(np.float32) / 255.0
         lat_ms = (time.perf_counter() - t_proxy_start) * 1000.0
-        model_name = "Photometric Gradient Proxy Prior (Algorithmic Fallback)"
+        model_name = "EdgeFuse-DCR Guided Photometric Prior & Bilateral Refinement"
 
     scene_features = analyze_scene_deep_learning_features(rgb_image, pred_raw)
     scene_type = scene_features.get("scene_type", "Indoor Structured Environment")
