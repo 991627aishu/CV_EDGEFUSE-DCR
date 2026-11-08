@@ -218,206 +218,216 @@
 
   <!-- Main Persistent Sidebar -->
   <aside id="main-sidebar"
-    class="fixed inset-y-0 left-0 z-50 w-64 lg:w-72 bg-white dark:bg-lab-sidebar border-r border-ivory-300 dark:border-slate-800 flex flex-col justify-between transform -translate-x-full md:translate-x-0 transition-transform duration-200 shadow-xl md:shadow-none overflow-y-auto">
+    class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-lab-sidebar border-r border-ivory-300 dark:border-slate-800/90 flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-200 shadow-xl md:shadow-none">
 
-    <!-- Top Brand & Navigation -->
-    <div class="p-5 space-y-6">
+    <!-- Scrollable Content Area: Header + Appearance + Grouped Navigation + Tour CTA -->
+    <div class="flex-1 overflow-y-auto px-3.5 py-4 space-y-3.5">
 
-      <!-- Logo & Brand Header -->
-      <div class="space-y-3 border-b border-ivory-300 dark:border-slate-800/80 pb-4">
+      <!-- A. BRAND HEADER -->
+      <div class="space-y-2.5 pb-3 border-b border-ivory-300/80 dark:border-slate-800/80">
         <div class="flex items-center justify-between">
-          <a href="#section-hero" class="flex items-center gap-3 group">
+          <a href="#section-hero" class="flex items-center gap-2.5 group">
             <div
-              class="w-9 h-9 rounded-xl bg-forest-900 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <svg class="w-5 h-5 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              class="w-8 h-8 rounded-lg bg-forest-900 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
+              <svg class="w-4 h-4 text-forest-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                 <path d="M2 17l10 5 10-5"></path>
                 <path d="M2 12l10 5 10-5"></path>
               </svg>
             </div>
-            <div>
-              <span
-                class="text-base font-extrabold tracking-tight font-mono text-charcoal-950 dark:text-white block">EDGEFUSE-DCR</span>
-              <span class="text-[10px] text-charcoal-500 dark:text-slate-400 font-medium">Phase 4 Depth
-                Refinement</span>
+            <div class="leading-tight">
+              <span class="text-sm font-extrabold tracking-tight font-mono text-charcoal-950 dark:text-white block">EDGEFUSE-DCR</span>
+              <span class="text-[10px] text-charcoal-500 dark:text-slate-400 font-medium tracking-tight block">Phase 4 Depth Refinement</span>
             </div>
           </a>
 
           <!-- Close Button on Mobile Drawer -->
           <button type="button" onclick="closeMobileSidebar()"
-            class="md:hidden text-charcoal-400 dark:text-slate-500 hover:text-charcoal-900 dark:hover:text-white p-1">
+            class="md:hidden text-charcoal-400 dark:text-slate-500 hover:text-charcoal-900 dark:hover:text-white p-1 rounded-lg">
             ✕
           </button>
         </div>
 
         <!-- Live Model Ready Pill -->
         <div id="model-status-indicator"
-          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 shadow-sm">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          class="flex items-center gap-2 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 shadow-2xs">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>Model Ready (PyTorch CPU)</span>
         </div>
       </div>
 
-      <!-- Theme Switcher Pill in Sidebar -->
+      <!-- B. APPEARANCE (Interface Theme) -->
       <div class="space-y-1.5">
         <span
-          class="text-[10px] font-bold uppercase tracking-wider text-charcoal-500 dark:text-slate-400 font-mono">Interface
-          Theme</span>
+          class="text-[9px] font-bold uppercase tracking-wider text-charcoal-400 dark:text-slate-400 font-mono block px-1">Interface Theme</span>
         <button type="button" onclick="toggleTheme()"
-          class="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-ivory-200 dark:bg-slate-900 border border-ivory-300 dark:border-slate-800 text-xs font-semibold text-charcoal-800 dark:text-slate-200 hover:border-forest-500 dark:hover:border-cyan-500 transition-colors shadow-sm">
+          class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-ivory-150 dark:bg-slate-900/80 border border-ivory-300 dark:border-slate-800 text-xs font-medium text-charcoal-800 dark:text-slate-200 hover:border-forest-500 dark:hover:border-cyan-500 transition-colors shadow-2xs">
           <div class="flex items-center gap-2">
-            <span class="dark:hidden">🌙</span>
-            <span class="hidden dark:inline">☀️</span>
-            <span id="theme-label">Dark Theme Active</span>
+            <span class="text-xs dark:hidden">🌙</span>
+            <span class="text-xs hidden dark:inline">☀️</span>
+            <span id="theme-label" class="text-[11px] font-semibold">Dark Theme Active</span>
           </div>
           <span
-            class="text-[10px] px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-ivory-300 dark:border-slate-700 font-mono">Switch</span>
+            class="text-[10px] px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-ivory-300 dark:border-slate-700 text-charcoal-600 dark:text-slate-300 font-mono font-medium">Switch</span>
         </button>
       </div>
 
-      <!-- Navigation Section Links -->
-      <nav class="space-y-1 text-xs font-semibold">
-        <span
-          class="text-[10px] font-bold uppercase tracking-wider text-charcoal-500 dark:text-slate-400 font-mono block px-3 py-1">Sections</span>
+      <!-- C. HIERARCHICAL NAVIGATION -->
+      <nav class="space-y-3 pt-1 text-xs">
 
-        <a href="#section-hero" onclick="closeMobileSidebar()"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <svg class="w-4 h-4 text-forest-700 dark:text-forest-400" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2">
-            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-          </svg>
-          Overview & Hero
-        </a>
+        <!-- 1. MAIN -->
+        <div class="space-y-0.5">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-charcoal-400 dark:text-slate-400 font-mono block px-2.5 py-0.5">Main</span>
 
-        <a href="#section-why-matters" onclick="closeMobileSidebar()"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-          Why Depth Matters
-        </a>
-
-        <a href="#section-how-to-use" onclick="closeMobileSidebar()"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <svg class="w-4 h-4 text-cyan-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-          </svg>
-          How to Use (8 Steps)
-        </a>
-
-        <a href="#section-explorer" onclick="closeMobileSidebar()"
-          class="flex items-center justify-between px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <div class="flex items-center gap-2.5">
-            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none"
+          <a href="#section-hero" onclick="closeMobileSidebar()" data-section="section-hero"
+            class="sidebar-nav-item flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200/80 dark:hover:bg-slate-800/70 transition-all font-medium">
+            <svg class="w-3.5 h-3.5 text-forest-700 dark:text-forest-400 flex-shrink-0" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
-            Dataset Explorer
-          </div>
-          <span
-            class="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono font-bold">9</span>
-        </a>
+            <span class="truncate">Overview & Hero</span>
+          </a>
 
-        <a href="#section-ai-depth" onclick="closeMobileSidebar()"
-          class="flex items-center justify-between px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <div class="flex items-center gap-2.5">
-            <svg class="w-4 h-4 text-pink-600 dark:text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          <a href="#section-why-matters" onclick="closeMobileSidebar()" data-section="section-why-matters"
+            class="sidebar-nav-item flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200/80 dark:hover:bg-slate-800/70 transition-all font-medium">
+            <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               stroke-width="2">
-              <path
-                d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
-            AI-Predicted Depth
-          </div>
-          <span
-            class="text-[9px] px-1.5 py-0.5 rounded bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300 font-mono font-bold">V2</span>
-        </a>
+            <span class="truncate">Why Depth Matters</span>
+          </a>
 
-        <a href="#section-reconstruction" onclick="closeMobileSidebar()"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <svg class="w-4 h-4 text-cyan-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-          Reconstruction Lab
-        </a>
+          <a href="#section-how-to-use" onclick="closeMobileSidebar()" data-section="section-how-to-use"
+            class="sidebar-nav-item flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200/80 dark:hover:bg-slate-800/70 transition-all font-medium">
+            <svg class="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span class="truncate">How to Use (8 Steps)</span>
+          </a>
+        </div>
 
-        <a href="#section-benchmark" onclick="closeMobileSidebar()"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-          </svg>
-          Benchmarks
-        </a>
+        <!-- 2. DATA & MODELS -->
+        <div class="space-y-0.5">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-charcoal-400 dark:text-slate-400 font-mono block px-2.5 py-0.5">Data & Models</span>
 
-        <a href="#section-exports" onclick="closeMobileSidebar()"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200 dark:hover:bg-slate-800/80 transition-colors">
-          <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Research Exports
-        </a>
+          <a href="#section-explorer" onclick="closeMobileSidebar()" data-section="section-explorer"
+            class="sidebar-nav-item flex items-center justify-between px-2.5 py-1.5 rounded-lg text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200/80 dark:hover:bg-slate-800/70 transition-all font-medium">
+            <div class="flex items-center gap-2.5 truncate">
+              <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span class="truncate">Dataset Explorer</span>
+            </div>
+            <span
+              class="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-mono font-bold">9</span>
+          </a>
+
+          <a href="#section-ai-depth" onclick="closeMobileSidebar()" data-section="section-ai-depth"
+            class="sidebar-nav-item flex items-center justify-between px-2.5 py-1.5 rounded-lg text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200/80 dark:hover:bg-slate-800/70 transition-all font-medium">
+            <div class="flex items-center gap-2.5 truncate">
+              <svg class="w-3.5 h-3.5 text-pink-600 dark:text-pink-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <path
+                  d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+              </svg>
+              <span class="truncate">AI-Predicted Depth</span>
+            </div>
+            <span
+              class="text-[9px] px-1.5 py-0.5 rounded bg-pink-100 dark:bg-pink-950/80 text-pink-700 dark:text-pink-300 font-mono font-bold">V2</span>
+          </a>
+        </div>
+
+        <!-- 3. EXPERIMENTS -->
+        <div class="space-y-0.5">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-charcoal-400 dark:text-slate-400 font-mono block px-2.5 py-0.5">Experiments</span>
+
+          <a href="#section-reconstruction" onclick="closeMobileSidebar()" data-section="section-reconstruction"
+            class="sidebar-nav-item flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200/80 dark:hover:bg-slate-800/70 transition-all font-medium">
+            <svg class="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span class="truncate">Reconstruction Lab</span>
+          </a>
+
+          <a href="#section-benchmark" onclick="closeMobileSidebar()" data-section="section-benchmark"
+            class="sidebar-nav-item flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200/80 dark:hover:bg-slate-800/70 transition-all font-medium">
+            <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span class="truncate">Benchmarks</span>
+          </a>
+        </div>
+
+        <!-- 4. OUTPUTS -->
+        <div class="space-y-0.5">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-charcoal-400 dark:text-slate-400 font-mono block px-2.5 py-0.5">Outputs</span>
+
+          <a href="#section-exports" onclick="closeMobileSidebar()" data-section="section-exports"
+            class="sidebar-nav-item flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-charcoal-700 dark:text-slate-300 hover:text-charcoal-950 dark:hover:text-white hover:bg-ivory-200/80 dark:hover:bg-slate-800/70 transition-all font-medium">
+            <svg class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span class="truncate">Research Exports</span>
+          </a>
+        </div>
+
       </nav>
 
-      <!-- Guided Spotlight Tour Action -->
+      <!-- 4. GUIDED TOUR BUTTON (Compact, positioned below navigation) -->
       <div class="pt-2">
         <button type="button" onclick="startGuidedTour(); closeMobileSidebar();"
-          class="w-full py-2.5 px-3 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-gradient-to-r dark:from-blue-600 dark:to-cyan-600 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2">
-          <svg class="w-3.5 h-3.5 text-forest-400 dark:text-cyan-200 animate-pulse" viewBox="0 0 24 24" fill="none"
+          class="w-full py-2 px-3 rounded-lg bg-forest-900 hover:bg-forest-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-sm flex items-center justify-center gap-2 group">
+          <svg class="w-3.5 h-3.5 text-forest-300 dark:text-emerald-200 animate-pulse flex-shrink-0" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2.5">
             <circle cx="12" cy="12" r="10"></circle>
             <polygon points="10 8 16 12 10 16 10 8"></polygon>
           </svg>
-          Start Guided Tour
+          <span class="truncate">Start Guided Tour</span>
         </button>
       </div>
 
     </div>
 
-    <!-- Bottom Sidebar Footer: Team USN & GitHub -->
-    <div class="p-5 border-t border-ivory-300 dark:border-slate-800 bg-ivory-50 dark:bg-slate-900/40 space-y-3 text-xs">
-
-
-
-      <!-- GitHub Link & Version -->
-      <div
-        class="flex items-center justify-between pt-2 border-t border-ivory-200 dark:border-slate-800 text-[11px] text-charcoal-600 dark:text-slate-400">
-        <a href="https://github.com/991627aishu/CV_EDGEFUSE-DCR" target="_blank" rel="noopener noreferrer"
-          class="hover:text-charcoal-950 dark:hover:text-white flex items-center gap-1.5 font-semibold transition-colors">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-            <path fill-rule="evenodd" clip-rule="evenodd"
-              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z">
-            </path>
-          </svg>
-          GitHub Repo
-        </a>
-        <span class="font-mono text-[10px]">v1.0.0</span>
-      </div>
-
+    <!-- 5. BOTTOM FOOTER: GitHub & Version -->
+    <div
+      class="mt-auto px-4 py-2.5 border-t border-ivory-300/80 dark:border-slate-800/80 bg-ivory-50/80 dark:bg-slate-900/60 flex items-center justify-between text-[11px] text-charcoal-600 dark:text-slate-400 flex-shrink-0">
+      <a href="https://github.com/991627aishu/CV_EDGEFUSE-DCR" target="_blank" rel="noopener noreferrer"
+        class="hover:text-charcoal-950 dark:hover:text-white flex items-center gap-1.5 font-semibold transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z">
+          </path>
+        </svg>
+        <span>GitHub Repo</span>
+      </a>
+      <span class="font-mono text-[10px] text-charcoal-400 dark:text-slate-500 font-semibold">v1.0.0</span>
     </div>
+
   </aside>
 
   <!-- ========================================================================= -->
   <!-- 2. MAIN APPLICATION CONTENT (OFFSET BY SIDEBAR ON DESKTOP)               -->
   <!-- ========================================================================= -->
-  <div class="md:pl-64 lg:pl-72 flex-1 min-h-screen flex flex-col justify-between">
+  <div class="md:pl-64 flex-1 min-h-screen flex flex-col justify-between">
 
     <div>
       <!-- ======================================================================= -->
@@ -3821,8 +3831,14 @@
       const sb = document.getElementById('main-sidebar');
       const bd = document.getElementById('mobile-sidebar-backdrop');
       if (sb && bd) {
-        sb.classList.toggle('-translate-x-full');
-        bd.classList.toggle('hidden');
+        const isOpen = !sb.classList.contains('-translate-x-full');
+        if (isOpen) {
+          closeMobileSidebar();
+        } else {
+          sb.classList.remove('-translate-x-full');
+          bd.classList.remove('hidden');
+          document.body.classList.add('overflow-hidden');
+        }
       }
     }
 
@@ -3831,6 +3847,50 @@
       const bd = document.getElementById('mobile-sidebar-backdrop');
       if (sb) sb.classList.add('-translate-x-full');
       if (bd) bd.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    // Modern SaaS ScrollSpy for Active Sidebar Navigation Highlighting
+    function initSidebarScrollSpy() {
+      const sections = [
+        'section-hero',
+        'section-why-matters',
+        'section-how-to-use',
+        'section-explorer',
+        'section-ai-depth',
+        'section-reconstruction',
+        'section-benchmark',
+        'section-exports'
+      ];
+      const navItems = document.querySelectorAll('.sidebar-nav-item');
+      if (!navItems || navItems.length === 0) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            navItems.forEach(item => {
+              const target = item.getAttribute('data-section');
+              if (target === id) {
+                item.classList.add('bg-forest-100', 'dark:bg-cyan-950/50', 'text-forest-950', 'dark:text-cyan-300', 'font-bold', 'shadow-2xs');
+                item.classList.remove('text-charcoal-700', 'dark:text-slate-300', 'font-medium');
+              } else {
+                item.classList.remove('bg-forest-100', 'dark:bg-cyan-950/50', 'text-forest-950', 'dark:text-cyan-300', 'font-bold', 'shadow-2xs');
+                item.classList.add('text-charcoal-700', 'dark:text-slate-300', 'font-medium');
+              }
+            });
+          }
+        });
+      }, {
+        root: null,
+        rootMargin: '-20% 0px -60% 0px',
+        threshold: 0
+      });
+
+      sections.forEach(secId => {
+        const el = document.getElementById(secId);
+        if (el) observer.observe(el);
+      });
     }
 
     // -------------------------------------------------------------------------
@@ -7365,6 +7425,7 @@
     // Page Load Initialization
     window.addEventListener('DOMContentLoaded', () => {
       try { initTheme(); } catch (e) { console.warn('initTheme error:', e); }
+      try { initSidebarScrollSpy(); } catch (e) { console.warn('initSidebarScrollSpy error:', e); }
       try { setupDragDrop(); } catch (e) { console.warn('setupDragDrop error:', e); }
       try { setLabState(LAB_STATES.IDLE); } catch (e) { console.warn('setLabState error:', e); }
       try { loadDatasetGallery(); } catch (e) { console.warn('loadDatasetGallery error:', e); }
