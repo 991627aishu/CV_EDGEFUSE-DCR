@@ -480,15 +480,48 @@ def synthesize_rag_reference_depth(
     5. Returns (calibrated_gt_float32, metadata_dict).
     """
     from src.ai_depth import DepthAnythingV2Manager, trim_process_memory
+    import time
+    import logging
 
-    mgr = DepthAnythingV2Manager.get_instance()
-    mgr.ensure_model_loaded()
-
+    logger = logging.getLogger("edgefuse.ai_depth_rag")
     h_orig, w_orig = rgb_image.shape[:2]
-    pred_raw, pred_meta = mgr.predict(rgb_image, input_size=392)
-    lat_ms = float(pred_meta.get("inference_time_ms", 0.0))
-    if pred_raw.shape[:2] != (h_orig, w_orig):
-        pred_raw = cv2.resize(pred_raw, (w_orig, h_orig), interpolation=cv2.INTER_LINEAR)
+    pred_raw = None
+    lat_ms = 0.0
+    model_name = "Depth Anything V2 (ViT-S)"
+
+    try:
+        mgr = DepthAnythingV2Manager.get_instance()
+        if mgr.ensure_model_loaded():
+            pred_raw, pred_meta = mgr.predict(rgb_image, input_size=392)
+            lat_ms = float(pred_meta.get("inference_time_ms", 0.0))
+            if pred_raw is not None and pred_raw.shape[:2] != (h_orig, w_orig):
+                pred_raw = cv2.resize(pred_raw, (w_orig, h_orig), interpolation=cv2.INTER_LINEAR)
+    except Exception as e:
+        logger.warning(f"Depth Anything V2 unavailable, using photometric gradient depth proxy: {e}")
+        pred_raw = None
+
+    if pred_raw is None:
+        # High-fidelity Photometric Gradient & Bilateral Luminance Depth Proxy Fallback
+        # Synthesizes an estimated continuous spatial depth prior using multi-scale luminance,
+        # vertical scene perspective geometry, and bilateral edge preservation.
+        t_proxy_start = time.perf_counter()
+        gray = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2GRAY) if rgb_image.ndim == 3 else rgb_image
+        gray_f = gray.astype(np.float32) / 255.0
+
+        # Perspective prior: ground plane is close at bottom, farther at top
+        y_coords = np.linspace(0.8, 0.2, h_orig, dtype=np.float32)[:, None]
+        perspective_grid = np.repeat(y_coords, w_orig, axis=1)
+
+        # Photometric inverse luminance approximation
+        blur_l = cv2.GaussianBlur(gray_f, (21, 21), 0)
+        proxy_raw = 0.65 * perspective_grid + 0.35 * (1.0 - blur_l)
+
+        # Edge-guided bilateral smoothing
+        proxy_u8 = (np.clip(proxy_raw, 0, 1) * 255).astype(np.uint8)
+        smooth_u8 = cv2.bilateralFilter(proxy_u8, d=9, sigmaColor=50, sigmaSpace=50)
+        pred_raw = smooth_u8.astype(np.float32) / 255.0
+        lat_ms = (time.perf_counter() - t_proxy_start) * 1000.0
+        model_name = "Photometric Gradient Proxy Prior (Algorithmic Fallback)"
 
     scene_features = analyze_scene_deep_learning_features(rgb_image, pred_raw)
     scene_type = scene_features.get("scene_type", "Indoor Structured Environment")
@@ -547,13 +580,15 @@ def synthesize_rag_reference_depth(
             calib_equation = r"D_{\text{gt}} = 0.5\text{m} + 7.5\text{m} \cdot \hat{d}"
 
     try:
-        mgr.unload()
+        if 'mgr' in locals() and mgr is not None:
+            mgr.unload()
     except Exception:
         pass
     trim_process_memory()
 
     meta = {
         "calib_mode": calib_mode,
+        "model_name": model_name,
         "citation": citation,
         "calib_equation": calib_equation,
         "scene_category": scene_type,
@@ -562,7 +597,8 @@ def synthesize_rag_reference_depth(
         "mean_depth": round(float(calibrated_gt.mean()), 3),
         "resolution": f"{w_orig} × {h_orig}",
         "has_seeds": has_seeds,
-        "latency_ms": round(lat_ms, 1)
+        "latency_ms": round(lat_ms, 1),
+        "is_pseudo_gt": True
     }
 
     return calibrated_gt.astype(np.float32), meta

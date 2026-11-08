@@ -366,7 +366,7 @@ def edgefuse_dcr_refine(raw_reconstruction, guide_rgb, initial_valid_mask=None, 
 # 6. Unified Reconstruction Pipeline
 # ===========================================================================
 
-def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_model=None, device="cpu", apply_suppression=True, suppression_strength=0.85):
+def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_model=None, model=None, device="cpu", apply_suppression=True, suppression_strength=0.85):
     """
     Unified public interface for all depth reconstruction methods.
     Supports:
@@ -380,6 +380,8 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
       - 'cnn_boundary': CNN + Confidence + Boundary Refinement
       - 'hybrid': Full EdgeFuse-DCR (CNN + Confidence + Boundary + Texture Gate)
     """
+    if cnn_model is None and model is not None:
+        cnn_model = model
     t_start = time.perf_counter()
     h_rgb, w_rgb = rgb_image.shape[:2]
     target_shape = (h_rgb, w_rgb)

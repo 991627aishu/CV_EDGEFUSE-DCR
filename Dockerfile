@@ -22,6 +22,13 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch torchvision && \
     pip install --no-cache-dir -r requirements.txt
 
+# Pre-download Depth Anything V2 ViT-S weights during build so the container is fully self-contained
+RUN mkdir -p /app/models && \
+    curl -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+    "https://huggingface.co/depth-anything/Depth-Anything-V2-Small/resolve/main/depth_anything_v2_vits.pth" \
+    -o /app/models/depth_anything_v2_vits.pth && \
+    test -s /app/models/depth_anything_v2_vits.pth
+
 COPY . /app
 
 EXPOSE 8000

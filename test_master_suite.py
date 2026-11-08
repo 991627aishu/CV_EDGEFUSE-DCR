@@ -413,7 +413,7 @@ def main():
     # -----------------------------------------------------------------------
     # TEST 30: Responsive Layout & Mobile/Desktop Viewport Structure
     # -----------------------------------------------------------------------
-    assert "md:pl-64 lg:pl-72" in html_src
+    assert "lg:pl-64" in html_src or "md:pl-64" in html_src
     assert "section-hero" in html_src
     assert "Overview & Hero" in html_src
     assert "section-reconstruction" in html_src

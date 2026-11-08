@@ -91,11 +91,30 @@ class DepthAnythingV2Manager:
                 os.makedirs(os.path.dirname(self.checkpoint_path), exist_ok=True)
                 
                 # Download if missing and URL available
-                if not os.path.exists(self.checkpoint_path) or os.path.getsize(self.checkpoint_path) < 1000000:
+                if not os.path.exists(self.checkpoint_path) or os.path.getsize(self.checkpoint_path) < 80000000:
                     logger.info(f"Downloading Depth Anything V2 checkpoint from {CHECKPOINT_URL}...")
                     import urllib.request
-                    urllib.request.urlretrieve(CHECKPOINT_URL, self.checkpoint_path)
-                    logger.info("Download completed successfully.")
+                    req = urllib.request.Request(
+                        CHECKPOINT_URL,
+                        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"}
+                    )
+                    tmp_path = self.checkpoint_path + ".download.tmp"
+                    with urllib.request.urlopen(req, timeout=60) as resp, open(tmp_path, "wb") as f_out:
+                        while True:
+                            chunk = resp.read(1024 * 1024)
+                            if not chunk:
+                                break
+                            f_out.write(chunk)
+                    if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 80000000:
+                        if os.path.exists(self.checkpoint_path):
+                            try:
+                                os.remove(self.checkpoint_path)
+                            except Exception:
+                                pass
+                        os.replace(tmp_path, self.checkpoint_path)
+                        logger.info("Download completed successfully.")
+                    else:
+                        raise RuntimeError(f"Downloaded file incomplete or truncated ({os.path.getsize(tmp_path) if os.path.exists(tmp_path) else 0} bytes).")
 
                 logger.info(f"Loading Depth Anything V2 ({self.encoder}) from {self.checkpoint_path} onto {self.device}...")
                 config = MODEL_CONFIGS[self.encoder]

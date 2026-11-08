@@ -2593,7 +2593,7 @@
                   class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">RMSE
                   (m) ↓</span>
                 <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-rmse">N/A</div>
-                <span class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Lower is better</span>
+                <span id="sub-rmse" class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Lower is better</span>
               </div>
 
               <div
@@ -2602,7 +2602,7 @@
                   class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">MAE
                   (m) ↓</span>
                 <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-mae">N/A</div>
-                <span class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Lower is better</span>
+                <span id="sub-mae" class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Lower is better</span>
               </div>
 
               <div
@@ -2611,7 +2611,7 @@
                   class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">PSNR
                   (dB) ↑</span>
                 <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-psnr">N/A</div>
-                <span class="text-[9px] text-cyan-600 dark:text-cyan-400 font-semibold">Higher is better</span>
+                <span id="sub-psnr" class="text-[9px] text-cyan-600 dark:text-cyan-400 font-semibold">Higher is better</span>
               </div>
 
               <div
@@ -2620,7 +2620,7 @@
                   class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">SSIM
                   ↑</span>
                 <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-ssim">N/A</div>
-                <span class="text-[9px] text-cyan-600 dark:text-cyan-400 font-semibold">Structural Match</span>
+                <span id="sub-ssim" class="text-[9px] text-cyan-600 dark:text-cyan-400 font-semibold">Structural Match</span>
               </div>
 
               <div
@@ -2629,7 +2629,7 @@
                   class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">Boundary
                   F1 ↑</span>
                 <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-f1">N/A</div>
-                <span class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Edge Precision</span>
+                <span id="sub-f1" class="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">Edge Precision</span>
               </div>
 
               <div
@@ -2638,7 +2638,7 @@
                   class="text-[10px] font-mono font-bold text-charcoal-500 dark:text-slate-400 uppercase tracking-wider">Latency
                   (CPU)</span>
                 <div class="text-xl font-black font-mono text-charcoal-950 dark:text-white" id="val-latency">N/A</div>
-                <span class="text-[9px] text-charcoal-500 dark:text-slate-400 font-semibold">End-to-End</span>
+                <span id="sub-latency" class="text-[9px] text-charcoal-500 dark:text-slate-400 font-semibold">End-to-End</span>
               </div>
             </div>
           </div>
@@ -4501,6 +4501,19 @@
         document.getElementById('val-f1').innerText = 'N/A';
         document.getElementById('val-latency').innerHTML = 'N/A';
 
+        const subRmse = document.getElementById('sub-rmse');
+        if (subRmse) subRmse.innerText = 'Lower is better';
+        const subMae = document.getElementById('sub-mae');
+        if (subMae) subMae.innerText = 'Lower is better';
+        const subPsnr = document.getElementById('sub-psnr');
+        if (subPsnr) subPsnr.innerText = 'Higher is better';
+        const subSsim = document.getElementById('sub-ssim');
+        if (subSsim) subSsim.innerText = 'Structural Match';
+        const subF1 = document.getElementById('sub-f1');
+        if (subF1) subF1.innerText = 'Edge Precision';
+        const subLat = document.getElementById('sub-latency');
+        if (subLat) subLat.innerText = 'End-to-End';
+
         if (pill) pill.innerText = 'Idle (Awaiting Input)';
         if (dimBox) dimBox.innerText = 'No Active Input';
 
@@ -4548,6 +4561,19 @@
         document.getElementById('val-ssim').innerText = 'N/A';
         document.getElementById('val-f1').innerText = 'N/A';
         document.getElementById('val-latency').innerHTML = 'N/A';
+
+        const subRmse = document.getElementById('sub-rmse');
+        if (subRmse) subRmse.innerText = 'Lower is better';
+        const subMae = document.getElementById('sub-mae');
+        if (subMae) subMae.innerText = 'Lower is better';
+        const subPsnr = document.getElementById('sub-psnr');
+        if (subPsnr) subPsnr.innerText = 'Higher is better';
+        const subSsim = document.getElementById('sub-ssim');
+        if (subSsim) subSsim.innerText = 'Structural Match';
+        const subF1 = document.getElementById('sub-f1');
+        if (subF1) subF1.innerText = 'Edge Precision';
+        const subLat = document.getElementById('sub-latency');
+        if (subLat) subLat.innerText = 'End-to-End';
 
         clearReconstructionPanels();
 
@@ -4817,6 +4843,19 @@
         document.getElementById('val-psnr').innerText = Number(data.metrics.psnr).toFixed(2);
         document.getElementById('val-ssim').innerText = Number(data.metrics.ssim).toFixed(4);
         document.getElementById('val-f1').innerText = Number(data.metrics.boundary_f1).toFixed(4);
+
+        const subRmse = document.getElementById('sub-rmse');
+        if (subRmse) subRmse.innerText = isFidelity ? 'Sensor Baseline Fidelity' : (isPseudo ? 'vs Pseudo-GT (Proxy)' : 'Lower is better (Verified GT)');
+        const subMae = document.getElementById('sub-mae');
+        if (subMae) subMae.innerText = isFidelity ? 'Sensor Fidelity (m)' : (isPseudo ? 'Proxy MAE (m)' : 'Lower is better (Verified GT)');
+        const subPsnr = document.getElementById('sub-psnr');
+        if (subPsnr) subPsnr.innerText = isFidelity ? 'Sensor Fidelity (dB)' : (isPseudo ? 'Proxy PSNR (dB)' : 'Higher is better (Verified GT)');
+        const subSsim = document.getElementById('sub-ssim');
+        if (subSsim) subSsim.innerText = isFidelity ? 'Fidelity Structural Match' : (isPseudo ? 'Proxy Structural Match' : 'Structural Match (GT)');
+        const subF1 = document.getElementById('sub-f1');
+        if (subF1) subF1.innerText = isFidelity ? 'Boundary Preservation' : (isPseudo ? 'Proxy Boundary F1' : 'Edge Precision (GT)');
+        const subLat = document.getElementById('sub-latency');
+        if (subLat) subLat.innerText = `Kernel: ${Number(data.latency_ms).toFixed(1)}ms`;
 
         if (data.error_b64) {
           setViewImage('view-error', data.error_b64);
@@ -6045,7 +6084,7 @@
     }
 
     async function synthesizeReferenceGt() {
-      if (!uploadedRgbFile && !document.getElementById('file-rgb').files[0]) {
+      if (!uploadedRgbFile && !document.getElementById('file-rgb').files[0] && !currentDemo) {
         // If no custom file is selected yet, check if there is an image in view-rgb
         const vRgb = document.getElementById('view-rgb');
         if (!vRgb || !vRgb.src || vRgb.src.length < 50) {
@@ -6061,8 +6100,16 @@
       try {
         const fd = new FormData();
         fd.append('session_id', customSessionId);
-        if (uploadedRgbFile) fd.append('rgb_file', uploadedRgbFile);
-        fd.append('depth_scale', document.getElementById('depth-scale-select').value);
+        if (uploadedRgbFile) {
+          fd.append('rgb_file', uploadedRgbFile);
+        } else if (currentDemo) {
+          fd.append('demo_sample_id', currentDemo);
+        }
+        if (uploadedDepthFile) {
+          fd.append('depth_file', uploadedDepthFile);
+        }
+        const scaleEl = document.getElementById('depth-scale-select');
+        fd.append('depth_scale', scaleEl ? scaleEl.value : 'auto');
 
         const res = await fetch('/api/reconstruct/synthesize_gt', { method: 'POST', body: fd });
         if (!res.ok) {

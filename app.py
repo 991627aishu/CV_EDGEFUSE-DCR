@@ -71,7 +71,7 @@ try:
     torch.set_num_interop_threads(1)
 except Exception:
     pass
-MODEL_PATH = "EDGEFUSE_DCR/models/edgefuse_dcr_compact.pth"
+MODEL_PATH = os.path.join(APP_DIR, "models", "edgefuse_dcr_compact.pth")
 if not os.path.exists(MODEL_PATH):
     MODEL_PATH = "models/edgefuse_dcr_compact.pth"
 
@@ -105,7 +105,7 @@ async def startup_event():
     """Startup initialization - maintain lean footprint (<180MB) for 512MB RAM tier."""
     trim_process_memory()
 
-DEMO_DIR = "EDGEFUSE_DCR/demo_samples"
+DEMO_DIR = os.path.join(APP_DIR, "demo_samples")
 if not os.path.exists(DEMO_DIR):
     DEMO_DIR = "demo_samples"
 
@@ -1582,6 +1582,8 @@ def use_ai_depth_as_input(
 def synthesize_gt_endpoint(
     session_id: Optional[str] = Form(None),
     rgb_file: Optional[UploadFile] = File(None),
+    depth_file: Optional[UploadFile] = File(None),
+    demo_sample_id: Optional[str] = Form(None),
     depth_scale: str = Form("auto")
 ):
     """
@@ -1596,6 +1598,7 @@ def synthesize_gt_endpoint(
     raw_rgb = None
     sparse_depth = None
 
+    # 1. Parse RGB guidance image
     if rgb_file and hasattr(rgb_file, "filename") and rgb_file.filename:
         if hasattr(rgb_file, "file") and hasattr(rgb_file.file, "read"):
             rgb_bytes = rgb_file.file.read()
@@ -1606,6 +1609,32 @@ def synthesize_gt_endpoint(
         sess = CUSTOM_SESSIONS[curr_session_id]
         raw_rgb = sess.get("raw_rgb")
         sparse_depth = sess.get("raw_depth")
+
+    # 2. Parse input depth if provided for seed calibration (Ranftl et al., TPAMI 2022)
+    if depth_file and hasattr(depth_file, "filename") and depth_file.filename:
+        if hasattr(depth_file, "file") and hasattr(depth_file.file, "read"):
+            depth_bytes = depth_file.file.read()
+        else:
+            depth_bytes = depth_file.read()
+        try:
+            parsed_d, _, _, _ = parse_depth_bytes(depth_bytes, filename=depth_file.filename, depth_scale=depth_scale, max_dim=720)
+            sparse_depth = parsed_d
+        except Exception as e:
+            print(f"Warning: could not parse depth_file for pseudo-GT calibration: {e}")
+
+    # 3. Fallback to active demo sample if no custom files provided
+    if raw_rgb is None and demo_sample_id and not hasattr(demo_sample_id, "default"):
+        if str(demo_sample_id) in CATALOG.scenes_by_id:
+            try:
+                raw_rgb, sparse_depth, _, _ = CATALOG.load_scene_data(str(demo_sample_id))
+            except Exception:
+                pass
+        else:
+            info = resolve_demo_sample(str(demo_sample_id))
+            if info and os.path.exists(info["rgb_path"]):
+                raw_rgb = np.array(Image.open(info["rgb_path"]))
+                if os.path.exists(info["input_path"]):
+                    sparse_depth = np.load(info["input_path"])
 
     if raw_rgb is None:
         raise HTTPException(status_code=400, detail="RGB Guidance Image is required to synthesize reference Ground Truth.")
@@ -1622,6 +1651,8 @@ def synthesize_gt_endpoint(
     CUSTOM_SESSIONS[curr_session_id]["gt_meta"] = gt_meta
     CUSTOM_SESSIONS[curr_session_id]["gt_type"] = "pseudo_gt"
     CUSTOM_SESSIONS[curr_session_id]["raw_rgb"] = raw_rgb
+    if sparse_depth is not None:
+        CUSTOM_SESSIONS[curr_session_id]["raw_depth"] = sparse_depth
 
     valid_mask = (calibrated_gt > 0.05) & np.isfinite(calibrated_gt)
     gt_colored = colorize_depth(calibrated_gt, valid_mask=valid_mask)
@@ -1634,7 +1665,7 @@ def synthesize_gt_endpoint(
         "gt_meta": gt_meta,
         "gt_type": "pseudo_gt",
         "is_pseudo_gt": True,
-        "message": f"Generated Estimated Reference Depth ({gt_meta['calib_mode']}) - Synthetic Pseudo-GT (Qualitative)"
+        "message": f"Generated Estimated Reference Depth ({gt_meta.get('calib_mode', 'Synthetic')}) - Synthetic Pseudo-GT (Qualitative)"
     }
 
 
@@ -2410,6 +2441,9 @@ def download_colorized_preview():
         headers={"Content-Disposition": f"attachment; filename={fname}"}
     )
 
+download_colorized_depth = download_colorized_preview
+
+
 
 @app.get("/api/download/confidence")
 def download_confidence_map():
@@ -2429,6 +2463,7 @@ def download_confidence_map():
         media_type="image/png",
         headers={"Content-Disposition": f"attachment; filename={fname}"}
     )
+
 
 
 @app.get("/api/download/valid_mask")
@@ -2451,6 +2486,7 @@ def download_validity_mask():
     )
 
 
+
 @app.get("/api/download/boundary")
 def download_boundary_overlay():
     """Downloads Boundary Discontinuity Overlay as PNG."""
@@ -2469,6 +2505,7 @@ def download_boundary_overlay():
         media_type="image/png",
         headers={"Content-Disposition": f"attachment; filename={fname}"}
     )
+
 
 
 @app.get("/api/download/error_map")
@@ -2495,6 +2532,7 @@ def download_error_map():
         media_type="image/png",
         headers={"Content-Disposition": f"attachment; filename={fname}"}
     )
+
 
 
 @app.get("/api/download/ply")
