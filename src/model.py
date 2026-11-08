@@ -198,12 +198,27 @@ def save_checkpoint(model, path, epoch=0, val_loss=0.0):
     }, path)
 
 
-def load_model(checkpoint_path, device="cpu"):
+def load_model(checkpoint_path, device="cpu", optimize_jit=True):
     model = EdgeFuseNet(in_channels=5, base_channels=32)
     if os.path.exists(checkpoint_path):
         ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
         model.load_state_dict(ckpt["model_state_dict"])
     model.to(device)
     model.eval()
+
+    if optimize_jit:
+        try:
+            num_threads = min(4, os.cpu_count() or 2)
+            torch.set_num_threads(num_threads)
+            dummy_rgb = torch.zeros(1, 3, 240, 320, dtype=torch.float32, device=device)
+            dummy_d = torch.zeros(1, 1, 240, 320, dtype=torch.float32, device=device)
+            dummy_v = torch.zeros(1, 1, 240, 320, dtype=torch.float32, device=device)
+            with torch.inference_mode():
+                traced = torch.jit.trace(model, (dummy_rgb, dummy_d, dummy_v))
+                traced = torch.jit.freeze(traced)
+                _ = traced(dummy_rgb, dummy_d, dummy_v)
+            return traced
+        except Exception as e:
+            print(f"JIT trace optimization notice ({e}), using eager model.")
     return model
 

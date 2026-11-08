@@ -245,26 +245,28 @@ def estimate_confidence_map(depth_map, valid_mask, window_size=5, factor=1, is_l
     h, w = depth_map.shape
     if is_low_res and factor > 1:
         # True physical sensor measurements exist only on the sub-sampled grid
-        anchor_mask = np.zeros((h, w), dtype=np.float32)
-        anchor_mask[::factor, ::factor] = 1.0
-        dist = distance_transform_edt(1.0 - anchor_mask)
+        anchor_mask = np.zeros((h, w), dtype=np.uint8)
+        anchor_mask[::factor, ::factor] = 1
+        dist = cv2.distanceTransform(1 - anchor_mask, cv2.DIST_L2, 5)
         decay = max(1.5 * factor, 2.0)
         spatial_conf = np.exp(-dist / decay).astype(np.float32)
     else:
         if valid_mask.shape[:2] != (h, w):
-            v_mask = cv2.resize(valid_mask.astype(np.float32), (w, h), interpolation=cv2.INTER_NEAREST)
+            v_mask = (cv2.resize(valid_mask.astype(np.float32), (w, h), interpolation=cv2.INTER_NEAREST) > 0.5).astype(np.uint8)
         else:
-            v_mask = valid_mask.astype(np.float32)
+            v_mask = (valid_mask > 0).astype(np.uint8)
 
         if v_mask.max() > 0:
-            dist = distance_transform_edt(1.0 - v_mask)
+            dist = cv2.distanceTransform(1 - v_mask, cv2.DIST_L2, 5)
             spatial_conf = np.exp(-dist / 8.0).astype(np.float32)
         else:
-            spatial_conf = np.ones((h, w), dtype=np.float32) * 0.1
+            spatial_conf = np.full((h, w), 0.1, dtype=np.float32)
 
-    # 2. Local geometric consistency: normalized standard deviation
-    local_mean = uniform_filter(depth_map.astype(np.float32), size=window_size)
-    local_sq_mean = uniform_filter(depth_map.astype(np.float32) ** 2, size=window_size)
+    # 2. Local geometric consistency: normalized standard deviation via SIMD-accelerated cv2.boxFilter
+    d_f32 = depth_map.astype(np.float32)
+    ksize = (window_size, window_size)
+    local_mean = cv2.boxFilter(d_f32, cv2.CV_32F, ksize, borderType=cv2.BORDER_REFLECT)
+    local_sq_mean = cv2.boxFilter(d_f32 ** 2, cv2.CV_32F, ksize, borderType=cv2.BORDER_REFLECT)
     local_var = np.maximum(0.0, local_sq_mean - local_mean ** 2)
     local_std = np.sqrt(local_var)
 
@@ -398,7 +400,8 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
     if cnn_model is not None:
         try:
             import torch
-            torch.set_num_threads(1)
+            import os
+            torch.set_num_threads(min(4, os.cpu_count() or 2))
 
             h_c, w_c = base_up.shape[:2]
             cnn_scale = 1.0
@@ -507,9 +510,6 @@ def reconstruct_depth(rgb_image, depth_input, factor=4, method="hybrid", cnn_mod
 
     elif method == "hybrid":  # Full hybrid EdgeFuse-DCR
         res = edgefuse_dcr_refine(cnn_depth, rgb_image, initial_valid_mask=valid_mask, apply_suppression=apply_suppression, suppression_strength=suppression_strength, factor=factor, is_low_res=is_low_res, cnn_conf=cnn_conf_np)
-        rec = res["final_depth"]
-        conf = res["confidence_map"]
-        gate = res["texture_gate"]
         rec = res["final_depth"]
         conf = res["confidence_map"]
         gate = res["texture_gate"]
