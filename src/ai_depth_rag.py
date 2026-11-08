@@ -555,9 +555,18 @@ def synthesize_rag_reference_depth(
                 t = float(np.median(gt_pts - s * pred_pts))
 
             calibrated_gt = cv2.resize(np.clip(s * pred_aligned + t, 0.1, 85.0), (w_orig, h_orig), interpolation=cv2.INTER_LINEAR)
+            
+            # Apply RGB-guided bilateral refinement to ensure sub-pixel edge alignment with guidance photograph
+            try:
+                from src.depth_engine import fast_guided_filter
+                calibrated_gt = fast_guided_filter(guide_rgb=rgb_image, depth_in=calibrated_gt, radius=4, eps=0.01)
+                calibrated_gt = np.clip(calibrated_gt, 0.1, 85.0)
+            except Exception:
+                pass
+
             calib_mode = f"Multi-Point Metric Seed Alignment (Scale={s:.4f}, Shift={t:.3f}m)"
             citation = "Ranftl et al., 'Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-Shot Cross-Dataset Transfer', IEEE TPAMI 2022."
-            calib_equation = r"D_{\text{gt}}(u,v) = s \cdot D_{\text{vit}}(u,v) + t"
+            calib_equation = r"D_{\text{gt}}(u,v) = s \cdot D_{\text{prior}}(u,v) + t"
 
     if not has_seeds:
         d_min, d_max = float(pred_raw.min()), float(pred_raw.max())

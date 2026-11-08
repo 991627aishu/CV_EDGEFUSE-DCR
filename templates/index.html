@@ -6178,7 +6178,7 @@
 
         const res = await fetch('/api/reconstruct/synthesize_gt', { method: 'POST', body: fd });
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ detail: 'Failed to generate estimated reference' }));
+          const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}: Failed to generate estimated reference` }));
           throw new Error(err.detail || 'Synthesis failed');
         }
         const data = await res.json();
@@ -6203,7 +6203,7 @@
           setViewImage('view-rgb', uploadedRgbDataUrl);
         }
         showToast('✨ Generated Estimated Reference Depth (Pseudo-GT)! Executing reconstruction...');
-        executeReconstruction();
+        await executeReconstruction();
       } catch (e) {
         showToast('Estimated Reference Generation Error: ' + e.message, true);
       } finally {
