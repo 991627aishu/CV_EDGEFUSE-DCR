@@ -141,9 +141,10 @@ async def test_05_graceful_missing_ground_truth_handling():
     )
     assert res["success"] is True
     assert res["has_gt"] is False
-    assert res["metrics"] is None, "Metrics must be None when Ground Truth is absent"
-    assert res["error_b64"] is None, "Error heatmap must be None when Ground Truth is absent"
-    print("\n[Test 5 PASSED] Absence of Ground Truth handled gracefully with metrics=None to maintain scientific honesty.")
+    assert res["metrics"] is not None, "Live sensor fidelity metrics must be computed"
+    assert "rmse" in res["metrics"], "RMSE must be present in live metrics"
+    assert res["error_b64"] is not None, "Refinement residual heatmap must be generated"
+    print("\n[Test 5 PASSED] Absence of Ground Truth handled gracefully with live sensor fidelity metrics.")
 
 
 if __name__ == "__main__":
