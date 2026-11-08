@@ -2723,6 +2723,7 @@
 
     // Custom Upload State
     let uploadedRgbFile = null;
+    let uploadedRgbDataUrl = null;
     let uploadedDepthFile = null;
     let uploadedGtFile = null;
     let customSessionId = 'sess_' + Math.random().toString(36).substring(2, 12);
@@ -3438,15 +3439,22 @@
         if (pill) pill.innerText = 'Idle (Awaiting Input)';
         if (dimBox) dimBox.innerText = 'No Active Input';
 
-        setViewImage('view-rgb', null);
-        setViewImage('view-lr-depth', null);
-        setViewImage('view-valid-mask', null);
+        if (!uploadedRgbFile && !uploadedRgbDataUrl) {
+          setViewImage('view-rgb', null);
+          const bRgb = document.getElementById('res-badge-rgb');
+          if (bRgb) { bRgb.classList.add('hidden'); bRgb.innerText = '-- × --'; }
+        } else if (uploadedRgbDataUrl) {
+          setViewImage('view-rgb', uploadedRgbDataUrl);
+        }
+
+        if (!uploadedDepthFile) {
+          setViewImage('view-lr-depth', null);
+          setViewImage('view-valid-mask', null);
+          const bLr = document.getElementById('res-badge-lr-depth');
+          if (bLr) { bLr.classList.add('hidden'); bLr.innerText = '-- × --'; }
+        }
         clearReconstructionPanels();
 
-        const bRgb = document.getElementById('res-badge-rgb');
-        if (bRgb) { bRgb.classList.add('hidden'); bRgb.innerText = '-- × --'; }
-        const bLr = document.getElementById('res-badge-lr-depth');
-        if (bLr) { bLr.classList.add('hidden'); bLr.innerText = '-- × --'; }
         const bRef = document.getElementById('res-badge-refined');
         if (bRef) { bRef.classList.add('hidden'); bRef.innerText = '-- × --'; }
 
@@ -3477,6 +3485,10 @@
         document.getElementById('val-latency').innerHTML = 'N/A';
 
         clearReconstructionPanels();
+
+        if (uploadedRgbDataUrl) {
+          setViewImage('view-rgb', uploadedRgbDataUrl);
+        }
 
         if (btnRun) {
           btnRun.disabled = false;
@@ -3614,10 +3626,27 @@
     // 3. RECONSTRUCTION EXECUTION ENGINE & STATE INVALIDATION
     // -------------------------------------------------------------------------
     function invalidateReconstructionState() {
-      setLabState(LAB_STATES.IDLE);
+      clearReconstructionPanels();
       lastLiveReconstructionData = null;
       customBenchmarkRows = null;
       customBenchmarkMeta = null;
+
+      document.getElementById('val-rmse').innerText = 'N/A';
+      document.getElementById('val-mae').innerText = 'N/A';
+      document.getElementById('val-psnr').innerText = 'N/A';
+      document.getElementById('val-ssim').innerText = 'N/A';
+      document.getElementById('val-f1').innerText = 'N/A';
+      document.getElementById('val-latency').innerHTML = 'N/A';
+
+      const recPh = document.getElementById('view-reconstructed-placeholder');
+      const recPhTitle = document.getElementById('view-rec-ph-title');
+      const recPhDesc = document.getElementById('view-rec-ph-desc');
+      if (recPh) recPh.classList.remove('hidden');
+      if (recPhTitle) recPhTitle.innerText = 'Ready for Hybrid Refinement';
+      if (recPhDesc) recPhDesc.innerText = 'Click "Execute Depth Reconstruction" below to refine.';
+
+      const bRef = document.getElementById('res-badge-refined');
+      if (bRef) { bRef.classList.add('hidden'); bRef.innerText = '-- × --'; }
 
       const vErr = document.getElementById('view-error');
       if (vErr) { vErr.removeAttribute('src'); vErr.classList.add('hidden'); }
@@ -3639,6 +3668,11 @@
       }
       const diffDesc = document.getElementById('diff-validity-desc');
       if (diffDesc) diffDesc.innerText = 'Execute reconstruction to generate a scientific difference analysis against the active baseline.';
+
+      // Ensure RGB Guidance Image remains visible if already uploaded!
+      if (uploadedRgbDataUrl) {
+        setViewImage('view-rgb', uploadedRgbDataUrl);
+      }
     }
 
     async function executeReconstruction() {
@@ -3791,6 +3825,16 @@
         setViewImage('view-cnn', data.cnn_b64);
         const phCnn = document.getElementById('view-cnn-ph');
         if (phCnn) phCnn.classList.add('hidden');
+      }
+      if (data.rgb_b64) {
+        setViewImage('view-rgb', data.rgb_b64);
+        const bRgb = document.getElementById('res-badge-rgb');
+        if (bRgb && data.resolution_str) {
+          bRgb.innerText = data.resolution_str;
+          bRgb.classList.remove('hidden');
+        }
+      } else if (uploadedRgbDataUrl) {
+        setViewImage('view-rgb', uploadedRgbDataUrl);
       }
       if (data.confidence_b64) setViewImage('view-confidence', data.confidence_b64);
       if (data.boundary_b64) setViewImage('view-boundary', data.boundary_b64);
@@ -4905,6 +4949,7 @@
         uploadedDepthFile = file;
         document.getElementById('label-depth').innerText = `✓ ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
         previewDepthMap(file);
+        if (uploadedRgbDataUrl) { setViewImage('view-rgb', uploadedRgbDataUrl); }
       } else if (type === 'gt') {
         uploadedGtFile = file;
         document.getElementById('label-gt').innerText = `✓ ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
@@ -4918,6 +4963,7 @@
           gtBadge.innerText = '✓ Sensor GT Attached';
           gtBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
         }
+        if (uploadedRgbDataUrl) { setViewImage('view-rgb', uploadedRgbDataUrl); }
       }
 
       document.getElementById('header-sample-pill').innerText = 'Custom Upload';
@@ -4929,6 +4975,7 @@
         if (bLabel) bLabel.innerText = `Scene: Custom User Upload (${uploadedGtFile ? 'Sensor GT Attached' : 'Awaiting GT Reference'})`;
       }
       showToast(`Selected ${file.name} for ${type.toUpperCase()}`);
+      updateExecutionButtonState();
     }
 
     async function synthesizeReferenceGt() {
@@ -4974,6 +5021,9 @@
           errBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800';
         }
 
+        if (uploadedRgbDataUrl) {
+          setViewImage('view-rgb', uploadedRgbDataUrl);
+        }
         showToast('✨ Generated Estimated Reference Depth (Pseudo-GT)! Executing reconstruction...');
         executeReconstruction();
       } catch (e) {
@@ -4984,9 +5034,11 @@
     }
 
     function previewRgbFile(file) {
+      if (!file) return;
       const reader = new FileReader();
       reader.onload = (e) => { 
-        setViewImage('view-rgb', e.target.result); 
+        uploadedRgbDataUrl = e.target.result;
+        setViewImage('view-rgb', uploadedRgbDataUrl); 
         const img = new Image();
         img.onload = () => {
           const bRgb = document.getElementById('res-badge-rgb');
@@ -4995,7 +5047,7 @@
             bRgb.classList.remove('hidden');
           }
         };
-        img.src = e.target.result;
+        img.src = uploadedRgbDataUrl;
         updateExecutionButtonState();
       };
       reader.readAsDataURL(file);
@@ -5032,6 +5084,11 @@
         document.getElementById('validity-px-counts').innerText = `${validPx} Valid / ${invalidPx} Void (${totalPx} total px)`;
         document.getElementById('sample-dimensions').innerText = `Custom User Input (${data.dimensions} • ${file.name})`;
         showToast(`Depth Map Validated: ${data.dimensions} (${data.valid_percent}% Valid)`);
+        
+        // Re-affirm RGB preview in case depth preview finished after
+        if (uploadedRgbDataUrl) {
+          setViewImage('view-rgb', uploadedRgbDataUrl);
+        }
         updateExecutionButtonState();
       } catch (e) {
         showToast('Depth Validation Warning: ' + e.message, true);
@@ -5040,6 +5097,7 @@
 
     function clearCustomFiles() {
       uploadedRgbFile = null;
+      uploadedRgbDataUrl = null;
       uploadedDepthFile = null;
       uploadedGtFile = null;
       currentDemo = null;

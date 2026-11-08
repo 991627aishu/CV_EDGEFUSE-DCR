@@ -1826,6 +1826,7 @@ async def run_reconstruction(
 
     # Compute Input Depth Statistics
     valid_mask, input_stats = compute_validity_mask_and_stats(depth_input, depth_type=depth_type, depth_unit=depth_unit)
+    rgb_b64 = encode_image_base64(rgb_image)
     input_depth_b64 = encode_image_base64(colorize_depth(depth_input, valid_mask=valid_mask, colormap=colormap))
     valid_mask_b64 = encode_image_base64((valid_mask.astype(np.uint8) * 255))
 
@@ -2017,6 +2018,7 @@ async def run_reconstruction(
         "total_latency_ms": round(total_latency, 1),
         "latency_breakdown": latency_breakdown,
         "peak_ram_mb": round(peak_mem / (1024 * 1024), 2),
+        "rgb_b64": rgb_b64,
         "input_depth_b64": input_depth_b64,
         "valid_mask_b64": valid_mask_b64,
         "input_stats": input_stats,
