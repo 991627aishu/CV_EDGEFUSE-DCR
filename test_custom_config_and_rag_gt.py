@@ -145,11 +145,13 @@ def run_tests():
         upsample_factor=4
     ))
     assert data_nogt["success"] is True
-    assert data_nogt["has_gt"] is False, "has_gt must be False when no GT was provided"
-    assert data_nogt["metrics"] is None, "metrics must be None when no GT was provided"
-    assert data_nogt["error_b64"] is None, "error_b64 must be None when no GT was provided"
+    assert data_nogt["has_gt"] is False, "has_gt must be False when no external GT was provided"
+    assert data_nogt["metrics"] is not None, "Live real-time metrics must be computed"
+    assert "rmse" in data_nogt["metrics"]
+    assert "boundary_f1" in data_nogt["metrics"]
+    assert data_nogt["error_b64"] is not None, "Real-time residual heatmap must be generated"
     assert data_nogt["reconstructed_b64"] is not None
-    print(f" -> PASSED: Missing GT cleanly handled without crash! has_gt=False, metrics=None, latency={data_nogt['latency_ms']}ms.", flush=True)
+    print(f" -> PASSED: Live real-time metrics computed! RMSE={data_nogt['metrics']['rmse']:.4f}, F1={data_nogt['metrics']['boundary_f1']:.4f}, latency={data_nogt['latency_ms']}ms.", flush=True)
     passed += 1
 
     # 7. Test All Upsampling Factors (2x, 4x, 8x)

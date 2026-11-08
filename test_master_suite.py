@@ -308,8 +308,9 @@ def main():
 
     res_missing = sync_run(run_missing_gt())
     assert res_missing["has_gt"] == False
-    assert res_missing["metrics"] is None
-    record_pass(20, "Missing Ground Truth Reporting (has_gt=False, metrics=None, N/A UI)")
+    assert res_missing["metrics"] is not None
+    assert "rmse" in res_missing["metrics"]
+    record_pass(20, "Missing Ground Truth Reporting (has_gt=False, live sensor fidelity metrics)")
 
     # -----------------------------------------------------------------------
     # TEST 21: Benchmark Synchronization

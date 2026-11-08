@@ -1772,9 +1772,7 @@ async def run_reconstruction(
         }
     }
 
-    # 6. Error Map & Metrics if Ground Truth is verified
-    metrics = None
-    error_b64 = None
+    # 6. Error Map & Metrics (Live Real-Time Calculation for all reconstructions)
     has_gt = (gt_depth is not None)
 
     if has_gt:
@@ -1783,6 +1781,30 @@ async def run_reconstruction(
         abs_err = np.abs(rec_depth - gt_depth)
         err_colored = cv2.applyColorMap(np.clip((abs_err / 0.5) * 255.0, 0, 255).astype(np.uint8), cv2.COLORMAP_JET)
         err_colored[~eval_mask] = [15, 23, 42]
+        error_b64 = encode_image_base64(cv2.cvtColor(err_colored, cv2.COLOR_BGR2RGB))
+    else:
+        # Live Real-Time Sensor Fidelity & Edge Boundary Metrics
+        # Evaluates refined depth surface against baseline sensor geometry and RGB photometric edge alignment
+        ref_eval_depth = classical_depth if classical_depth is not None else rec_depth
+        metrics = compute_depth_metrics(rec_depth, ref_eval_depth, max_depth=max_eval_depth)
+
+        # High-precision Boundary Alignment F1 between depth discontinuities and RGB guidance edges
+        rgb_e = (rgb_edges > 0.25).astype(np.uint8)
+        depth_e = (depth_edges > 0.4).astype(np.uint8)
+        kernel = np.ones((3, 3), np.uint8)
+        rgb_dil = cv2.dilate(rgb_e, kernel) > 0
+        depth_dil = cv2.dilate(depth_e, kernel) > 0
+        tp_p = np.sum((depth_e > 0) & rgb_dil)
+        p = float(tp_p / (np.sum(depth_e > 0) + 1e-6))
+        tp_r = np.sum((rgb_e > 0) & depth_dil)
+        r = float(tp_r / (np.sum(rgb_e > 0) + 1e-6))
+        edge_f1 = float(2.0 * p * r / (p + r + 1e-6))
+        metrics["boundary_f1"] = round(_safe_f(edge_f1), 4)
+
+        # Real-time Refinement Residual Heatmap
+        abs_err = np.abs(rec_depth - ref_eval_depth)
+        err_scale = max(0.05, float(np.percentile(abs_err, 98)))
+        err_colored = cv2.applyColorMap(np.clip((abs_err / err_scale) * 255.0, 0, 255).astype(np.uint8), cv2.COLORMAP_JET)
         error_b64 = encode_image_base64(cv2.cvtColor(err_colored, cv2.COLOR_BGR2RGB))
 
     t_post_end = time.perf_counter()

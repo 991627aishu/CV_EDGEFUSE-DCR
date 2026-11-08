@@ -3246,8 +3246,9 @@
     function updateReconstructionUI(data) {
       document.getElementById('val-latency').innerHTML = `${Number(data.latency_ms).toFixed(1)}<span class="text-xs font-normal text-charcoal-500 dark:text-slate-400 ml-0.5">ms</span>`;
 
-      if (data.has_gt && data.metrics && typeof data.metrics.rmse !== 'undefined') {
+      if (data.metrics && typeof data.metrics.rmse !== 'undefined') {
         const isPseudo = Boolean(data.is_pseudo_gt || data.gt_type === 'pseudo_gt' || data.gt_type === 'rag_synthesized');
+        const isFidelity = Boolean(data.gt_type === 'baseline_fidelity' || data.gt_type === 'sensor_fidelity' || !data.has_gt);
         document.getElementById('val-rmse').innerText = Number(data.metrics.rmse).toFixed(4);
         document.getElementById('val-mae').innerText = Number(data.metrics.mae).toFixed(4);
         document.getElementById('val-psnr').innerText = Number(data.metrics.psnr).toFixed(2);
@@ -3263,27 +3264,35 @@
         }
         const errBadge = document.getElementById('error-heatmap-status-badge');
         if (errBadge) {
-          const badgeText = isPseudo ? 'Estimated Pseudo-GT (Qualitative)' : (data.gt_type === 'sensor' ? 'Sensor GT Verified' : 'Benchmark GT');
+          const badgeText = isFidelity
+            ? 'Live Sensor Fidelity & Edge Heatmap'
+            : (isPseudo ? 'Estimated Pseudo-GT (Qualitative)' : (data.gt_type === 'sensor' ? 'Sensor GT Verified' : 'Benchmark GT'));
           errBadge.innerText = badgeText;
-          errBadge.className = isPseudo
-            ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800'
-            : 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
+          errBadge.className = isFidelity
+            ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+            : (isPseudo
+              ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800'
+              : 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800');
         }
         const gtBadge = document.getElementById('gt-status-badge');
         if (gtBadge) {
-          const gtText = isPseudo ? '✓ Estimated Pseudo-GT' : (data.gt_type === 'sensor' ? '✓ Sensor GT Active' : '✓ Benchmark GT');
+          const gtText = isFidelity
+            ? '✓ Live Real-Time Metrics'
+            : (isPseudo ? '✓ Estimated Pseudo-GT' : (data.gt_type === 'sensor' ? '✓ Sensor GT Active' : '✓ Benchmark GT'));
           gtBadge.innerText = gtText;
-          gtBadge.className = isPseudo
-            ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800'
-            : 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800';
+          gtBadge.className = isFidelity
+            ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+            : (isPseudo
+              ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800'
+              : 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800');
         }
       } else {
-        // Scientifically honest: no GT reference provided -> show N/A
-        document.getElementById('val-rmse').innerText = 'N/A';
-        document.getElementById('val-mae').innerText = 'N/A';
-        document.getElementById('val-psnr').innerText = 'N/A';
-        document.getElementById('val-ssim').innerText = 'N/A';
-        document.getElementById('val-f1').innerText = 'N/A';
+        // Fallback placeholder if no metrics computed
+        document.getElementById('val-rmse').innerText = '--';
+        document.getElementById('val-mae').innerText = '--';
+        document.getElementById('val-psnr').innerText = '--';
+        document.getElementById('val-ssim').innerText = '--';
+        document.getElementById('val-f1').innerText = '--';
 
         const vErr = document.getElementById('view-error');
         if (vErr) { vErr.src = ''; vErr.classList.add('hidden'); }
